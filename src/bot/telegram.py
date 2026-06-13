@@ -624,14 +624,22 @@ class BotHandlers:
                 )
         elif cmd.intent == Intent.SCREEN:
             rules = cmd.params.get('rules', ['technical', 'fundamental', 'foreign_flow'])
-            symbols = cmd.params.get('symbols', ['BBCA', 'BBRI', 'BMRI', 'TLKM', 'ASII', 'ADRO', 'UNVR', 'ICBP', 'GOTO', 'BUMI'])
+            # Use all available IDX stocks (from encyclopedia)
+            try:
+                from src.engine.idx_encyclopedia import all_stocks
+                symbols = list(all_stocks().keys())
+            except Exception:
+                symbols = ['BBCA', 'BBRI', 'BMRI', 'TLKM', 'ASII', 'ADRO', 'UNVR', 
+                          'ICBP', 'INDF', 'PTBA', 'ANTM', 'GGRM', 'HMSP', 'UNTR',
+                          'KLBF', 'PGAS', 'SMGR', 'CPIN', 'AMRT', 'ACES', 'BRIS',
+                          'TOWR', 'EXCL', 'ISAT', 'MTEL', 'BUKA', 'GOTO', 'EMTK', 'MDKA']
             await update.message.reply_text(
                 f"🔍 Screening {len(symbols)} saham... (mohon tunggu 30-60 detik)",
             )
             try:
                 from src.engine.screener import ScreenerEngine
                 se = ScreenerEngine()
-                results = await se.screen(symbols, rules, min_score=5)
+                results = await se.screen(symbols, rules, min_score=3)
                 if results:
                     text = "📊 *Hasil Screening*\n\n"
                     for r in results:
@@ -695,8 +703,9 @@ class BotHandlers:
                         # Also show risk calculation
                         from src.engine.risk import RiskManager
                         rm = RiskManager()
+                        capital = getattr(user, 'capital', None) or 10_000_000
                         sizing = rm.calculate_position(
-                            cmd.symbol, user.capital or 10_000_000,
+                            cmd.symbol, capital,
                             plan.entry_price, plan.stop_loss, plan.take_profit,
                         )
                         text += f"\n\n{rm.format_sizing(sizing)}"

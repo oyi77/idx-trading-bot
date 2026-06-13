@@ -140,37 +140,38 @@ class NLPRouter:
         return ParsedCommand(Intent.UNKNOWN)
 
     def _parse_screener_rules(self, text: str) -> list:
-        """Parse natural language to screener rules."""
+        """Parse natural language to screener rules.
+        
+        Maps natural language to ScreenerEngine rule categories:
+        - asing/foreign/NF3D/NF5D → foreign_flow
+        - volume/spike → volume
+        - akumulasi → accumulation
+        - fundamental/murah/value → fundamental
+        """
         text_lower = text.lower()
         rules = []
 
-        if "asing" in text_lower or "foreign" in text_lower:
-            if "3" in text:
-                rules.append("NF3D")
-            elif "5" in text:
-                rules.append("NF5D")
-            elif "10" in text:
-                rules.append("NF10D")
-            else:
-                rules.append("NF3D")
+        # Always include technical
+        rules.append("technical")
+
+        if "asing" in text_lower or "foreign" in text_lower or "nf" in text_lower:
+            rules.append("foreign_flow")
 
         if "volume" in text_lower or "spike" in text_lower or "ramai" in text_lower:
-            rules.append("VOL")
+            rules.append("volume")
 
         if "akumulasi" in text_lower or "accumulation" in text_lower:
-            rules.append("AC1")
+            rules.append("accumulation")
 
-        if "value" in text_lower or " nilai" in text_lower:
-            match = re.search(r'(\d+\.?\d*)\s*[mM]', text)
-            if match:
-                value = float(match.group(1))
-                rules.append(f"VAL>{int(value * 1_000_000_000)}")
+        if "fundamental" in text_lower or "murah" in text_lower or "value" in text_lower:
+            rules.append("fundamental")
 
-        if "all" in text_lower or not rules:
-            if not rules:
-                rules.append("ALL")
+        # Default: all categories
+        if not rules or len(rules) == 1:  # only technical
+            rules.extend(["fundamental", "foreign_flow"])
 
-        return rules
+        # Deduplicate
+        return list(dict.fromkeys(rules))
 
     def _parse_plan(self, text: str) -> ParsedCommand:
         """Parse trading plan command."""

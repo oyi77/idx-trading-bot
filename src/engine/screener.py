@@ -186,6 +186,54 @@ class ScreenerEngine:
             except Exception:
                 reasons.append("⚠️ Foreign: error")
 
+        # ─── Volume Spike ───────────────────────────────────
+        if "volume" in rules:
+            available_score += 2
+            try:
+                if volumes and len(volumes) > 20:
+                    avg_vol = sum(volumes[-20:]) / 20
+                    latest_vol = volumes[-1] if volumes else 0
+                    if avg_vol > 0:
+                        ratio = latest_vol / avg_vol
+                        if ratio > 2.0:
+                            total_score += 2
+                            reasons.append(f"🚀 Volume {ratio:.1f}x normal")
+                        elif ratio > 1.5:
+                            total_score += 1
+                            reasons.append(f"📈 Volume {ratio:.1f}x normal")
+                        else:
+                            reasons.append(f"➖ Volume normal ({ratio:.1f}x)")
+                else:
+                    reasons.append("➖ Volume: N/A")
+            except Exception:
+                reasons.append("⚠️ Volume: error")
+
+        # ─── Accumulation ───────────────────────────────────
+        if "accumulation" in rules:
+            available_score += 2
+            try:
+                if closes and len(closes) > 5:
+                    # Accumulation: price closing near high + up days
+                    close_loc = sum(
+                        1 for i in range(-5, 0) if i + len(closes) > 0 and highs[i] != lows[i]
+                        and (closes[i] - lows[i]) / (highs[i] - lows[i] + 0.01) > 0.6
+                    )
+                    up_days = sum(
+                        1 for i in range(-5, -1) if closes[i] > closes[i - 1]
+                    )
+                    if close_loc >= 3 and up_days >= 3:
+                        total_score += 2
+                        reasons.append(f"🐳 Akumulasi terdeteksi ({close_loc}/5 close high)")
+                    elif close_loc >= 2:
+                        total_score += 1
+                        reasons.append(f"📊 Possible akumulasi ({close_loc}/5)")
+                    else:
+                        reasons.append("➖ No clear accumulation")
+                else:
+                    reasons.append("➖ Accumulation: N/A")
+            except Exception:
+                reasons.append("⚠️ Accumulation: error")
+
         # Normalize
         if available_score > 0:
             normalized = round(total_score / available_score * 10)
