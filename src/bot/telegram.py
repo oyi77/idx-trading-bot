@@ -519,6 +519,25 @@ class BotHandlers:
         if ai_insight:
             out += f"\n🧠 *AI:*  {ai_insight}\n"
 
+        # ─── Bandarmology + Sentiment (RapidAPI powered) ───────
+        if rapidapi_broker:
+            out += f"\n🎰 *Bandarmology:*\n"
+            fnb = rapidapi_broker.get("foreign_net_buy", 0)
+            fbr = rapidapi_broker.get("foreign_domestic_ratio", 0) * 100
+            if fnb > 200_000_000_000:
+                out += f"  🟢 Akumulasi Asing: Rp{fnb:,.0f} ({fbr:.1f}% foreign)\n"
+            elif fnb < -200_000_000_000:
+                out += f"  🔴 Distribusi Asing: Rp{abs(fnb):,.0f}\n"
+            else:
+                out += f"  ⚪ Netral: Rp{fnb:,.0f}\n"
+
+            # Top broker
+            top_brokers = rapidapi_broker.get("top_brokers", [])
+            foreign_brokers = [b for b in top_brokers if b.get("group") == "BROKER_GROUP_FOREIGN"]
+            if foreign_brokers:
+                top = foreign_brokers[0]
+                out += f"  🔝 {top['code']} {top['name']}: Net Rp{float(top['net_value']):,.0f}\n"
+
         out += (
             f"\n━━━━━━━━━━━━━━━━━━━━\n"
             f"💡 Ketik `analisa BBCA` atau `screener asing 3 hari`\n"
@@ -967,6 +986,50 @@ class BotHandlers:
             logger.warning(f"Feedback error: {e}")
             await update.message.reply_text("❌ Gagal menyimpan feedback. Coba lagi.")
 
+    # ── Bandarmology ──
+
+    async def bandarmology(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """Premium-only bandarmology report."""
+        try:
+            from src.feed.rapidapi_idx import RapidAPIFeed
+            from src.engine.bandarmology import BandarmologyEngine
+
+            feed = RapidAPIFeed()
+            broker = await feed.get_broker_flow_summary()
+            all_brokers = await feed.get_top_brokers()
+            broker['_all_brokers'] = all_brokers
+            await feed.close()
+
+            engine = BandarmologyEngine()
+            report = engine.analyze(broker)
+
+            out = f"🎰 *Bandarmology Report*\n"
+            out += f"━━━━━━━━━━━━━━━━━━━━\n\n"
+            out += f"{report.summary}\n\n"
+
+            if report.foreign_accumulation_signals:
+                out += "🟢 *Foreign Accumulation:*\n"
+                for s in report.foreign_accumulation_signals[:5]:
+                    out += f"  {s.broker_code} {s.broker_name}\n"
+                    out += f"  Net +Rp{s.net_value:,.0f} ({s.strength})\n"
+
+            if report.foreign_distribution_signals:
+                out += "\n🔴 *Foreign Distribution:*\n"
+                for s in report.foreign_distribution_signals[:5]:
+                    out += f"  {s.broker_code} {s.broker_name}\n"
+                    out += f"  Net -Rp{abs(s.net_value):,.0f} ({s.strength})\n"
+
+            out += f"\n━━━━━━━━━━━━━━━━━━━━\n"
+            out += f"💎 Upgrade ke Premium untuk alert bandar real-time: /pricing"
+
+            await update.message.reply_text(out, parse_mode="Markdown")
+        except Exception as e:
+            logger.warning(f"Bandarmology error: {e}")
+            await update.message.reply_text(
+                "🔒 *Bandarmology*\n\nData broker flow sedang tidak tersedia. Coba lagi nanti.",
+                parse_mode="Markdown",
+            )
+
 
 def create_app() -> Application:
     """Create Telegram bot application instance."""
@@ -987,6 +1050,7 @@ def create_app() -> Application:
     app.add_handler(CommandHandler("performance", handlers.performance))
     app.add_handler(CommandHandler("feedback", handlers.feedback))
     app.add_handler(CommandHandler("fb", handlers.feedback))
+    app.add_handler(CommandHandler("bandarmology", handlers.bandarmology))
     app.add_handler(MessageHandler(filters.TEXT, handlers.handle_message))
     app.add_handler(CallbackQueryHandler(handlers.button_callback, pattern="^sub_"))
 
