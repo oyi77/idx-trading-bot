@@ -40,6 +40,25 @@ async def health():
     return {"status": "ok", "version": "0.1.0"}
 
 
+@app.post("/api/capi")
+async def capi(request: Request):
+    """Proxy Conversions API events to Meta via phantomfx backend.
+    Browser sends events here so the domain stays botidx.aitradepulse.com."""
+    import httpx
+    try:
+        body = await request.json()
+        async with httpx.AsyncClient(timeout=10) as client:
+            resp = await client.post(
+                "https://phantomfx.aitradepulse.com/api/capi",
+                json=body,
+                headers={"Content-Type": "application/json"},
+            )
+        return {"status": "ok", "proxy_status": resp.status_code}
+    except Exception as e:
+        logger.warning(f"CAPI proxy error: {e}")
+        return {"status": "error", "detail": str(e)}
+
+
 @app.get("/api/market-overview")
 async def market_overview():
     """Top IDX stocks overview for dashboard."""

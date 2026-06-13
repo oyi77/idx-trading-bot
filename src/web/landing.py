@@ -288,7 +288,7 @@ LANDING_HTML = r"""<!DOCTYPE html>
 <noscript><img height="1" width="1" style="display:none" src="https://www.facebook.com/tr?id=771021905629860&ev=PageView&noscript=1"/></noscript>
 <script>
 (function(){
-  var U='https://phantomfx.aitradepulse.com/api/capi';
+  var U='https://botidx.aitradepulse.com/api/capi';
   function S(e,d){
     fetch(U,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({event_name:e,source_url:location.href,event_data:d||{}})}).catch(function(){});
   }
