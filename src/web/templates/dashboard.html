@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title }}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { background: #0f172a; color: #e2e8f0; }
+        .card { background: #1e293b; border-radius: 0.75rem; padding: 1.5rem; }
+        .badge-up { background: #22c55e20; color: #22c55e; }
+        .badge-down { background: #ef444420; color: #ef4444; }
+    </style>
+</head>
+<body class="min-h-screen">
+    <div class="max-w-6xl mx-auto px-4 py-8">
+        <!-- Header -->
+        <div class="flex items-center justify-between mb-8">
+            <div>
+                <h1 class="text-3xl font-bold">IDX AI Trading Bot</h1>
+                <p class="text-slate-400">Dashboard v{{ version }}</p>
+            </div>
+            <div class="flex gap-4">
+                <input id="symbolInput" type="text" placeholder="Kode saham..."
+                    class="bg-slate-700 px-4 py-2 rounded-lg border border-slate-600 focus:border-emerald-500 outline-none"
+                    onkeydown="if(event.key==='Enter') analyzeStock()">
+                <button onclick="analyzeStock()"
+                    class="bg-emerald-600 hover:bg-emerald-500 px-6 py-2 rounded-lg font-semibold transition">
+                    Analisa
+                </button>
+            </div>
+        </div>
+
+        <!-- Result Area -->
+        <div id="result" class="hidden">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Price Card -->
+                <div class="card col-span-1">
+                    <div id="priceCard">
+                        <div class="text-sm text-slate-400 mb-1">Harga</div>
+                        <div id="price" class="text-3xl font-bold">-</div>
+                        <div id="change" class="text-sm mt-1">-</div>
+                    </div>
+                    <div class="mt-4 pt-4 border-t border-slate-700">
+                        <div class="text-sm text-slate-400">Score</div>
+                        <div id="score" class="text-2xl font-bold text-emerald-400">-</div>
+                        <div id="signal" class="text-sm mt-1 font-semibold">-</div>
+                    </div>
+                </div>
+
+                <!-- Indicators Card -->
+                <div class="card col-span-2">
+                    <h3 class="text-lg font-semibold mb-4">Indikator Teknikal</h3>
+                    <div id="indicators" class="grid grid-cols-2 gap-4 text-sm">
+                        <div class="text-slate-400">Loading...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Searches -->
+        <div id="recent" class="mt-8">
+            <h2 class="text-xl font-semibold mb-4">Recent</h2>
+            <div class="flex gap-3">
+                <div onclick="loadRecent('BBCA')" class="card cursor-pointer hover:bg-slate-700/50 transition text-center min-w-[100px]">
+                    <div class="font-bold">BBCA</div>
+                    <div class="text-xs text-slate-400">BCA</div>
+                </div>
+                <div onclick="loadRecent('TLKM')" class="card cursor-pointer hover:bg-slate-700/50 transition text-center min-w-[100px]">
+                    <div class="font-bold">TLKM</div>
+                    <div class="text-xs text-slate-400">Telkom</div>
+                </div>
+                <div onclick="loadRecent('BBRI')" class="card cursor-pointer hover:bg-slate-700/50 transition text-center min-w-[100px]">
+                    <div class="font-bold">BBRI</div>
+                    <div class="text-xs text-slate-400">BRI</div>
+                </div>
+                <div onclick="loadRecent('ASII')" class="card cursor-pointer hover:bg-slate-700/50 transition text-center min-w-[100px]">
+                    <div class="font-bold">ASII</div>
+                    <div class="text-xs text-slate-400">Astra</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        async function analyzeStock() {
+            const symbol = document.getElementById('symbolInput').value.trim().toUpperCase();
+            if (!symbol) return;
+            await loadRecent(symbol);
+        }
+
+        async function loadRecent(symbol) {
+            document.getElementById('symbolInput').value = symbol;
+            document.getElementById('result').classList.remove('hidden');
+            document.getElementById('indicators').innerHTML = '<div class="text-slate-400">Loading...</div>';
+
+            try {
+                const resp = await fetch(`/api/analyze/${symbol}`);
+                const data = await resp.json();
+
+                if (data.error) {
+                    document.getElementById('indicators').innerHTML = `<div class="text-red-400">${data.error}</div>`;
+                    return;
+                }
+
+                // Price
+                const price = data.price || 0;
+                document.getElementById('price').textContent = `Rp${price.toLocaleString('id-ID')}`;
+
+                // Score
+                const score = data.score || 0;
+                document.getElementById('score').textContent = `${score}/10`;
+                const signalEl = document.getElementById('signal');
+                if (score >= 7) {
+                    signalEl.textContent = '🟢 BUY';
+                    signalEl.className = 'text-sm mt-1 font-semibold text-emerald-400';
+                } else if (score >= 5) {
+                    signalEl.textContent = '🟡 WATCH';
+                    signalEl.className = 'text-sm mt-1 font-semibold text-yellow-400';
+                } else {
+                    signalEl.textContent = '🔴 PASS';
+                    signalEl.className = 'text-sm mt-1 font-semibold text-red-400';
+                }
+
+                // Indicators
+                const ind = data.analysis?.indicators || {};
+                let html = '';
+
+                if (ind.RSI14) html += `<div><span class="text-slate-400">RSI(14):</span> <span class="font-semibold">${ind.RSI14}</span> <span class="text-xs text-${ind.RSI_signal === 'bullish' ? 'emerald' : ind.RSI_signal === 'bearish' ? 'red' : 'slate'}-400">${ind.RSI_signal}</span></div>`;
+                if (ind.MACD) html += `<div><span class="text-slate-400">MACD:</span> <span class="font-semibold">${ind.MACD.trend}</span> <span class="text-xs text-slate-400">(hist: ${ind.MACD.histogram})</span></div>`;
+                if (ind.Bollinger) html += `<div><span class="text-slate-400">Bollinger:</span> <span class="font-semibold">${ind.Bollinger.position}</span></div>`;
+                if (ind.SuperTrend) html += `<div><span class="text-slate-400">SuperTrend:</span> <span class="font-semibold text-${ind.SuperTrend.trend === 'bullish' ? 'emerald' : ind.SuperTrend.trend === 'bearish' ? 'red' : 'slate'}-400">${ind.SuperTrend.trend}</span></div>`;
+                if (ind.SMA20) html += `<div><span class="text-slate-400">SMA(20):</span> <span class="font-semibold">${ind.SMA20.toLocaleString('id-ID')}</span></div>`;
+                if (ind.VWAP) html += `<div><span class="text-slate-400">VWAP:</span> <span class="font-semibold">${ind.VWAP.toLocaleString('id-ID')}</span> <span class="text-xs text-slate-400">(${ind.VWAP_position})</span></div>`;
+
+                if (ind.Volume) {
+                    html += `<div><span class="text-slate-400">Volume:</span> <span class="font-semibold">${ind.Volume.latest?.toLocaleString('id-ID') || '-'}</span>`;
+                    if (ind.Volume.spike) html += ` <span class="text-xs text-emerald-400">SPIKE!</span>`;
+                    html += `</div>`;
+                }
+
+                if (ind.MACD) html += `<div><span class="text-slate-400">MA20/EMA20:</span> <span class="font-semibold">${ind.EMA20_MA20_cross || '-'}</span></div>`;
+
+                document.getElementById('indicators').innerHTML = html || '<div class="text-slate-400">Data tidak tersedia</div>';
+            } catch (e) {
+                document.getElementById('indicators').innerHTML = `<div class="text-red-400">Error: ${e.message}</div>`;
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,17 @@
+[Unit]
+Description=Vilona Saham — AI Analisa IDX Trading Bot
+After=network.target
+
+[Service]
+Type=simple
+User=openclaw
+WorkingDirectory=/home/openclaw/idx-trading-bot
+EnvironmentFile=/home/openclaw/idx-trading-bot/.env
+ExecStart=/home/openclaw/idx-trading-bot/.venv/bin/python src/main.py
+Restart=on-failure
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
