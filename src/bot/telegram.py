@@ -121,8 +121,8 @@ class BotHandlers:
             "• ✅ AI trade setup\n\n"
             "👑 *Premium — Rp149.000/bulan*\n"
             "• ✅ Semua Pro + 200 alert\n"
-            "• ✅ Bandar View + komuntas eksklusif\n"
-            "• ✅ Sesi mentor mingguan\n"
+            "• ✅ Bandar View + Market Sentiment\n"
+            "• ✅ Auto-Report Mingguan (Senin pagi)\n"
             "• ✅ Priority response\n\n"
             "🌟 *Lifetime — Rp1.999.000*\n"
             "• Akses selamanya (sisa 998 seat)\n\n"
@@ -899,8 +899,8 @@ class BotHandlers:
             text = (
                 "👑 *Premium — Rp149.000/bulan*\n\n"
                 "✅ Semua fitur Pro\n"
-                "✅ Bandar View + flow institusi\n"
-                "✅ Komunitas eksklusif & mentor mingguan\n"
+                "✅ Bandar View + Market Sentiment\n"
+                "✅ Auto-Report Mingguan (Senin pagi)\n"
                 "✅ Prioritas AI response\n\n"
                 "🎁 *GRATIS 7 hari* — kalo gak cocok refund full.\n"
                 "📲 Link pembayaran akan dikirim ke chat ini."
@@ -1030,6 +1030,61 @@ class BotHandlers:
                 parse_mode="Markdown",
             )
 
+    # ── Watchlist ──
+
+    async def watchlist(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """Manage watchlist: /watchlist [add|remove|list] [symbol]"""
+        try:
+            from src.engine.watchlist import WatchlistEngine
+
+            engine = WatchlistEngine()
+            user_id = update.effective_user.id
+            args = context.args or []
+
+            if not args:
+                digest = await engine.generate_digest(user_id)
+                text = engine.format_digest(digest)
+                await update.message.reply_text(text, parse_mode="Markdown")
+                return
+
+            action = args[0].lower()
+            symbol = args[1].upper() if len(args) > 1 else ""
+
+            if action == "add" and symbol:
+                ok, msg = engine.add(user_id, symbol)
+                await update.message.reply_text(msg, parse_mode="Markdown")
+            elif action == "remove" and symbol:
+                ok, msg = engine.remove(user_id, symbol)
+                await update.message.reply_text(msg, parse_mode="Markdown")
+            elif action == "list":
+                entries = engine.list_stocks(user_id)
+                if not entries:
+                    await update.message.reply_text(
+                        "📋 Watchlist kosong.\nTambah: `watchlist add BBCA`",
+                        parse_mode="Markdown",
+                    )
+                else:
+                    text = "📋 *Watchlist:*\n"
+                    for e in entries:
+                        text += f"  • {e.symbol}"
+                        if e.last_price:
+                            d = "🟢" if e.change_pct > 0 else ("🔴" if e.change_pct < 0 else "⚪")
+                            text += f" Rp{e.last_price:,.0f} {d} {e.change_pct:+.1f}%"
+                        text += "\n"
+                    await update.message.reply_text(text, parse_mode="Markdown")
+            else:
+                await update.message.reply_text(
+                    "📋 *Watchlist*\n\n"
+                    "`/watchlist` — lihat digest\n"
+                    "`/watchlist add BBCA` — tambah\n"
+                    "`/watchlist remove BBCA` — hapus\n"
+                    "`/watchlist list` — daftar saham",
+                    parse_mode="Markdown",
+                )
+        except Exception as e:
+            logger.warning(f"Watchlist error: {e}")
+            await update.message.reply_text("❌ Gagal mengakses watchlist. Coba lagi.")
+
 
 def create_app() -> Application:
     """Create Telegram bot application instance."""
@@ -1051,6 +1106,7 @@ def create_app() -> Application:
     app.add_handler(CommandHandler("feedback", handlers.feedback))
     app.add_handler(CommandHandler("fb", handlers.feedback))
     app.add_handler(CommandHandler("bandarmology", handlers.bandarmology))
+    app.add_handler(CommandHandler("watchlist", handlers.watchlist))
     app.add_handler(MessageHandler(filters.TEXT, handlers.handle_message))
     app.add_handler(CallbackQueryHandler(handlers.button_callback, pattern="^sub_"))
 

@@ -15,7 +15,7 @@ Natural language → Real-time analysis → AI trade setups → Broker execution
 - ✅ Multi-platform: Telegram + WhatsApp + Web Dashboard
 - ✅ Subscription tiers (Free / Pro / Premium / Lifetime)
 - ✅ Broker integration (Stockbit / Ajaib)
-- ✅ White-label support for mentor communities
+- ✅ White-label support for mentor communities (brand your own bot)
 
 ## Quick Start
 
@@ -106,7 +106,7 @@ Telegram Bot / Web Dashboard / Broker Order
 |------|-------|-------------|
 | Free | Rp0 | 5 screens/day, delayed 15m, 5 alerts |
 | Pro | Rp49k/mo | Realtime, unlimited alerts, AI setups |
-| Premium | Rp149k/mo | Community, weekly mentor, priority AI |
+| Premium | Rp149k/mo | Bandar View, Market Sentiment, Auto-Report, priority AI |
 | Lifetime | Rp1.999k | Forever access (1000 seats) |
 | White-label | Rp5jt set + Rp500k/mo | Own branding, admin panel |
 
