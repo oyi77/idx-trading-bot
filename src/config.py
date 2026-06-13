@@ -25,6 +25,7 @@ class Settings(BaseSettings):
 
     # --- Data Feeds ---
     itick_api_key: str = ""
+    rapidapi_key: str = ""
     finnhub_api_key: str = ""
     alpha_vantage_api_key: str = ""
     massive_api_key: str = ""

@@ -215,6 +215,16 @@ class BotHandlers:
         except Exception:
             pass
 
+        # ─── Broker Flow via RapidAPI IDX (NEW) ────────────────
+        rapidapi_broker = None
+        try:
+            from src.feed.rapidapi_idx import RapidAPIFeed
+            rfeed = RapidAPIFeed()
+            rapidapi_broker = await rfeed.get_broker_flow_summary()
+            await rfeed.close()
+        except Exception:
+            pass
+
         # ─── News Sentiment ───────────────────────────────────
         news_data = None
         try:
@@ -245,6 +255,13 @@ class BotHandlers:
                 "net_buy": getattr(flow_data, "net_buy", 0),
                 "streak_days": getattr(flow_data, "streak_days", 0),
             } if flow_data else None
+
+            # Merge RapidAPI broker data into flow_dict
+            if rapidapi_broker:
+                if flow_dict is None:
+                    flow_dict = {}
+                flow_dict["market_foreign_net"] = rapidapi_broker.get("foreign_net_buy", 0)
+                flow_dict["foreign_ratio"] = rapidapi_broker.get("foreign_domestic_ratio", 0) * 100
 
             news_list = [
                 {"sentiment": getattr(a, "sentiment", "neutral")}
@@ -331,6 +348,16 @@ class BotHandlers:
             text += f"  Buy: Rp{flow_data.foreign_buy:,.0f} | Sell: Rp{flow_data.foreign_sell:,.0f}\n"
             if flow_data.streak_days > 0:
                 text += f"  Streak: {flow_data.streak_days} hari\n"
+        elif rapidapi_broker:
+            fnb = rapidapi_broker.get("foreign_net_buy", 0)
+            if fnb != 0:
+                dir_emoji = "🟢" if fnb > 0 else "🔴"
+                dir_text = "NET BUY" if fnb > 0 else "NET SELL"
+                text += f"  {dir_emoji} {dir_text} Asing: Rp{abs(fnb):,.0f}\n"
+                text += f"  Buy: Rp{rapidapi_broker.get('foreign_buy',0):,.0f} | Sell: Rp{rapidapi_broker.get('foreign_sell',0):,.0f}\n"
+                text += f"  Foreign Ratio: {rapidapi_broker.get('foreign_domestic_ratio',0)*100:.1f}%\n"
+            else:
+                text += "  Asing net flat hari ini\n"
         else:
             text += "  Tidak ada aktivitas asing signifikan hari ini\n"
 
@@ -479,6 +506,12 @@ class BotHandlers:
                     ftext = f"🏦 Net {direction} Rp{abs(net):,.0f}"
                     ftext += f" ({streak}d)" if streak else ""
                     out += f"\n{ftext}\n"
+            elif rapidapi_broker:
+                fnb = rapidapi_broker.get("foreign_net_buy", 0)
+                fbo = rapidapi_broker.get("foreign_domestic_ratio", 0) * 100
+                if fnb:
+                    direction = "Buy" if fnb > 0 else "Sell"
+                    out += f"\n🏦 Foreign Net {direction}: Rp{abs(fnb):,.0f} ({fbo:.1f}% foreign)\\n"
 
         out += f"\n{signal_emoji} *Score: {final_score}/10*  —  *{signal_text}*\n"
         if final_reasons:
