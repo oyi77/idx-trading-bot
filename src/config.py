@@ -19,7 +19,7 @@ class Settings(BaseSettings):
     # --- Bot ---
     bot_token: str
     webhook_url: str = ""
-    port: int = 8080
+    port: int = 8083
     debug: bool = True
     log_level: str = "INFO"
 

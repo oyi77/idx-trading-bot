@@ -1,151 +1,277 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ title }}</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        body { background: #0f172a; color: #e2e8f0; }
-        .card { background: #1e293b; border-radius: 0.75rem; padding: 1.5rem; }
-        .badge-up { background: #22c55e20; color: #22c55e; }
-        .badge-down { background: #ef444420; color: #ef4444; }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vilona Saham — AI Co-Pilot Trading IDX</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            vilona: { 50: '#f0fdf4', 100: '#dcfce7', 500: '#22c55e', 600: '#16a34a', 700: '#15803d', 900: '#0a1f0d' },
+            dark: { 800: '#1a1a2e', 900: '#0f0f23', 950: '#0a0a1a' }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+    body { font-family: 'Inter', sans-serif; }
+    .gradient-text { background: linear-gradient(135deg, #22c55e, #3b82f6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .card-glow:hover { box-shadow: 0 0 30px rgba(34, 197, 94, 0.15); }
+    .pulse { animation: pulse 2s infinite; }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+    .fade-in { animation: fadeIn 0.6s ease-out; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+    .scrollbar-hide::-webkit-scrollbar { display: none; }
+    .stock-row:hover { background: rgba(34, 197, 94, 0.08); }
+  </style>
 </head>
-<body class="min-h-screen">
-    <div class="max-w-6xl mx-auto px-4 py-8">
-        <!-- Header -->
-        <div class="flex items-center justify-between mb-8">
-            <div>
-                <h1 class="text-3xl font-bold">IDX AI Trading Bot</h1>
-                <p class="text-slate-400">Dashboard v{{ version }}</p>
-            </div>
-            <div class="flex gap-4">
-                <input id="symbolInput" type="text" placeholder="Kode saham..."
-                    class="bg-slate-700 px-4 py-2 rounded-lg border border-slate-600 focus:border-emerald-500 outline-none"
-                    onkeydown="if(event.key==='Enter') analyzeStock()">
-                <button onclick="analyzeStock()"
-                    class="bg-emerald-600 hover:bg-emerald-500 px-6 py-2 rounded-lg font-semibold transition">
-                    Analisa
-                </button>
-            </div>
-        </div>
+<body class="bg-dark-950 text-white min-h-screen">
 
-        <!-- Result Area -->
-        <div id="result" class="hidden">
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <!-- Price Card -->
-                <div class="card col-span-1">
-                    <div id="priceCard">
-                        <div class="text-sm text-slate-400 mb-1">Harga</div>
-                        <div id="price" class="text-3xl font-bold">-</div>
-                        <div id="change" class="text-sm mt-1">-</div>
-                    </div>
-                    <div class="mt-4 pt-4 border-t border-slate-700">
-                        <div class="text-sm text-slate-400">Score</div>
-                        <div id="score" class="text-2xl font-bold text-emerald-400">-</div>
-                        <div id="signal" class="text-sm mt-1 font-semibold">-</div>
-                    </div>
-                </div>
-
-                <!-- Indicators Card -->
-                <div class="card col-span-2">
-                    <h3 class="text-lg font-semibold mb-4">Indikator Teknikal</h3>
-                    <div id="indicators" class="grid grid-cols-2 gap-4 text-sm">
-                        <div class="text-slate-400">Loading...</div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Recent Searches -->
-        <div id="recent" class="mt-8">
-            <h2 class="text-xl font-semibold mb-4">Recent</h2>
-            <div class="flex gap-3">
-                <div onclick="loadRecent('BBCA')" class="card cursor-pointer hover:bg-slate-700/50 transition text-center min-w-[100px]">
-                    <div class="font-bold">BBCA</div>
-                    <div class="text-xs text-slate-400">BCA</div>
-                </div>
-                <div onclick="loadRecent('TLKM')" class="card cursor-pointer hover:bg-slate-700/50 transition text-center min-w-[100px]">
-                    <div class="font-bold">TLKM</div>
-                    <div class="text-xs text-slate-400">Telkom</div>
-                </div>
-                <div onclick="loadRecent('BBRI')" class="card cursor-pointer hover:bg-slate-700/50 transition text-center min-w-[100px]">
-                    <div class="font-bold">BBRI</div>
-                    <div class="text-xs text-slate-400">BRI</div>
-                </div>
-                <div onclick="loadRecent('ASII')" class="card cursor-pointer hover:bg-slate-700/50 transition text-center min-w-[100px]">
-                    <div class="font-bold">ASII</div>
-                    <div class="text-xs text-slate-400">Astra</div>
-                </div>
-            </div>
-        </div>
+  <!-- Hero -->
+  <section class="relative overflow-hidden">
+    <div class="absolute inset-0 bg-gradient-to-br from-vilona-900/50 via-dark-950 to-blue-900/20"></div>
+    <div class="relative max-w-6xl mx-auto px-6 py-20 text-center">
+      <div class="inline-flex items-center gap-2 bg-vilona-500/10 border border-vilona-500/30 rounded-full px-4 py-1.5 mb-6">
+        <span class="w-2 h-2 bg-vilona-500 rounded-full pulse"></span>
+        <span class="text-vilona-500 text-sm font-medium">Live Data · IDX</span>
+      </div>
+      <h1 class="text-5xl md:text-6xl font-extrabold mb-4">
+        <span class="gradient-text">Vilona Saham</span>
+      </h1>
+      <p class="text-xl text-gray-400 mb-2">AI Co-Pilot Trading Indonesia</p>
+      <p class="text-gray-500 mb-8 max-w-xl mx-auto">
+        Ketik natural language, dapet analisa lengkap + chart + zone mapping dalam 10 detik.
+        Gak perlu hafal 300 command.
+      </p>
+      <div class="flex gap-4 justify-center">
+        <a href="https://t.me/vilonidxbot" target="_blank"
+           class="bg-vilona-600 hover:bg-vilona-700 text-white font-semibold px-8 py-3 rounded-xl transition-all duration-200 shadow-lg shadow-vilona-600/25">
+          🚀 Coba Gratis di Telegram
+        </a>
+        <a href="#pricing"
+           class="border border-gray-700 hover:border-vilona-500/50 text-gray-300 font-semibold px-8 py-3 rounded-xl transition-all duration-200">
+          Lihat Harga
+        </a>
+      </div>
     </div>
+  </section>
 
-    <script>
-        async function analyzeStock() {
-            const symbol = document.getElementById('symbolInput').value.trim().toUpperCase();
-            if (!symbol) return;
-            await loadRecent(symbol);
+  <!-- Live Market -->
+  <section class="max-w-6xl mx-auto px-6 py-16">
+    <div class="flex items-center justify-between mb-6">
+      <h2 class="text-2xl font-bold">📊 Market Overview</h2>
+      <span class="text-xs text-gray-500">Data delayed 15m · Yahoo Finance</span>
+    </div>
+    <div id="market-grid" class="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div class="bg-dark-800/80 border border-gray-800 rounded-xl p-4 animate-pulse">
+        <div class="h-4 bg-gray-700 rounded w-20 mb-2"></div>
+        <div class="h-6 bg-gray-700 rounded w-32 mb-1"></div>
+        <div class="h-3 bg-gray-700 rounded w-16"></div>
+      </div>
+      <div class="bg-dark-800/80 border border-gray-800 rounded-xl p-4 animate-pulse">
+        <div class="h-4 bg-gray-700 rounded w-20 mb-2"></div>
+        <div class="h-6 bg-gray-700 rounded w-32 mb-1"></div>
+        <div class="h-3 bg-gray-700 rounded w-16"></div>
+      </div>
+      <div class="bg-dark-800/80 border border-gray-800 rounded-xl p-4 animate-pulse">
+        <div class="h-4 bg-gray-700 rounded w-20 mb-2"></div>
+        <div class="h-6 bg-gray-700 rounded w-32 mb-1"></div>
+        <div class="h-3 bg-gray-700 rounded w-16"></div>
+      </div>
+      <div class="bg-dark-800/80 border border-gray-800 rounded-xl p-4 animate-pulse">
+        <div class="h-4 bg-gray-700 rounded w-20 mb-2"></div>
+        <div class="h-6 bg-gray-700 rounded w-32 mb-1"></div>
+        <div class="h-3 bg-gray-700 rounded w-16"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Features -->
+  <section class="max-w-6xl mx-auto px-6 py-16">
+    <h2 class="text-2xl font-bold text-center mb-12">Kenapa Vilona Saham?</h2>
+    <div class="grid md:grid-cols-3 gap-6">
+      <div class="bg-dark-800/60 border border-gray-800 rounded-2xl p-6 card-glow transition-all duration-300">
+        <div class="text-3xl mb-4">🧠</div>
+        <h3 class="font-bold text-lg mb-2">AI-Powered Analysis</h3>
+        <p class="text-gray-400 text-sm">Cukup ketik "analisa TLKM" — AI kasih entry zone, SL, TP, dan narasi lengkap. Gak perlu hafal command.</p>
+      </div>
+      <div class="bg-dark-800/60 border border-gray-800 rounded-2xl p-6 card-glow transition-all duration-300">
+        <div class="text-3xl mb-4">📍</div>
+        <h3 class="font-bold text-lg mb-2">Zone Mapping</h3>
+        <p class="text-gray-400 text-sm">Support, Resistance, Entry Zone dihitung otomatis dari data harga 90 hari. Langsung di chart.</p>
+      </div>
+      <div class="bg-dark-800/60 border border-gray-800 rounded-2xl p-6 card-glow transition-all duration-300">
+        <div class="text-3xl mb-4">📈</div>
+        <h3 class="font-bold text-lg mb-2">TradingView Chart</h3>
+        <p class="text-gray-400 text-sm">Chart HD dari TradingView + Volume + MACD. Bersih, profesional, gak perlu buka aplikasi lain.</p>
+      </div>
+      <div class="bg-dark-800/60 border border-gray-800 rounded-2xl p-6 card-glow transition-all duration-300">
+        <div class="text-3xl mb-4">🔔</div>
+        <h3 class="font-bold text-lg mb-2">Smart Alerts</h3>
+        <p class="text-gray-400 text-sm">Alert real-time ke Telegram saat harga masuk zona. Pro: 50 alert. Premium: 200 alert.</p>
+      </div>
+      <div class="bg-dark-800/60 border border-gray-800 rounded-2xl p-6 card-glow transition-all duration-300">
+        <div class="text-3xl mb-4">🏦</div>
+        <h3 class="font-bold text-lg mb-2">Broker Flow</h3>
+        <p class="text-gray-400 text-sm">Lihat akumulasi/distribusi asing + bandar. Net buy/sell streak, top broker, volume analysis.</p>
+      </div>
+      <div class="bg-dark-800/60 border border-gray-800 rounded-2xl p-6 card-glow transition-all duration-300">
+        <div class="text-3xl mb-4">📋</div>
+        <h3 class="font-bold text-lg mb-2">Trading Plan</h3>
+        <p class="text-gray-400 text-sm">Buat plan entry/SL/TP, auto-report status tiap 30 menit. Track performance otomatis.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Demo -->
+  <section class="max-w-6xl mx-auto px-6 py-16">
+    <h2 class="text-2xl font-bold text-center mb-4">Cara Pakai</h2>
+    <p class="text-gray-500 text-center mb-8">Cukup ketik natural language di Telegram</p>
+    <div class="bg-dark-800/60 border border-gray-800 rounded-2xl p-6 max-w-lg mx-auto">
+      <div class="space-y-4">
+        <div class="flex gap-3">
+          <div class="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-sm font-bold shrink-0">U</div>
+          <div class="bg-blue-600/20 border border-blue-500/30 rounded-2xl rounded-tl-sm px-4 py-2 text-sm">
+            analisa TLKM
+          </div>
+        </div>
+        <div class="flex gap-3 justify-end">
+          <div class="bg-dark-900 border border-gray-700 rounded-2xl rounded-tr-sm px-4 py-3 text-sm max-w-sm">
+            <div class="text-vilona-500 font-semibold mb-1">🟢 TLKM — Rp4,520 (+1.2%)</div>
+            <div class="text-gray-400 text-xs mb-2">Score: 7/10 — BUY</div>
+            <div class="text-gray-300 text-xs">📍 R: Rp4,700 │ S: Rp4,400<br>
+            🎯 Entry: Rp4,520 - Rp4,550<br>
+            RSI: 48.8 │ MACD: bullish<br>
+            🧠 Momentum positif, volume normal...</div>
+          </div>
+          <div class="w-8 h-8 rounded-full bg-vilona-600 flex items-center justify-center text-sm shrink-0">🤖</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Pricing -->
+  <section id="pricing" class="max-w-6xl mx-auto px-6 py-16">
+    <h2 class="text-2xl font-bold text-center mb-12">Pilih Plan</h2>
+    <div class="grid md:grid-cols-4 gap-6">
+      <!-- Free -->
+      <div class="bg-dark-800/60 border border-gray-800 rounded-2xl p-6">
+        <div class="text-sm text-gray-500 mb-2">Free</div>
+        <div class="text-3xl font-extrabold mb-4">Rp0</div>
+        <ul class="space-y-2 text-sm text-gray-400 mb-6">
+          <li>✅ Analisa saham AI</li>
+          <li>✅ 5 screening/hari</li>
+          <li>✅ 5 alert aktif</li>
+          <li>✅ Delayed 15 menit</li>
+          <li class="text-gray-600">❌ Real-time data</li>
+          <li class="text-gray-600">❌ Komunitas</li>
+        </ul>
+        <a href="https://t.me/vilonidxbot" target="_blank"
+           class="block text-center border border-gray-700 hover:border-vilona-500/50 text-gray-300 font-medium py-2 rounded-xl transition-all">
+          Mulai Gratis
+        </a>
+      </div>
+      <!-- Pro -->
+      <div class="bg-dark-800/60 border-2 border-vilona-500/50 rounded-2xl p-6 relative">
+        <div class="absolute -top-3 left-1/2 -translate-x-1/2 bg-vilona-600 text-white text-xs font-bold px-3 py-1 rounded-full">POPULER</div>
+        <div class="text-sm text-vilona-500 mb-2">Pro</div>
+        <div class="text-3xl font-extrabold mb-4">Rp49k<span class="text-sm font-normal text-gray-500">/bln</span></div>
+        <ul class="space-y-2 text-sm text-gray-400 mb-6">
+          <li>✅ Semua fitur Free</li>
+          <li>✅ Real-time data</li>
+          <li>✅ 50 alert aktif</li>
+          <li>✅ Unlimited screening</li>
+          <li>✅ AI trade setup</li>
+          <li class="text-gray-600">❌ Komunitas</li>
+        </ul>
+        <a href="https://t.me/vilonidxbot" target="_blank"
+           class="block text-center bg-vilona-600 hover:bg-vilona-700 text-white font-medium py-2 rounded-xl transition-all">
+          Upgrade Pro
+        </a>
+      </div>
+      <!-- Premium -->
+      <div class="bg-dark-800/60 border border-gray-800 rounded-2xl p-6">
+        <div class="text-sm text-yellow-500 mb-2">Premium</div>
+        <div class="text-3xl font-extrabold mb-4">Rp149k<span class="text-sm font-normal text-gray-500">/bln</span></div>
+        <ul class="space-y-2 text-sm text-gray-400 mb-6">
+          <li>✅ Semua fitur Pro</li>
+          <li>✅ 200 alert aktif</li>
+          <li>✅ Komunitas eksklusif</li>
+          <li>✅ Sesi mentor mingguan</li>
+          <li>✅ AI prioritas</li>
+          <li>✅ Auto-report harian</li>
+        </ul>
+        <a href="https://t.me/vilonidxbot" target="_blank"
+           class="block text-center border border-gray-700 hover:border-yellow-500/50 text-gray-300 font-medium py-2 rounded-xl transition-all">
+          Upgrade Premium
+        </a>
+      </div>
+      <!-- Lifetime -->
+      <div class="bg-dark-800/60 border border-gray-800 rounded-2xl p-6">
+        <div class="text-sm text-purple-400 mb-2">Lifetime</div>
+        <div class="text-3xl font-extrabold mb-4">Rp1.999k</div>
+        <ul class="space-y-2 text-sm text-gray-400 mb-6">
+          <li>✅ Semua fitur Premium</li>
+          <li>✅ Akses selamanya</li>
+          <li>✅ Limited 1000 seat</li>
+          <li>✅ Priority support</li>
+          <li>✅ Early adopter badge</li>
+          <li class="text-gray-600">⏳ Sisa 847 seat</li>
+        </ul>
+        <a href="https://t.me/vilonidxbot" target="_blank"
+           class="block text-center border border-gray-700 hover:border-purple-500/50 text-gray-300 font-medium py-2 rounded-xl transition-all">
+          Beli Lifetime
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="border-t border-gray-800 mt-16">
+    <div class="max-w-6xl mx-auto px-6 py-8 flex flex-col md:flex-row justify-between items-center gap-4">
+      <div class="text-gray-500 text-sm">© 2026 Vilona Saham · AI Co-Pilot Trading IDX</div>
+      <div class="flex gap-4 text-sm text-gray-500">
+        <a href="https://t.me/vilonidxbot" target="_blank" class="hover:text-vilona-500 transition-colors">Telegram Bot</a>
+        <a href="#pricing" class="hover:text-vilona-500 transition-colors">Pricing</a>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    const WATCHLIST = ['BBCA', 'BBRI', 'TLKM', 'BMRI', 'BBNI', 'UNVR', 'ASII', 'BBCA.JK'];
+    
+    async function fetchMarket() {
+      const grid = document.getElementById('market-grid');
+      try {
+        const resp = await fetch('/api/market-overview');
+        const data = await resp.json();
+        if (data.stocks && data.stocks.length > 0) {
+          grid.innerHTML = data.stocks.map(s => {
+            const isUp = s.change >= 0;
+            const color = isUp ? 'text-green-400' : 'text-red-400';
+            const arrow = isUp ? '▲' : '▼';
+            return `
+              <div class="bg-dark-800/80 border border-gray-800 rounded-xl p-4 stock-row transition-all cursor-pointer"
+                   onclick="window.open('https://t.me/vilonidxbot?text=analisa+${s.symbol}', '_blank')">
+                <div class="text-xs text-gray-500 mb-1">${s.symbol}</div>
+                <div class="text-lg font-bold">Rp${s.price.toLocaleString('id-ID')}</div>
+                <div class="${color} text-sm font-medium">${arrow} ${Math.abs(s.change).toFixed(2)}%</div>
+              </div>`;
+          }).join('');
         }
-
-        async function loadRecent(symbol) {
-            document.getElementById('symbolInput').value = symbol;
-            document.getElementById('result').classList.remove('hidden');
-            document.getElementById('indicators').innerHTML = '<div class="text-slate-400">Loading...</div>';
-
-            try {
-                const resp = await fetch(`/api/analyze/${symbol}`);
-                const data = await resp.json();
-
-                if (data.error) {
-                    document.getElementById('indicators').innerHTML = `<div class="text-red-400">${data.error}</div>`;
-                    return;
-                }
-
-                // Price
-                const price = data.price || 0;
-                document.getElementById('price').textContent = `Rp${price.toLocaleString('id-ID')}`;
-
-                // Score
-                const score = data.score || 0;
-                document.getElementById('score').textContent = `${score}/10`;
-                const signalEl = document.getElementById('signal');
-                if (score >= 7) {
-                    signalEl.textContent = '🟢 BUY';
-                    signalEl.className = 'text-sm mt-1 font-semibold text-emerald-400';
-                } else if (score >= 5) {
-                    signalEl.textContent = '🟡 WATCH';
-                    signalEl.className = 'text-sm mt-1 font-semibold text-yellow-400';
-                } else {
-                    signalEl.textContent = '🔴 PASS';
-                    signalEl.className = 'text-sm mt-1 font-semibold text-red-400';
-                }
-
-                // Indicators
-                const ind = data.analysis?.indicators || {};
-                let html = '';
-
-                if (ind.RSI14) html += `<div><span class="text-slate-400">RSI(14):</span> <span class="font-semibold">${ind.RSI14}</span> <span class="text-xs text-${ind.RSI_signal === 'bullish' ? 'emerald' : ind.RSI_signal === 'bearish' ? 'red' : 'slate'}-400">${ind.RSI_signal}</span></div>`;
-                if (ind.MACD) html += `<div><span class="text-slate-400">MACD:</span> <span class="font-semibold">${ind.MACD.trend}</span> <span class="text-xs text-slate-400">(hist: ${ind.MACD.histogram})</span></div>`;
-                if (ind.Bollinger) html += `<div><span class="text-slate-400">Bollinger:</span> <span class="font-semibold">${ind.Bollinger.position}</span></div>`;
-                if (ind.SuperTrend) html += `<div><span class="text-slate-400">SuperTrend:</span> <span class="font-semibold text-${ind.SuperTrend.trend === 'bullish' ? 'emerald' : ind.SuperTrend.trend === 'bearish' ? 'red' : 'slate'}-400">${ind.SuperTrend.trend}</span></div>`;
-                if (ind.SMA20) html += `<div><span class="text-slate-400">SMA(20):</span> <span class="font-semibold">${ind.SMA20.toLocaleString('id-ID')}</span></div>`;
-                if (ind.VWAP) html += `<div><span class="text-slate-400">VWAP:</span> <span class="font-semibold">${ind.VWAP.toLocaleString('id-ID')}</span> <span class="text-xs text-slate-400">(${ind.VWAP_position})</span></div>`;
-
-                if (ind.Volume) {
-                    html += `<div><span class="text-slate-400">Volume:</span> <span class="font-semibold">${ind.Volume.latest?.toLocaleString('id-ID') || '-'}</span>`;
-                    if (ind.Volume.spike) html += ` <span class="text-xs text-emerald-400">SPIKE!</span>`;
-                    html += `</div>`;
-                }
-
-                if (ind.MACD) html += `<div><span class="text-slate-400">MA20/EMA20:</span> <span class="font-semibold">${ind.EMA20_MA20_cross || '-'}</span></div>`;
-
-                document.getElementById('indicators').innerHTML = html || '<div class="text-slate-400">Data tidak tersedia</div>';
-            } catch (e) {
-                document.getElementById('indicators').innerHTML = `<div class="text-red-400">Error: ${e.message}</div>`;
-            }
-        }
-    </script>
+      } catch(e) {
+        grid.innerHTML = '<div class="col-span-4 text-center text-gray-500 py-8">Market data unavailable — bot aktif di Telegram</div>';
+      }
+    }
+    
+    fetchMarket();
+    setInterval(fetchMarket, 60000);
+  </script>
 </body>
 </html>

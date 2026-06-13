@@ -44,10 +44,32 @@ async def dashboard(request: Request):
 async def health():
     return {"status": "ok", "version": "0.1.0"}
 
+
+@app.get("/api/market-overview")
+async def market_overview():
+    """Top IDX stocks overview for dashboard."""
+    symbols = ["BBCA", "BBRI", "TLKM", "BMRI", "BBNI", "UNVR", "ASII"]
+    from src.feed.yahoo import YahooFeed
+    feed = YahooFeed()
+    results = []
+    for sym in symbols:
+        try:
+            q = await feed.get_quote(sym)
+            if q:
+                results.append({
+                    "symbol": sym,
+                    "price": q["price"],
+                    "change": q.get("change_pct", 0),
+                    "volume": q.get("volume", 0),
+                })
+        except Exception:
+            pass
+    return {"stocks": results, "count": len(results)}
+
 @app.get("/api/quote/{symbol}")
 async def get_quote(symbol: str):
-    from src.feed.manager import FeedManager
-    feed = FeedManager()
+    from src.feed.yahoo import YahooFeed
+    feed = YahooFeed()
     result = await feed.get_quote(symbol.upper())
     if result:
         return {"symbol": symbol.upper(), "data": result}
