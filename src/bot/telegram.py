@@ -1003,6 +1003,85 @@ class BotHandlers:
             logger.warning(f"Feedback error: {e}")
             await update.message.reply_text("❌ Gagal menyimpan feedback. Coba lagi.")
 
+    # ── Upgrade (Payment) ──
+
+    async def upgrade(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """Initiate payment for tier upgrade."""
+        tier = context.args[0].lower() if context.args else ""
+        valid_tiers = ["pro", "premium", "lifetime", "whitelabel"]
+
+        if tier not in valid_tiers:
+            keyboard = [
+                [InlineKeyboardButton("💎 Pro Rp49rb/bln", callback_data="pay_pro")],
+                [InlineKeyboardButton("👑 Premium Rp149rb/bln", callback_data="pay_premium")],
+                [InlineKeyboardButton("🌟 Lifetime Rp1.999rb", callback_data="pay_lifetime")],
+            ]
+            await update.message.reply_text(
+                "💳 *Upgrade Langganan*\n\n"
+                "Pilih paket yang diinginkan:\n\n"
+                "💎 *Pro* — Rp49.000/bulan\n"
+                "👑 *Premium* — Rp149.000/bulan\n"
+                "🌟 *Lifetime* — Rp1.999.000 (sekali bayar)\n\n"
+                "Pembayaran via QRIS / Bank Transfer — otomatis aktif setelah bayar.",
+                parse_mode="Markdown",
+                reply_markup=InlineKeyboardMarkup(keyboard),
+            )
+            return
+
+        await self._process_upgrade(update, tier)
+
+    async def _process_upgrade(self, update, tier: str):
+        """Create Tripay payment and send QR/payment link."""
+        await update.message.reply_text("🔄 Membuat invoice pembayaran...")
+
+        try:
+            from src.services.payment import create_payment
+
+            user = update.effective_user
+            result = create_payment(
+                user_id=user.id,
+                username=user.username or user.first_name or "",
+                tier=tier,
+            )
+
+            if result.get("success"):
+                amount = result["amount"]
+                pmt_url = result.get("payment_url", "")
+                qr_url = result.get("qr_url", "")
+                pay_code = result.get("pay_code", "")
+
+                tier_label = {"pro": "Pro", "premium": "Premium", "lifetime": "Lifetime"}
+                text = (
+                    f"💳 *Pembayaran {tier_label.get(tier, tier)}*\n\n"
+                    f"💰 Jumlah: *Rp{amount:,}*\n\n"
+                )
+                if qr_url:
+                    text += f"📱 [Scan QRIS / Lihat QR]({qr_url})\n\n"
+                if pay_code:
+                    text += f"🔢 Kode Bayar: `{pay_code}`\n\n"
+                if pmt_url:
+                    text += f"🔗 [Buka Halaman Pembayaran]({pmt_url})\n\n"
+
+                text += (
+                    "✅ Setelah bayar, akun otomatis upgrade dalam 1-2 menit.\n"
+                    "📋 Cek status: /myplans"
+                )
+                await update.message.reply_text(
+                    text, parse_mode="Markdown", disable_web_page_preview=True,
+                )
+            else:
+                error = result.get("error", "Gagal membuat pembayaran")
+                await update.message.reply_text(
+                    f"❌ Gagal: {error}\n\nCoba lagi atau hubungi admin.",
+                    parse_mode="Markdown",
+                )
+        except Exception as e:
+            logger.warning(f"Upgrade error: {e}")
+            await update.message.reply_text(
+                "❌ Sistem pembayaran sedang sibuk. Coba lagi beberapa saat.",
+                parse_mode="Markdown",
+            )
+
     # ── Bandarmology ──
 
     async def bandarmology(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -1224,6 +1303,7 @@ def create_app() -> Application:
     app.add_handler(CommandHandler("fb", handlers.feedback))
     app.add_handler(CommandHandler("bandarmology", handlers.bandarmology))
     app.add_handler(CommandHandler("event", handlers.event))
+    app.add_handler(CommandHandler("upgrade", handlers.upgrade))
     app.add_handler(CommandHandler("sector", handlers.sectorforecast))
     app.add_handler(CommandHandler("sectorforecast", handlers.sectorforecast))
     app.add_handler(CommandHandler("ihsg", handlers.ihsg))

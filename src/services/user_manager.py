@@ -73,3 +73,42 @@ class UserManager:
             f"🔔 Alert: {limits['alerts']}\n"
             f"⚡ Real-time: {'✅' if limits['realtime'] else '❌ (15 menit delay)'}"
         )
+
+    async def upgrade_tier(self, telegram_id: int, target_tier: str, amount_paid: int = 0) -> tuple:
+        """Upgrade user subscription tier.
+
+        Returns (success: bool, message: str).
+        """
+        from datetime import datetime, timezone, timedelta
+        WIB = timezone(timedelta(hours=7))
+
+        if target_tier not in SubscriptionTier.PRICES:
+            return False, f"Tier tidak valid: {target_tier}"
+
+        user = await self.get_user(telegram_id)
+        if not user:
+            return False, "User tidak ditemukan"
+
+        stmt = select(Subscription).where(Subscription.user_id == user.id)
+        result = await self.db.execute(stmt)
+        sub = result.scalar_one_or_none()
+
+        if not sub:
+            sub = Subscription(user_id=user.id, tier=target_tier)
+            self.db.add(sub)
+        else:
+            sub.tier = target_tier
+
+        if target_tier == "lifetime":
+            sub.expires_at = None
+        elif target_tier != "whitelabel":
+            sub.expires_at = datetime.now(WIB) + timedelta(days=30)
+
+        sub.can_expire = target_tier not in ("lifetime", "whitelabel")
+        sub.amount_paid = (sub.amount_paid or 0) + amount_paid
+        sub.last_payment_at = datetime.now(WIB)
+
+        await self.db.commit()
+
+        tier_label = {"pro": "Pro", "premium": "Premium", "lifetime": "Lifetime", "whitelabel": "White-label"}
+        return True, f"✅ Upgrade ke *{tier_label.get(target_tier, target_tier)}* berhasil!"
