@@ -774,6 +774,44 @@ class BotHandlers:
                     "Coba: `stats BBCA` atau `analisa TLKM`"
                 )
             await update.message.reply_text(text, parse_mode="Markdown")
+        elif cmd.intent == Intent.BACKTEST:
+            symbol = cmd.symbol or "BBCA"
+            await update.message.reply_text(
+                f"📊 Backtesting {symbol}... (mohon tunggu 30-60 detik)",
+            )
+            try:
+                from src.engine.idx_backtest import BacktestEngine
+                engine = BacktestEngine(years=3)
+                r = await engine.validate(symbol)
+                if r and r.total_signals > 0:
+                    text = (
+                        f"📊 *Backtest — {symbol} ({r.name})*\n"
+                        f"Periode: {r.years_analyzed:.1f} tahun | {r.data_points} hari\n\n"
+                        f"*📈 Performa:*\n"
+                        f"• Sinyal: *{r.total_signals}*\n"
+                        f"• Win Rate: *{r.win_rate:.1%}*\n"
+                        f"• Avg Return: *{r.avg_return:+.1f}%*\n"
+                        f"• Max: {r.max_return:+.1f}% | Min: {r.min_return:+.1f}%\n\n"
+                        f"*⏱ Akurasi:*\n"
+                        f"• H+1: *{r.h1_accuracy:.1%}*\n"
+                        f"• H+3: *{r.h3_accuracy:.1%}*\n"
+                        f"• H+5: *{r.h5_accuracy:.1%}*\n\n"
+                        f"*⚠️ Risk:*\n"
+                        f"• Sharpe: {r.sharpe_ratio:.2f}\n"
+                        f"• Max DD: {r.max_drawdown:.1f}%\n"
+                        f"• Profit Factor: {r.profit_factor:.2f}\n\n"
+                        f"*📊 vs Buy & Hold:*\n"
+                        f"• Buy&Hold: {r.buy_hold_return:+.1f}%\n"
+                        f"• Strategy: {r.strategy_return:+.1f}%\n"
+                        f"• Alpha: {r.alpha:+.1f}%\n\n"
+                        "━━━━━━━━━━━━━━━━━\n"
+                        "⚠️ Backtest tidak menjamin hasil masa depan"
+                    )
+                else:
+                    text = f"⚠️ Data tidak cukup untuk backtest {symbol}."
+            except Exception as e:
+                text = f"❌ Backtest error: {str(e)[:100]}"
+            await update.message.reply_text(text, parse_mode="Markdown")
         elif cmd.intent == Intent.HELP:
             await self.help(update, context)
         elif cmd.intent == Intent.PRICING:
