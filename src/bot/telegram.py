@@ -60,7 +60,10 @@ class BotHandlers:
             "• `screener akumulasi asing` — screening saham\n"
             "• `backtest BBCA` — validasi performa 3 tahun\n"
             "• `/bandarmology` — deteksi akumulasi bandar asing\n"
-            "• `/watchlist` — pantau saham favorit\n\n"
+            "• `/sector` — forecast volatilitas 11 sektor\n"
+            "• `/event <berita>` — klasifikasi event korporat\n"
+            "• `/watchlist` — pantau saham favorit\n"
+            "• `/ihsg` — ringkasan market 30 tahun\n\n"
             "💡 *3.000+ analisa udah dihasilkan.* Gak perlu hafal 300 command. "
             "Cukup ketik natural.\n\n"
             "━━━━━━━━━━━━━━━━━\n"
@@ -79,7 +82,10 @@ class BotHandlers:
             "• `stats TLKM` — high, low, volume, nilai\n\n"
             "*🎰 Bandar & Sentiment*\n"
             "• `/bandarmology` — deteksi akumulasi bandar asing\n"
+            "• `/sector` — forecast volatilitas 11 sektor (7 hari)\n"
+            "• `/event <berita>` — klasifikasi event korporat (11 kelas)\n"
             "• `/watchlist` — pantau saham favorit (daily digest)\n"
+            "• `/ihsg` — ringkasan IHSG (data 30 tahun)\n"
             "• `/watchlist add BBCA` — tambah ke watchlist\n\n"
             "*🔍 Screening*\n"
             "• `screener akumulasi asing` — saham diakumulasi asing\n"
@@ -127,6 +133,8 @@ class BotHandlers:
             "👑 *Premium — Rp149.000/bulan*\n"
             "• ✅ Semua Pro + 200 alert\n"
             "• ✅ Bandar View + Market Sentiment\n"
+            "• ✅ Sector Forecast (11 sektor, 7 hari)\n"
+            "• ✅ Event Classifier (11 kelas korporat)\n"
             "• ✅ Auto-Report Mingguan (Senin pagi)\n"
             "• ✅ Watchlist Smart + daily digest\n"
             "• ✅ Priority response\n\n"
@@ -907,6 +915,8 @@ class BotHandlers:
                 "👑 *Premium — Rp149.000/bulan*\n\n"
                 "✅ Semua fitur Pro\n"
                 "✅ Bandar View + Market Sentiment\n"
+                "✅ Sector Forecast 11 sektor\n"
+                "✅ Event Classifier korporat\n"
                 "✅ Auto-Report Mingguan (Senin pagi)\n"
                 "✅ Prioritas AI response\n\n"
                 "🎁 *GRATIS 7 hari* — kalo gak cocok refund full.\n"
@@ -1037,6 +1047,106 @@ class BotHandlers:
                 parse_mode="Markdown",
             )
 
+    # ── Event Classifier (NEW — Premium) ──
+
+    async def event(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """Classify corporate event from financial news text.
+        Usage: /event PT Telkom umumkan dividen tunai Rp 14 triliun
+        """
+        text = " ".join(context.args) if context.args else ""
+        if not text:
+            await update.message.reply_text(
+                "📰 *Event Classifier*\n\n"
+                "Klasifikasi berita korporat — 11 kategori event.\n\n"
+                "*Contoh:*\n"
+                "• `/event PT Telkom umumkan dividen tunai`\n"
+                "• `/event Bank Mandiri buyback saham Rp 5T`\n"
+                "• `/event GoTo resmi IPO di bursa`\n"
+                "• `/event emiten properti akuisisi lahan Jakarta`\n\n"
+                "💎 *Premium Feature* — 95.2% akurasi, 11 kelas event",
+                parse_mode="Markdown",
+            )
+            return
+
+        await update.message.reply_text(
+            "🔍 Menganalisa berita... (AI Event Classifier)",
+        )
+
+        try:
+            from src.engine.event_classifier import classify_news, format_event_card
+
+            result = classify_news(text)
+            out = format_event_card(result, text)
+
+            # Add CTA based on event type
+            if result["signal"] > 0:
+                out += "\n\n💡 Saham terkait potensi *BUY* — analisa dengan `analisa <kode>`"
+            elif result["signal"] < 0:
+                out += "\n\n⚠️ Saham terkait potensi *SELL* — verifikasi dengan `analisa <kode>`"
+
+            out += "\n\n💎 Powered by FinBERT-ID + tuntun-news dataset (95.2% akurasi)"
+            await update.message.reply_text(out, parse_mode="Markdown")
+
+        except Exception as e:
+            logger.warning(f"Event classifier error: {e}")
+            await update.message.reply_text(
+                "❌ Gagal klasifikasi berita. Coba lagi.\n\n"
+                "💡 Pastikan teks berita berisi informasi korporat.",
+                parse_mode="Markdown",
+            )
+
+    # ── Sector Forecast (NEW — Premium) ──
+
+    async def sectorforecast(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """Premium sector volatility forecast — 11 sektor, 7 hari."""
+        await update.message.reply_text(
+            "📊 Menganalisa volatilitas 11 sektor... (mohon tunggu 30-60 detik)",
+        )
+
+        try:
+            import os
+            os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+            os.environ['PYTORCH_LIGHTNING_LOG_LEVEL'] = 'ERROR'
+            import warnings
+            warnings.filterwarnings('ignore')
+            import logging
+            logging.getLogger('pytorch_lightning').setLevel(logging.ERROR)
+            logging.getLogger('lightning').setLevel(logging.ERROR)
+
+            from src.engine.sector_forecast import predict_all_sectors, format_market_outlook
+
+            results = predict_all_sectors()
+            out = format_market_outlook(results)
+            await update.message.reply_text(out, parse_mode="Markdown")
+
+        except Exception as e:
+            logger.warning(f"Sector forecast error: {e}")
+            await update.message.reply_text(
+                "❌ Gagal memproses forecast sektor. Coba lagi nanti.\n\n"
+                "💡 Pastikan model HF tersedia di `data/models/sector_forecast/`",
+                parse_mode="Markdown",
+            )
+
+    # ── IHSG Summary ──
+
+    async def ihsg(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """IHSG market summary — 30 years of historical data."""
+        await update.message.reply_text(
+            "📊 Memuat data IHSG...", 
+        )
+        try:
+            from src.feed.ihsg_data import get_ihsg_summary, format_ihsg_card
+            summary = get_ihsg_summary()
+            out = format_ihsg_card(summary)
+            out += "\\n\\n💎 Premium: /sector untuk forecast 11 sektor"
+            await update.message.reply_text(out, parse_mode="Markdown")
+        except Exception as e:
+            logger.warning(f"IHSG error: {e}")
+            await update.message.reply_text(
+                "❌ Gagal memuat data IHSG. Coba lagi nanti.",
+                parse_mode="Markdown",
+            )
+
     # ── Watchlist ──
 
     async def watchlist(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -1113,6 +1223,10 @@ def create_app() -> Application:
     app.add_handler(CommandHandler("feedback", handlers.feedback))
     app.add_handler(CommandHandler("fb", handlers.feedback))
     app.add_handler(CommandHandler("bandarmology", handlers.bandarmology))
+    app.add_handler(CommandHandler("event", handlers.event))
+    app.add_handler(CommandHandler("sector", handlers.sectorforecast))
+    app.add_handler(CommandHandler("sectorforecast", handlers.sectorforecast))
+    app.add_handler(CommandHandler("ihsg", handlers.ihsg))
     app.add_handler(CommandHandler("watchlist", handlers.watchlist))
     app.add_handler(MessageHandler(filters.TEXT, handlers.handle_message))
     app.add_handler(CallbackQueryHandler(handlers.button_callback, pattern="^sub_"))
