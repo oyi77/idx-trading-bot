@@ -32,13 +32,8 @@ except ImportError:
 
 @app.get("/", response_class=HTMLResponse)
 async def dashboard(request: Request):
-    if templates is None:
-        return HTMLResponse("<h1>IDX AI Trading Bot</h1><p>Dashboard requires jinja2. Install with: pip install jinja2</p>")
-    return templates.TemplateResponse("dashboard.html", {
-        "request": request,
-        "title": "IDX AI Trading Bot",
-        "version": "0.1.0",
-    })
+    from src.web.landing import LANDING_HTML
+    return HTMLResponse(LANDING_HTML)
 
 @app.get("/api/health")
 async def health():
