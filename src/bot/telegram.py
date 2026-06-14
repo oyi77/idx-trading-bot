@@ -422,6 +422,7 @@ class BotHandlers:
         try:
             from datetime import datetime
             import json, hashlib, os
+            from src.models import AnalysisJournal
             db = await self._get_db()
             aid = hashlib.md5(f"{symbol}{datetime.utcnow().isoformat()}{os.urandom(4).hex()}".encode()).hexdigest()[:16]
             indicators = {
