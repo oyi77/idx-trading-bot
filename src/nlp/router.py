@@ -15,7 +15,6 @@ class Intent(Enum):
     ALERT = "alert"
     STATS = "stats"
     CHART = "chart"
-    BACKTEST = "backtest"
     BRIEFING = "briefing"
     NEWS = "news"
     TRENDING = "trending"
@@ -63,7 +62,6 @@ class NLPRouter:
     _STATS_PREFIXES = ("stats", "/stats", "statistik", "statistic")
 
     _HELP_TRIGGERS = ("/help", "help", "bantuan", "tolong", "h")
-    _BACKTEST_TRIGGERS = ("backtest", "/backtest", "uji sinyal", "test strategi")
     _BRIEFING_TRIGGERS = ("/briefing", "briefing", "morning", "pagi", "daily report", "laporan pagi")
     _NEWS_TRIGGERS = ("/news", "news", "berita", "/berita")
     _TRENDING_TRIGGERS = ("/trending", "trending", "trend", "/trend")
@@ -117,14 +115,6 @@ class NLPRouter:
                 symbol = parts[1].upper() if len(parts) > 1 else ""
                 logger.info(f"NLPRouter: STATS symbol={symbol} from '{text}'")
                 return ParsedCommand(Intent.STATS, symbol)
-
-        # ── BACKTEST ──
-        for trigger in self._BACKTEST_TRIGGERS:
-            if lower.startswith(trigger):
-                parts = text.split()
-                symbol = parts[1].upper() if len(parts) > 1 else ""
-                logger.info(f"NLPRouter: BACKTEST symbol={symbol} from '{text}'")
-                return ParsedCommand(Intent.BACKTEST, symbol)
 
         # ── BRIEFING ──
         for trigger in self._BRIEFING_TRIGGERS:
