@@ -103,7 +103,9 @@ class BotHandlers:
             "• /myplans — trading plan aktif\n"
             "• /myalerts — alert terpasang\n"
             "• /performance — performa trading\n"
-            "• /feedback TLKM 5 — rating analisa\n\n"
+            "• /feedback TLKM 5 — rating analisa\n"
+            "• /leaderboard — top trader minggu ini 🏆\n"
+            "• /points — poin & rank kamu\n\n"
             "━━━━━━━━━━━━━━━━━\n"
             "📘 *Panduan lengkap semua fitur* — /panduan\n"
             "🎁 *Baru?* Coba Premium gratis 7 hari: /pricing"
@@ -189,6 +191,16 @@ class BotHandlers:
             "• /pricing — Lihat paket: Free / Pro (Rp49k) / Premium (Rp149k) / "
             "Lifetime (Rp1.999k) / White-label.\n"
             "• /upgrade — Upgrade tier langsung dari bot.\n\n"
+            "*9️⃣ Gamification — Kumpulin Poin 🏆*\n"
+            "──────────────────────────────\n"
+            "🎯 *Goal:* Kompetisi sehat + reward untuk trader paling aktif.\n\n"
+            "• /leaderboard — Top 10 trader minggu ini. Lihat siapa paling aktif.\n"
+            "• /points — Poin kamu + level + rank + streak.\n\n"
+            "📊 *Cara dapetin poin:*\n"
+            "• analisa saham → +1 pt (max 5/hari)\n"
+            "• feedback rating → +2 pts\n"
+            "• bikin trading plan → +3 pts (max 10/hari)\n"
+            "• tambah watchlist → +1 pt (max 5/hari)\n\n"
             "━━━━━━━━━━━━━━━━━━━━━━━\n"
             "💡 *Trading pakai bot ini ibarat punya analis pribadi 24/7.* "
             "Gak perlu buka RTI + Stockbit + TradingView + Yahoo Finance + "
@@ -661,6 +673,13 @@ class BotHandlers:
             reply_markup=InlineKeyboardMarkup(keyboard),
         )
 
+        # ─── Gamification: award point ──────────────────────
+        try:
+            from src.engine.gamification import award
+            award(update.effective_user.id, "analisa", update.effective_user.username or "")
+        except Exception:
+            pass
+
     # ── My Plans ──
 
     async def myplans(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -897,6 +916,12 @@ class BotHandlers:
                             plan.entry_price, plan.stop_loss, plan.take_profit,
                         )
                         text += f"\n\n{rm.format_sizing(sizing)}"
+                        # ─── Gamification ───────────────
+                        try:
+                            from src.engine.gamification import award
+                            award(update.effective_user.id, "plan_trade", update.effective_user.username or "")
+                        except Exception:
+                            pass
                     else:
                         text = "❌ Gagal menyimpan trading plan."
             except Exception as e:
@@ -1197,6 +1222,12 @@ class BotHandlers:
                     f"✅ Makasih! Feedback untuk {symbol} tercatat.",
                     parse_mode="Markdown",
                 )
+                # ─── Gamification ──────────────────────────
+                try:
+                    from src.engine.gamification import award
+                    award(update.effective_user.id, "feedback", update.effective_user.username or "")
+                except Exception:
+                    pass
             else:
                 await update.message.reply_text(
                     f"Belum ada analisa {symbol} yang bisa di-feedback. Coba analisa dulu dengan `analisa {symbol}`",
@@ -1451,6 +1482,13 @@ class BotHandlers:
 
             if action == "add" and symbol:
                 ok, msg = engine.add(user_id, symbol)
+                if ok:
+                    # ─── Gamification ──────────────────────
+                    try:
+                        from src.engine.gamification import award
+                        award(update.effective_user.id, "watchlist_add", update.effective_user.username or "")
+                    except Exception:
+                        pass
                 await update.message.reply_text(msg, parse_mode="Markdown")
             elif action == "remove" and symbol:
                 ok, msg = engine.remove(user_id, symbol)
@@ -1483,6 +1521,33 @@ class BotHandlers:
         except Exception as e:
             logger.warning(f"Watchlist error: {e}")
             await update.message.reply_text("❌ Gagal mengakses watchlist. Coba lagi.")
+
+    # ── Gamification ──
+
+    async def leaderboard(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """Show weekly leaderboard."""
+        try:
+            from src.engine.gamification import GamificationEngine
+            engine = GamificationEngine()
+            entries = engine.get_leaderboard("weekly", 10)
+            text = engine.format_leaderboard(entries, "weekly")
+            await update.message.reply_text(text, parse_mode="Markdown")
+        except Exception as e:
+            logger.warning(f"Leaderboard error: {e}")
+            await update.message.reply_text("❌ Gagal load leaderboard. Coba lagi.")
+
+    async def points(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """Show user's personal points."""
+        try:
+            from src.engine.gamification import GamificationEngine
+            engine = GamificationEngine()
+            user_id = update.effective_user.id
+            data = engine.get_points(user_id)
+            text = engine.format_points(data)
+            await update.message.reply_text(text, parse_mode="Markdown")
+        except Exception as e:
+            logger.warning(f"Points error: {e}")
+            await update.message.reply_text("❌ Gagal load poin. Coba lagi.")
 
     async def briefing(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """Daily AI Briefing — morning market snapshot."""
@@ -1530,6 +1595,8 @@ def create_app() -> Application:
     app.add_handler(CommandHandler("report", handlers.report))
     app.add_handler(CommandHandler("trending", handlers.trending))
     app.add_handler(CommandHandler("panduan", handlers.panduan))
+    app.add_handler(CommandHandler("leaderboard", handlers.leaderboard))
+    app.add_handler(CommandHandler("points", handlers.points))
     app.add_handler(MessageHandler(filters.TEXT, handlers.handle_message))
     app.add_handler(CallbackQueryHandler(handlers.button_callback, pattern="^sub_"))
     app.add_handler(CallbackQueryHandler(handlers.button_callback, pattern="^share_"))
