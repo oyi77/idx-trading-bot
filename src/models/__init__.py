@@ -29,6 +29,8 @@ class User(Base):
     followup_stage = Column(Integer, default=0)  # 0=no followup yet, 1-3=stage
     last_followup_at = Column(DateTime, nullable=True)  # anti-spam
     followup_segment = Column(String(20), default="new")  # new, active_free, sleeping, power_free
+    onboarding_stage = Column(Integer, default=0)  # 0=none, 1-3=onboarding drip stages
+    last_watchlist_alert_at = Column(DateTime, nullable=True)  # anti-spam: watchlist alert 24h cooldown
     is_active = Column(Boolean, default=True)
 
     # Relationships
