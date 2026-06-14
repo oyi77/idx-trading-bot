@@ -42,3 +42,4 @@ scripts/*.ipynb
 
 # Docker
 docker-compose.override.yml
+lightning_logs/

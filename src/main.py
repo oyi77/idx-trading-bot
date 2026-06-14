@@ -59,11 +59,12 @@ async def run_api():
 
 async def main():
     """Run both Telegram bot and API server."""
-    print(f"🚀 IDX AI Trading Bot v0.1.0", flush=True)
+    print(f"🚀 IDX AI Trading Bot v0.2.0 (Multi-LLM)", flush=True)
     print(f"   Debug: {settings.debug}", flush=True)
     print(f"   Bot Token: {'✅' if settings.bot_token else '❌'}", flush=True)
     print(f"   iTick Key: {'✅' if settings.itick_api_key else '❌'}", flush=True)
-    print(f"   OpenRouter: {'✅' if settings.openrouter_api_key else '❌'}", flush=True)
+    print(f"   OmniRoute: {'✅' if settings.omniroute_api_key else '❌'}", flush=True)
+    print(f"   Groq: {'✅' if settings.groq_api_key else '❌'}", flush=True)
 
     await asyncio.gather(
         run_telegram(),

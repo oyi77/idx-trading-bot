@@ -1,4 +1,11 @@
-"""AI-powered stock analysis using OmniRoute gateway."""
+"""AI-powered stock analysis using multi-provider LLM chain.
+
+Provider chain (first success wins):
+  1. OmniRoute       — primary gateway (auto/best-fast)
+  2. Groq            — ultra-fast LPU inference (llama-3.3-70b)
+  3. Groq (fallback)  — llama-3.1-8b-instant if rate limited
+"""
+
 import json
 import logging
 from pathlib import Path
@@ -7,7 +14,7 @@ from typing import Optional
 logger = logging.getLogger(__name__)
 
 OMNIROUTE_BASE = "http://localhost:20128/v1"
-OMNIROUTE_MODEL = "auto/best-fast"  # Priority routing for analysis
+OMNIROUTE_MODEL = "auto/best-fast"
 
 DEFAULT_SYSTEM_PROMPT = (
     "Kamu adalah analis saham profesional yang fokus pada Bursa Efek Indonesia (IDX). "
@@ -76,60 +83,97 @@ async def analyze_with_ai(
     news_data: Optional[list] = None,
     score: int = 5,
 ) -> Optional[str]:
-    """Generate AI-powered analysis narrative for a stock."""
+    """Generate AI-powered analysis narrative for a stock.
+
+    Provider chain: OmniRoute → Groq primary → Groq fallback.
+    First provider to return a valid response wins.
+    """
+    context = _build_analysis_context(
+        symbol, price, change_pct, technical_data,
+        fundamental_data, foreign_flow_data, news_data, score,
+    )
+
+    # ── 1. Try OmniRoute ──────────────────────────────────
+    result = await _try_omniroute(context)
+    if result:
+        return result
+
+    # ── 2. Try Groq ───────────────────────────────────────
+    result = await _try_groq(context)
+    if result:
+        return result
+
+    logger.warning(f"No LLM provider available for {symbol}")
+    return None
+
+
+def _build_analysis_context(
+    symbol: str,
+    price: float,
+    change_pct: float,
+    technical_data: dict,
+    fundamental_data: Optional[dict],
+    foreign_flow_data: Optional[dict],
+    news_data: Optional[list],
+    score: int,
+) -> str:
+    """Build analysis context string from all data sources."""
+    context_parts = [
+        f"Saham: {symbol}",
+        f"Harga: Rp{price:,.0f} ({change_pct:+.1f}%)",
+    ]
+
+    ind = technical_data.get("indicators", {})
+    analysis_body = technical_data.get("analysis", {})
+
+    rsi = ind.get("RSI14", analysis_body.get("rsi"))
+    macd = ind.get("MACD", analysis_body.get("macd", {}))
+    bb = ind.get("Bollinger", analysis_body.get("bollinger", {}))
+    st = ind.get("SuperTrend", analysis_body.get("super_trend", {}))
+
+    if rsi:
+        context_parts.append(f"RSI(14): {rsi:.1f}")
+    if isinstance(macd, dict) and macd.get("trend"):
+        context_parts.append(f"MACD: {macd['trend']}")
+    if isinstance(bb, dict) and bb.get("position"):
+        context_parts.append(f"Bollinger: {bb['position']}")
+    if isinstance(st, dict) and st.get("trend"):
+        context_parts.append(f"SuperTrend: {st['trend']}")
+
+    context_parts.append(f"Skor teknikal: {score}/10")
+
+    if fundamental_data:
+        per = fundamental_data.get("per", 0)
+        pbv = fundamental_data.get("pbv", 0)
+        roe = fundamental_data.get("roe", 0)
+        if per and per > 0:
+            context_parts.append(f"PER: {per:.1f}x, PBV: {pbv:.2f}x, ROE: {roe:.1f}%")
+
+    if foreign_flow_data and foreign_flow_data.get("net_buy", 0) != 0:
+        dir_text = "NET BUY" if foreign_flow_data.get("net_buy", 0) > 0 else "NET SELL"
+        context_parts.append(f"Foreign Flow: {dir_text} Rp{abs(foreign_flow_data['net_buy']):,.0f}")
+
+    if news_data:
+        sentiments = [n.get("sentiment", "neutral") for n in news_data[:3]]
+        pos = sum(1 for s in sentiments if s == "positive")
+        neg = sum(1 for s in sentiments if s == "negative")
+        if pos > neg:
+            context_parts.append("Berita: dominan positif")
+        elif neg > pos:
+            context_parts.append("Berita: dominan negatif")
+
+    return "\n".join(context_parts)
+
+
+async def _try_omniroute(context: str) -> Optional[str]:
+    """Try OmniRoute gateway."""
     try:
         import httpx
 
         key = _get_omniroute_key()
         if not key:
-            logger.warning("No OmniRoute API key available")
+            logger.debug("OmniRoute: no API key — skipping")
             return None
-
-        context_parts = [
-            f"Saham: {symbol}",
-            f"Harga: Rp{price:,.0f} ({change_pct:+.1f}%)",
-        ]
-
-        ind = technical_data.get("indicators", {})
-        analysis_body = technical_data.get("analysis", {})
-
-        rsi = ind.get("RSI14", analysis_body.get("rsi"))
-        macd = ind.get("MACD", analysis_body.get("macd", {}))
-        bb = ind.get("Bollinger", analysis_body.get("bollinger", {}))
-        st = ind.get("SuperTrend", analysis_body.get("super_trend", {}))
-
-        if rsi:
-            context_parts.append(f"RSI(14): {rsi:.1f}")
-        if isinstance(macd, dict) and macd.get("trend"):
-            context_parts.append(f"MACD: {macd['trend']}")
-        if isinstance(bb, dict) and bb.get("position"):
-            context_parts.append(f"Bollinger: {bb['position']}")
-        if isinstance(st, dict) and st.get("trend"):
-            context_parts.append(f"SuperTrend: {st['trend']}")
-
-        context_parts.append(f"Skor teknikal: {score}/10")
-
-        if fundamental_data:
-            per = fundamental_data.get("per", 0)
-            pbv = fundamental_data.get("pbv", 0)
-            roe = fundamental_data.get("roe", 0)
-            if per and per > 0:
-                context_parts.append(f"PER: {per:.1f}x, PBV: {pbv:.2f}x, ROE: {roe:.1f}%")
-
-        if foreign_flow_data and foreign_flow_data.get("net_buy", 0) != 0:
-            dir_text = "NET BUY" if foreign_flow_data.get("net_buy", 0) > 0 else "NET SELL"
-            context_parts.append(f"Foreign Flow: {dir_text} Rp{abs(foreign_flow_data['net_buy']):,.0f}")
-
-        if news_data:
-            sentiments = [n.get("sentiment", "neutral") for n in news_data[:3]]
-            pos = sum(1 for s in sentiments if s == "positive")
-            neg = sum(1 for s in sentiments if s == "negative")
-            if pos > neg:
-                context_parts.append("Berita: dominan positif")
-            elif neg > pos:
-                context_parts.append("Berita: dominan negatif")
-
-        context = "\n".join(context_parts)
 
         payload = {
             "model": OMNIROUTE_MODEL,
@@ -145,15 +189,28 @@ async def analyze_with_ai(
                 json=payload,
             )
             if resp.status_code != 200:
-                logger.warning(f"OmniRoute returned {resp.status_code}")
+                logger.warning(f"OmniRoute: {resp.status_code} — falling back")
                 return None
 
             data = resp.json()
             return data["choices"][0]["message"]["content"].strip()
 
     except ImportError:
-        logger.warning("httpx not installed — install with: pip install httpx")
+        logger.debug("OmniRoute: httpx not installed")
         return None
     except Exception as e:
-        logger.warning(f"AI analysis error: {e}")
+        logger.warning(f"OmniRoute error: {e} — falling back")
+        return None
+
+
+async def _try_groq(context: str) -> Optional[str]:
+    """Try Groq provider."""
+    try:
+        from src.engine.groq_llm import chat as groq_chat
+        return await groq_chat(context=context)
+    except ImportError:
+        logger.debug("Groq: module not available")
+        return None
+    except Exception as e:
+        logger.warning(f"Groq error: {e}")
         return None

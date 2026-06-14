@@ -30,9 +30,13 @@ class Settings(BaseSettings):
     alpha_vantage_api_key: str = ""
     massive_api_key: str = ""
 
-    # --- AI ---
+    # --- AI / LLM ---
     openrouter_api_key: str = ""
     default_llm_model: str = "openai/gpt-4o-mini"
+    omniroute_api_key: str = ""
+    groq_api_key: str = ""
+    groq_model: str = "llama-3.3-70b-versatile"  # fast + capable
+    groq_fallback_model: str = "llama-3.1-8b-instant"  # ultra-fast fallback
 
     # --- Database ---
     database_url: str = "sqlite+aiosqlite:///data/trading_bot.db"
