@@ -1210,6 +1210,29 @@ class BotHandlers:
             )
             await query.edit_message_text(text, parse_mode="Markdown")
             return
+        elif data.startswith("analisa:"):
+            # Inline button: Analisa stock
+            symbol = data.split(":")[1].upper()
+            await query.edit_message_text(f"📊 Analisa {symbol}...", parse_mode="Markdown")
+            # Run analysis
+            try:
+                await self.analyze(update, context, symbol)
+                await query.edit_message_text(f"📊 Analisa {symbol} selesai! Cek di atas.")
+            except Exception as e:
+                await query.edit_message_text(f"❌ Gagal analisa {symbol}: {str(e)[:100]}")
+            return
+        elif data.startswith("plan:"):
+            # Inline button: Create trading plan
+            symbol = data.split(":")[1].upper()
+            await query.edit_message_text(f"📋 Membuat plan {symbol}...", parse_mode="Markdown")
+            # Run plan generation
+            try:
+                from src.engine.trading_plan import generate_trading_plan
+                plan = await generate_trading_plan(symbol)
+                await query.edit_message_text(plan, parse_mode="Markdown")
+            except Exception as e:
+                await query.edit_message_text(f"❌ Gagal membuat plan {symbol}: {str(e)[:100]}")
+            return
         elif data == "sub_whitelabel":
             text = (
                 "🏢 *White-label*\n\n"
@@ -1720,13 +1743,27 @@ class BotHandlers:
 
     async def _run_category_screener(self, update: Update, category: str) -> None:
         """Run a category screener and display results."""
+        from datetime import datetime
+        
+        # Dynamic stock count
+        try:
+            from src.engine.idx_universe import IDX_UNIVERSE
+            stock_count = len(IDX_UNIVERSE)
+        except:
+            stock_count = 704
+        
         await update.message.reply_text(
-            f"🔍 Scanning {category} — 39 saham IDX... (mohon tunggu ~30 detik)",
+            f"🔍 Scanning *{category}* — {stock_count} saham IDX...\n"
+            f"⏳ Mohon tunggu ~60 detik",
+            parse_mode="Markdown"
         )
         try:
             from src.engine.screener_categories import CategoryScreener
 
             data = await CategoryScreener.fetch_all()
+            scanned = len(data)
+            failed = stock_count - scanned
+            
             screener = CategoryScreener(data)
 
             screen_map = {
@@ -1744,31 +1781,85 @@ class BotHandlers:
 
             if not result.hits:
                 await update.message.reply_text(
-                    f"📭 Tidak ada saham dalam kategori *{result.category}* saat ini.",
+                    f"📭 Tidak ada saham dalam kategori *{result.category}* saat ini.\n\n"
+                    f"💡 Coba: /screener_momentum atau /screener_reversal",
                     parse_mode="Markdown",
                 )
                 return
 
-            text = f"🔍 *{result.category}* — {result.description}\n"
-            text += f"📊 *{result.total_signals} sinyal* ditemukan\n\n"
+            # Header with scan stats
+            now = datetime.now().strftime("%d %b %Y %H:%M")
+            text = (
+                f"🔍 *{result.category}* — {result.description}\n"
+                f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+                f"📊 Scanned: *{scanned}/{stock_count}* saham"
+            )
+            if failed > 0:
+                text += f" ({failed} gagal fetch)"
+            text += f"\n⏰ {now}\n\n"
 
+            # Results with action buttons
             for i, h in enumerate(result.hits[:10], 1):
                 emoji = "🟢" if h.change_pct > 0 else "🔴"
+                score_emoji = "🔥" if h.score >= 80 else ("⭐" if h.score >= 60 else "📊")
+                
                 text += (
                     f"*{i}. {h.symbol}*  {emoji} Rp{h.price:,.0f} ({h.change_pct:+.1f}%)\n"
-                    f"   🏷️ {h.strategy}  |  ⭐ {h.score}/100\n"
+                    f"   {score_emoji} Score: *{h.score}/100*  |  {h.strategy}\n"
                 )
                 for r in h.reasons[:2]:
                     text += f"   └ {r}\n"
                 text += "\n"
 
+            # Score legend
             text += (
-                "━━━━━━━━━━━━━━━━━━━━\n"
-                "💡 /screener_momentum | /screener_reversal | /screener_breakout | /screener_smartmoney\n"
-                "💎 /pricing — akses semua screener + real-time data"
+                "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+                "📊 *Score Legend:*\n"
+                "🔥 80-100 = Strong signal\n"
+                "⭐ 60-79 = Moderate signal\n"
+                "📊 40-59 = Weak signal\n\n"
             )
 
-            await update.message.reply_text(text, parse_mode="Markdown")
+            # Quick actions
+            text += (
+                "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+                "📌 *Quick Actions:*\n"
+                "• `analisa [SYMBOL]` — lihat detail saham\n"
+                "• `/plan [SYMBOL]` — buat trading plan\n"
+                "• `/alert [SYMBOL] >harga` — set alert\n\n"
+            )
+
+            # Other screeners
+            text += (
+                "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+                "📊 *Other Screeners:*\n"
+                "• /screener_momentum — momentum kuat\n"
+                "• /screener_reversal — reversal siap\n"
+                "• /screener_breakout — breakout detector\n"
+                "• /screener_smartmoney — smart money flow"
+            )
+
+            # Add inline keyboard for top 3 stocks
+            from telegram import InlineKeyboardButton, InlineKeyboardMarkup
+            keyboard = []
+            for h in result.hits[:3]:
+                keyboard.append([
+                    InlineKeyboardButton(
+                        f"📊 Analisa {h.symbol}",
+                        callback_data=f"analisa:{h.symbol}"
+                    ),
+                    InlineKeyboardButton(
+                        f"📋 Plan {h.symbol}",
+                        callback_data=f"plan:{h.symbol}"
+                    )
+                ])
+            reply_markup = InlineKeyboardMarkup(keyboard)
+
+            await update.message.reply_text(
+                text, 
+                parse_mode="Markdown",
+                reply_markup=reply_markup
+            )
 
         except Exception as e:
             logger.warning(f"Category screener error: {e}")
