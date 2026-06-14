@@ -34,8 +34,10 @@ logging.basicConfig(
 logger = logging.getLogger("notif-dispatcher")
 
 # Paths
-PROJECT_DIR = Path(__file__).resolve().parent.parent
+# Script lives in ~/.hermes/scripts/ but project is in ~/idx-trading-bot/
+PROJECT_DIR = Path.home() / "idx-trading-bot"
 sys.path.insert(0, str(PROJECT_DIR))
+os.chdir(str(PROJECT_DIR))
 
 from src.config import settings
 from src.models import Base, User, Subscription, TradePlan, Alert, AnalysisJournal

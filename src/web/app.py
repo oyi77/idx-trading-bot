@@ -118,7 +118,6 @@ body {{
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'SF Pro Display', system-ui, sans-serif;
     min-height: 100vh;
     overflow-x: hidden;
-    cursor: none;
 }}
 
 /* ── Canvas Particle Background ── */

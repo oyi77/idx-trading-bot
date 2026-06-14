@@ -4,7 +4,7 @@ import sqlite3
 from datetime import datetime, timedelta
 from pathlib import Path
 
-DB_PATH = Path(__file__).resolve().parent.parent / "data" / "trading_bot.db"
+DB_PATH = Path.home() / "idx-trading-bot" / "data" / "trading_bot.db"
 
 def generate_weekly():
     conn = sqlite3.connect(str(DB_PATH))
