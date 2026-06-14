@@ -84,6 +84,7 @@ class BotHandlers:
             "• `/briefing` — ringkasan pasar harian (IHSG + top movers)\n"
             "• `/news` — berita pasar terbaru (umum)\n"
             "• `/news BBCA` — berita spesifik saham\n"
+            "• `/report` — laporan mingguan lengkap (foreign flow + sektor + sentiment)\n"
             "• `/ihsg` — ringkasan IHSG (data real-time)\n"
             "• `/sector` — forecast volatilitas 11 sektor (7 hari)\n\n"
             "*🎰 Bandar & Sentiment*\n"
@@ -965,6 +966,18 @@ class BotHandlers:
 
     # ── News ──
 
+    async def report(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """Generate weekly market report on demand."""
+        msg = await update.message.reply_text("📊 Menyusun laporan mingguan... (30 detik)")
+        try:
+            from src.engine.weekly_report import generate_weekly_report
+            report = await generate_weekly_report()
+            await msg.edit_text(report, parse_mode="Markdown")
+        except Exception as e:
+            await msg.edit_text(
+                f"❌ Gagal membuat laporan: {str(e)[:100]}\n\nCoba lagi nanti."
+            )
+
     async def news(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """Fetch latest news for a stock symbol.
         Usage: /news TLKM or /news (general market news)
@@ -1416,6 +1429,7 @@ def create_app() -> Application:
     app.add_handler(CommandHandler("watchlist", handlers.watchlist))
     app.add_handler(CommandHandler("briefing", handlers.briefing))
     app.add_handler(CommandHandler("news", handlers.news))
+    app.add_handler(CommandHandler("report", handlers.report))
     app.add_handler(MessageHandler(filters.TEXT, handlers.handle_message))
     app.add_handler(CallbackQueryHandler(handlers.button_callback, pattern="^sub_"))
 
