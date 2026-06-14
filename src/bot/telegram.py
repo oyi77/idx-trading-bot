@@ -1065,6 +1065,8 @@ class BotHandlers:
                         stop_loss=float(sl if sl != '?' else 0),
                         take_profit=float(tp) if tp and tp != '?' else None,
                         notes=notes_text,
+                        source_message_id=getattr(update.message, 'message_id', None),
+                        source_chat_id=update.effective_chat.id,
                     )
                     if plan:
                         text = (

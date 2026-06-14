@@ -23,11 +23,16 @@ class TradePlanEngine:
         self.db = db_session
 
     async def create_plan(
-        self, user_id: int, symbol: str,
-        entry_price: float, stop_loss: float,
+        self,
+        user_id: int,
+        symbol: str,
+        entry_price: float,
+        stop_loss: float,
         take_profit: Optional[float] = None,
         direction: str = "long",
         notes: str = "",
+        source_message_id: Optional[int] = None,
+        source_chat_id: Optional[int] = None,
     ) -> Optional[TradePlan]:
         """Create a new trading plan."""
         plan = TradePlan(
@@ -40,6 +45,8 @@ class TradePlanEngine:
             status="active",
             notes=notes,
             auto_report=True,
+            source_message_id=source_message_id,
+            source_chat_id=source_chat_id,
             created_at=datetime.utcnow(),
             updated_at=datetime.utcnow(),
         )

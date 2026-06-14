@@ -99,6 +99,8 @@ class TradePlan(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow)
     auto_report = Column(Boolean, default=True)
+    source_message_id = Column(Integer, nullable=True)  # Telegram message_id from analisa response
+    source_chat_id = Column(Integer, nullable=True)  # Telegram chat_id where analisa was sent
 
     user = relationship("User", back_populates="trade_plans")
 

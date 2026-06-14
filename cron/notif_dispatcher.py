@@ -50,18 +50,21 @@ _price_cache: dict[str, float | None] = {}
 
 # ── Telegram Sender ────────────────────────────────────────
 
-async def send_telegram(chat_id: int, text: str, parse_mode: str = "Markdown") -> bool:
+async def send_telegram(chat_id: int, text: str, parse_mode: str = "Markdown", reply_to_message_id: int | None = None) -> bool:
     """Kirim pesan ke user via Telegram Bot API."""
     try:
         async with httpx.AsyncClient(timeout=10) as client:
+            payload = {
+                "chat_id": chat_id,
+                "text": text,
+                "parse_mode": parse_mode,
+                "disable_web_page_preview": True,
+            }
+            if reply_to_message_id:
+                payload["reply_to_message_id"] = reply_to_message_id
             resp = await client.post(
                 f"{TELEGRAM_API}/sendMessage",
-                json={
-                    "chat_id": chat_id,
-                    "text": text,
-                    "parse_mode": parse_mode,
-                    "disable_web_page_preview": True,
-                },
+                json=payload,
             )
             data = resp.json()
             if data.get("ok"):
@@ -288,6 +291,7 @@ def check_trading_plans(session) -> list[dict]:
             "chat_id": user.telegram_id,
             "text": text,
             "type": "trade_plan",
+            "reply_to_message_id": plan.source_message_id if (plan.source_message_id and user.telegram_id == getattr(plan, "source_chat_id", None)) else None,
         })
 
     session.commit()
