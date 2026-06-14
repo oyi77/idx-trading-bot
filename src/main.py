@@ -64,6 +64,7 @@ async def main():
     print(f"   Bot Token: {'✅' if settings.bot_token else '❌'}", flush=True)
     print(f"   iTick Key: {'✅' if settings.itick_api_key else '❌'}", flush=True)
     print(f"   OmniRoute: {'✅' if settings.omniroute_api_key else '❌'}", flush=True)
+    print(f"   DeepSeek: {'✅' if settings.deepseek_api_key else '❌'}", flush=True)
     print(f"   Groq: {'✅' if settings.groq_api_key else '❌'}", flush=True)
 
     await asyncio.gather(

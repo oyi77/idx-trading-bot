@@ -1,9 +1,10 @@
 """AI-powered stock analysis using multi-provider LLM chain.
 
 Provider chain (first success wins):
-  1. OmniRoute       — primary gateway (auto/best-fast)
-  2. Groq            — ultra-fast LPU inference (llama-3.3-70b)
-  3. Groq (fallback)  — llama-3.1-8b-instant if rate limited
+  1. DeepSeek V3      — best quality (MoE 685B, excellent ID)
+  2. OmniRoute        — local gateway (auto/best-fast)
+  3. Groq             — ultra-fast LPU (llama-3.3-70b)
+  4. Groq (fallback)  — llama-3.1-8b-instant if rate limited
 """
 
 import json
@@ -85,7 +86,7 @@ async def analyze_with_ai(
 ) -> Optional[str]:
     """Generate AI-powered analysis narrative for a stock.
 
-    Provider chain: OmniRoute → Groq primary → Groq fallback.
+    Provider chain: DeepSeek → OmniRoute → Groq → Groq fallback.
     First provider to return a valid response wins.
     """
     context = _build_analysis_context(
@@ -93,12 +94,17 @@ async def analyze_with_ai(
         fundamental_data, foreign_flow_data, news_data, score,
     )
 
-    # ── 1. Try OmniRoute ──────────────────────────────────
+    # ── 1. Try DeepSeek (best quality) ──────────────────
+    result = await _try_deepseek(context)
+    if result:
+        return result
+
+    # ── 2. Try OmniRoute ──────────────────────────────────
     result = await _try_omniroute(context)
     if result:
         return result
 
-    # ── 2. Try Groq ───────────────────────────────────────
+    # ── 3. Try Groq ───────────────────────────────────────
     result = await _try_groq(context)
     if result:
         return result
@@ -213,4 +219,17 @@ async def _try_groq(context: str) -> Optional[str]:
         return None
     except Exception as e:
         logger.warning(f"Groq error: {e}")
+        return None
+
+
+async def _try_deepseek(context: str) -> Optional[str]:
+    """Try DeepSeek provider (best quality, excellent Bahasa Indonesia)."""
+    try:
+        from src.engine.deepseek_llm import chat as ds_chat
+        return await ds_chat(context=context)
+    except ImportError:
+        logger.debug("DeepSeek: module not available")
+        return None
+    except Exception as e:
+        logger.warning(f"DeepSeek error: {e}")
         return None

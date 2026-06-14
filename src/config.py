@@ -37,6 +37,9 @@ class Settings(BaseSettings):
     groq_api_key: str = ""
     groq_model: str = "llama-3.3-70b-versatile"  # fast + capable
     groq_fallback_model: str = "llama-3.1-8b-instant"  # ultra-fast fallback
+    deepseek_api_key: str = ""
+    deepseek_model: str = "deepseek-chat"  # V3
+    deepseek_reasoner_model: str = "deepseek-reasoner"  # R1
 
     # --- Database ---
     database_url: str = "sqlite+aiosqlite:///data/trading_bot.db"
