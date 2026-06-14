@@ -74,6 +74,51 @@ class YahooFeed(DataFeed):
             log.error(f"Yahoo quote error for {symbol}: {e}")
             return None
 
+    async def get_global_quote(self, symbol: str) -> Optional[dict]:
+        """Get quote for a global/non-IDX symbol (no .JK suffix)."""
+        try:
+            ticker = yf.Ticker(symbol)
+            info = ticker.info or {}
+
+            price = (
+                info.get("currentPrice")
+                or info.get("regularMarketPrice")
+                or info.get("previousClose")
+            )
+            if not price:
+                try:
+                    fast = ticker.fast_info
+                    price = fast.last_price if hasattr(fast, "last_price") else None
+                except Exception:
+                    pass
+
+            if not price:
+                log.warning(f"No price found for {symbol}")
+                return None
+
+            change = info.get("regularMarketChange", 0)
+            change_pct = info.get("regularMarketChangePercent", 0)
+            prev_close = info.get("previousClose", price)
+            name = info.get("longName") or info.get("shortName") or symbol
+
+            return {
+                "symbol": symbol,
+                "price": price,
+                "change": round(change, 2) if change else None,
+                "change_pct": round(change_pct, 2) if change_pct else None,
+                "high": info.get("regularMarketDayHigh"),
+                "low": info.get("regularMarketDayLow"),
+                "open": info.get("regularMarketOpen"),
+                "prev_close": prev_close,
+                "volume": info.get("regularMarketVolume", 0),
+                "name": name,
+                "source": "yahoo",
+                "timestamp": datetime.now().isoformat(),
+            }
+        except Exception as e:
+            log.error(f"Yahoo global quote error for {symbol}: {e}")
+            return None
+
     async def get_klines(
         self, symbol: str, interval: str = "1d", limit: int = 100
     ) -> list:

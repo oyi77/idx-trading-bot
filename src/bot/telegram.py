@@ -79,6 +79,7 @@ class BotHandlers:
             "• /analisa — teknikal + fundamental + bandar flow\n"
             "• /stats — high, low, volume, nilai\n\n"
             "*☀️ Briefing & Pasar*\n"
+            "• /premarket — kondisi global sebelum pasar buka (Dow, Nikkei, komoditas, USD/IDR)\n"
             "• /briefing — ringkasan pasar harian (IHSG + top movers)\n"
             "• /news — berita pasar terbaru (umum)\n"
             "• /news BBCA — berita spesifik saham\n"
@@ -132,6 +133,10 @@ class BotHandlers:
             "*2️⃣ Briefing & Pasar — Big Picture Harian*\n"
             "──────────────────────────────\n"
             "🎯 *Goal:* Tau kondisi market secara keseluruhan sebelum trading.\n\n"
+            "• /premarket — Briefing pra-buka: IHSG, Dow, Nikkei, Hang Seng, Shanghai, "
+            "komoditas (gold, oil, copper), USD/IDR, foreign flow kemarin, market sentiment, "
+            "event hari ini. Semua yang perlu lo tau sebelum jam 09:00.\n"
+            "   _Wajib tiap pagi sebelum entry._\n\n"
             "• /briefing — Ringkasan pasar harian: status IHSG, top gainers/losers, "
             "outlook sektor. AI-generated dari data real-time.\n"
             "   _Pagi hari sebelum trading session._\n\n"
@@ -1549,6 +1554,25 @@ class BotHandlers:
             logger.warning(f"Points error: {e}")
             await update.message.reply_text("❌ Gagal load poin. Coba lagi.")
 
+    async def premarket(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """Pre-market briefing — global context before IDX opens."""
+        mode = "compact" if context.args and context.args[0].lower() == "quick" else "full"
+        msg = await update.message.reply_text("🌅 Fetching pre-market data... (15-30 detik)")
+        try:
+            from src.engine.premarket import build_premarket_snapshot, format_premarket, format_premarket_compact
+            snapshot = await build_premarket_snapshot()
+            if mode == "compact":
+                text = format_premarket_compact(snapshot)
+            else:
+                text = format_premarket(snapshot)
+            await msg.edit_text(text, parse_mode="Markdown")
+        except Exception as e:
+            logger.error(f"Premarket error: {e}", exc_info=True)
+            await msg.edit_text(
+                f"❌ Gagal pre-market briefing: {str(e)[:100]}\n\n"
+                f"Coba lagi nanti atau `/premarket quick`"
+            )
+
     async def briefing(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """Daily AI Briefing — morning market snapshot."""
         msg = await update.message.reply_text("☀️ Menyusun briefing pagi... (30 detik)")
@@ -1597,6 +1621,7 @@ def create_app() -> Application:
     app.add_handler(CommandHandler("panduan", handlers.panduan))
     app.add_handler(CommandHandler("leaderboard", handlers.leaderboard))
     app.add_handler(CommandHandler("points", handlers.points))
+    app.add_handler(CommandHandler("premarket", handlers.premarket))
     app.add_handler(MessageHandler(filters.TEXT, handlers.handle_message))
     app.add_handler(CallbackQueryHandler(handlers.button_callback, pattern="^sub_"))
     app.add_handler(CallbackQueryHandler(handlers.button_callback, pattern="^share_"))
