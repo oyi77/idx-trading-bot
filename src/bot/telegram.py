@@ -202,7 +202,7 @@ class BotHandlers:
         await update.message.reply_text(text, parse_mode="Markdown")
 
     async def panduan(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
-        """Panduan lengkap Vilona Saham — step-by-step untuk user Indonesia."""
+        """Panduan lengkap Vilona Saham — scroll paginated untuk user Indonesia."""
         if not await self._check_tier(update, "panduan"): return
 
         user_id = update.effective_user.id
@@ -210,199 +210,159 @@ class BotHandlers:
         tier = get_user_tier_sync(user_id)
         badge = get_tier_badge(tier)
 
-        # Level 1: Getting Started
-        l1 = (
-            f"📚 *PANDUAN LENGKAP VILONA SAHAM* 🇮🇩\n"
-            f"━━━━━━━━━━━━━━━━━━━━━━━━━\n"
-            f"👤 Tier kamu: *{tier.title()}* {badge}\n\n"
-            f"*Apa itu Vilona Saham?*\n"
-            f"Bot AI yang bantu kamu analisa saham IDX — "
-            f"pakai AI (DeepSeek, Groq, OmniRoute) + data real-time BEI.\n"
-            f"Tinggal ketik natural, bot langsung kasih:\n"
-            f"• 📈 Chart + analisa teknikal\n"
-            f"• 🧠 Narasi AI (bahasa Indonesia)\n"
-            f"• 🏦 Arus dana asing & bandar\n"
-            f"• 🎯 Auto trading plan (Entry, SL, TP)\n"
-            f"• ⭐ Confidence Score 1-10\n\n"
-            f"*Mulai dalam 10 detik — tanpa hafal command rumit.*\n\n"
+        # Simpan tier di context untuk dipake di callback
+        context.user_data["panduan_tier"] = tier
+        context.user_data["panduan_badge"] = badge
+        context.user_data["panduan_page"] = 1
+
+        text, keyboard = self._panduan_page(1, tier, badge)
+        await update.message.reply_text(
+            text, parse_mode="Markdown", reply_markup=InlineKeyboardMarkup(keyboard)
         )
 
-        # Level 2: Quick Start
-        l2 = (
-            f"🚀 *MULAI CEPAT — 3 Langkah*\n"
-            f"━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
-            f"*1. Analisa Saham*\n"
-            f"Ketik: `analisa BBCA`\n"
-            f"→ Dapet chart + narasi AI + score 1-10 + auto plan.\n\n"
-            f"*2. Cari Saham Potensial*\n"
-            f"Ketik: `screener momentum` (Pro/Premium)\n"
-            f"→ Scan 704 saham dalam 0.1 detik. Hasil: top picks.\n\n"
-            f"*3. Pasang Alert*\n"
-            f"Ketik: `alert TLKM >2600` (Pro/Premium)\n"
-            f"→ Bot otomatis DM lo pas harga kena target.\n\n"
-        )
+    def _panduan_page(self, page: int, tier: str, badge: str):
+        """Render panduan page + inline keyboard."""
+        from telegram import InlineKeyboardButton
 
-        # Level 3: All Commands — explained in detail
-        l3 = (
-            f"📋 *DAFTAR LENGKAP COMMAND*\n"
-            f"━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
-            f"🆓 *GRATIS — Semua User*\n"
-            f"━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
-            f"📊 `analisa BBCA`\n"
-            f"  Analisa lengkap: chart TradingView dark theme + AI narasi + data bandar + score trading.\n"
-            f"  AI kasih tau BUY/WATCH/PASS + alasan jelas.\n"
-            f"  *Contoh:* `analisa TLKM`, `analisa ASII`, `analisa GOTO`\n\n"
-            f"📈 `stats BBCA`\n"
-            f"  Statistik harga: open, high, low, close, volume, nilai transaksi.\n"
-            f"  *Contoh:* `stats BBCA`, `stats BRIS`\n\n"
-            f"🏛️ `ihsg`\n"
-            f"  Data IHSG real-time: indeks, perubahan, volume, nilai.\n"
-            f"  *Contoh:* tinggal ketik `ihsg` — langsung muncul.\n\n"
-            f"📰 `news`\n"
-            f"  Berita pasar Indonesia terbaru — dari CNBC, Kontan, Bisnis.\n"
-            f"  *Contoh:* `news`, `news BBCA`\n\n"
-            f"🔥 `trending`\n"
-            f"  Saham paling trending / banyak dibicarakan saat ini.\n"
-            f"  *Contoh:* tinggal ketik `trending` — langsung muncul.\n\n"
-            f"💳 `pricing`\n"
-            f"  Lihat paket langganan + harga. Upgrade ke Pro/Premium.\n"
-            f"  *Contoh:* tinggal ketik `pricing` — muncul pilihan.\n\n"
-            f"📖 `help`\n"
-            f"  Ringkasan semua command yang tersedia di tier kamu.\n\n"
-        )
-
-        l4 = (
-            f"💎 *PRO — Rp49.000/bulan* ← PALING DIMINATI\n"
-            f"━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
-            f"🔍 `screener momentum`\n"
-            f"  Scan 704 saham — cari yang punya momentum kencang.\n"
-            f"  Indikator: RSI kuat, volume spike, MACD bullish.\n"
-            f"  *Contoh:* `screener momentum` → muncul 5-10 saham.\n\n"
-            f"🔄 `screener reversal`\n"
-            f"  Cari saham yang siap balik arah — peluang entry reversal.\n"
-            f"  Indikator: RSI overbought/oversold, divergence.\n"
-            f"  *Contoh:* `screener reversal` → muncul saham reversal.\n\n"
-            f"💥 `screener breakout`\n"
-            f"  Deteksi saham yang tembus support / resistance kunci.\n"
-            f"  Indikator: break MA20/MA50, volume confirmation.\n"
-            f"  *Contoh:* `screener breakout` → muncul saham breakout.\n\n"
-            f"🐋 `screener smart money`\n"
-            f"  Jejak akumulasi bandar / smart money — akumulasi diam-diam.\n"
-            f"  Indikator: volume abnormal + harga sideways + asing masuk.\n"
-            f"  *Contoh:* `screener smart money` → muncul saham akumulasi.\n\n"
-            f"📋 `plan TLKM`\n"
-            f"  Auto trading plan: Entry, SL, TP, Risk/Reward — AI-generated.\n"
-            f"  *Contoh:* `plan TLKM entry 2500 sl 2400 tp 2700`\n"
-            f"  Bot auto pantau SL/TP — kirim notifikasi kalau kena.\n\n"
-            f"🔔 `alert TLKM >2600`\n"
-            f"  Pasang alert harga — bot DM lo pas target kena.\n"
-            f"  *Contoh:* `alert BBCA >6000`, `alert GOTO <80`\n"
-            f"  Maks 50 alert (Pro) / 200 alert (Premium).\n\n"
-            f"💼 `portfolio`\n"
-            f"  Tracking posisi + unrealized P/L + history profit.\n"
-            f"  *Contoh:* `portfolio add TLKM 2500 100` (add TLKM 100 lot @2500)\n\n"
-            f"🌅 `premarket`\n"
-            f"  Kondisi pre-market: Wall Street, IHSG futures, komoditas.\n"
-            f"  *Contoh:* tinggal ketik `premarket` — muncul kondisi.\n\n"
-            f"📊 `briefing`\n"
-            f"  Ringkasan pasar harian: sektor terkuat, top movers, asing flow.\n"
-            f"  *Contoh:* tinggal ketik `briefing` — muncul ringkasan.\n\n"
-        )
-
-        l5 = (
-            f"👑 *PREMIUM — Rp149.000/bulan*\n"
-            f"━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
-            f"🎰 `bandarmology`\n"
-            f"  Deteksi aktivitas bandar: broker mana yang akumulasi, mana distribusi.\n"
-            f"  Skor: Strong Buy > Buy > Hold > Sell > Strong Sell.\n"
-            f"  *Contoh:* tinggal ketik `bandarmology` — muncul peta bandar.\n\n"
-            f"📰 `event`\n"
-            f"  Klasifikasi berita korporat: RUPS, dividen, right issue, IPO.\n"
-            f"  *Contoh:* `event BBCA`, `event TLKM`\n\n"
-            f"📝 `report`\n"
-            f"  Laporan performa mingguan: win rate, total P/L, saham terbaik.\n"
-            f"  *Contoh:* tinggal ketik `report` — muncul laporan.\n\n"
-            f"👣 `jejak`\n"
-            f"  Profit trail: lihat history profit/loss per saham.\n"
-            f"  *Contoh:* `jejak` → muncul trail profit.\n\n"
-            f"🏆 `leaderboard`\n"
-            f"  Top trader minggu ini — berdasarkan win rate + konsistensi.\n"
-            f"  *Contoh:* `leaderboard` → muncul ranking.\n\n"
-            f"⭐ `points`\n"
-            f"  Poin & rank kamu: XP dari analisa, plan, dan performa trading.\n"
-            f"  *Contoh:* tinggal ketik `points` — muncul rank.\n\n"
-        )
-
-        l6 = (
-            f"🎯 *TIPS BUAT TRADER INDONESIA*\n"
-            f"━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
-            f"1. *Rekomendasi Analisa*\n"
-            f"  Setiap pagi (08:00-09:30 WIB) analisa LQ45 dulu:\n"
-            f"  `analisa BBCA`, `analisa BBRI`, `analisa TLKM`, `analisa ASII`\n\n"
-            f"2. *Screener Harian*\n"
-            f"  Pagi: `screener momentum` + `screener breakout`\n"
-            f"  Siang: `screener reversal` + `screener smart money`\n\n"
-            f"3. *Manajemen Risiko*\n"
-            f"  SL maks 5-8% dari entry. Risk/Reward minimal 1:2.\n"
-            f"  Bot kasih plan otomatis — tinggal ikuti disiplinnya.\n\n"
-            f"4. *Sesi Pasar*\n"
-            f"  Sesi 1 (09:00-12:00 WIB): volatilitas tinggi, entry.\n"
-            f"  Sesi 2 (13:30-15:00 WIB): follow-through, manajemen posisi.\n"
-            f"  Pasar tutup 15:00 WIB — cek portfolio sore hari.\n\n"
-            f"5. *Arus Asing*\n"
-            f"  Pantau bandarmology + screener smart money — ikuti jejak bandar.\n"
-            f"  Asing net buy >Rp50M dalam 3 hari? Sinyal kuat.\n\n"
-        )
-
-        l7 = (
-            f"💡 *FAQ — Pertanyaan Umum*\n"
-            f"━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
-            f"*Q: Data real-time atau delay?*\n"
-            f"  Pro/Premium: real-time dari BEI. Free: delay 15 menit.\n\n"
-            f"*Q: Akurat nggak AI-nya?*\n"
-            f"  AI pakai data teknikal + fundamental + broker flow.\n"
-            f"  Confidence score 10 = sinyal kuat. Score <6 = hati-hati.\n\n"
-            f"*Q: Bisa dipake di HP?*\n"
-            f"  Ya! Bot jalan di Telegram — bisa di Android, iPhone, Web.\n"
-            f"  Gak perlu install apa-apa lagi.\n\n"
-            f"*Q: Support kalau ada masalah?*\n"
-            f"  DM @alwayscuanbos atau grup premium (khusus member).\n"
-            f"  Respon <1 jam di jam kerja (09:00-17:00 WIB).\n\n"
-        )
-
-        l8 = (
-            f"🔗 *LINK PENTING*\n"
-            f"━━━━━━━━━━━━━━━━━━━━━━━━━\n"
-            f"📊 Dashboard: https://botidx.aitradepulse.com/dashboard\n"
-            f"🤖 Bot: @vilonidxbot\n"
-        )
-
-        # Build message based on tier
-        text = l1 + l2 + l3
-
-        if tier in ("pro", "premium", "admin"):
-            text += l4
-        else:
-            text += (
-                f"💎 *PRO — Rp49.000/bulan* ← PALING DIMINATI\n"
+        if page == 1:
+            text = (
+                f"📚 *PANDUAN LENGKAP VILONA SAHAM* 🇮🇩  |  1/5\n"
                 f"━━━━━━━━━━━━━━━━━━━━━━━━━\n"
-                f"Include: 4 screener, auto plan, alert, portfolio, premarket, briefing.\n"
-                f"Ketik /pricing buat upgrade.\n\n"
+                f"👤 *Tier kamu:* {tier.title()} {badge}\n\n"
+                f"*Apa itu Vilona Saham?*\n"
+                f"Bot AI analisa saham IDX — pakai AI "
+                f"(DeepSeek • Groq • OmniRoute) + data *real-time BEI*.\n\n"
+                f"Tinggal ketik natural, langsung dapet:\n"
+                f"• 📈 Chart + analisa teknikal\n"
+                f"• 🧠 Narasi AI bahasa Indonesia\n"
+                f"• 🏦 Arus dana asing & bandar\n"
+                f"• 🎯 Auto trading plan (Entry/SL/TP)\n"
+                f"• ⭐ Confidence Score 1-10\n\n"
+                f"🚀 *MULAI CEPAT — 3 Langkah*\n"
+                f"━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
+                f"*1️⃣ Analisa Saham*\n"
+                f"Ketik: `analisa BBCA`\n"
+                f"→ Dapet chart + narasi AI + score + auto plan.\n\n"
+                f"*2️⃣ Cari Saham Potensial*\n"
+                f"Ketik: `screener momentum` (Pro/Premium)\n"
+                f"→ Scan 693 saham dalam 0.1 detik — top picks.\n\n"
+                f"*3️⃣ Pasang Alert*\n"
+                f"Ketik: `alert TLKM >2600` (Pro/Premium)\n"
+                f"→ Bot auto DM pas harga kena target.\n"
             )
+            nav = [None, None, "2", "Selanjutnya →"]
 
-        if tier in ("premium", "admin"):
-            text += l5
-        else:
-            text += (
-                f"👑 *PREMIUM — Rp149.000/bulan*\n"
-                f"━━━━━━━━━━━━━━━━━━━━━━━━━\n"
-                f"Include: bandarmology, event, report, jejak, leaderboard, points.\n"
-                f"Ketik /pricing buat upgrade.\n\n"
+        elif page == 2:
+            text = (
+                f"📋 *DAFTAR COMMAND* — GRATIS  |  2/5\n"
+                f"━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
+                f"📊 `analisa BBCA`\n"
+                f"  Chart + AI narasi + data bandar + score 1-10.\n"
+                f"  AI kasih *BUY/WATCH/PASS* + alasan.\n"
+                f"  _Contoh: `analisa TLKM`, `analisa GOTO`_\n\n"
+                f"📈 `stats BBCA`\n"
+                f"  Harga, volume, nilai transaksi.\n"
+                f"  _Contoh: `stats BRIS`_\n\n"
+                f"🏛️ `ihsg`\n"
+                f"  Data IHSG real-time.\n\n"
+                f"📰 `news`\n"
+                f"  Berita pasar Indonesia (CNBC, Kontan).\n"
+                f"  _Contoh: `news BBCA`_\n\n"
+                f"🔥 `trending`\n"
+                f"  Saham paling trending saat ini.\n\n"
+                f"💳 `pricing`\n"
+                f"  Paket langganan + harga.\n\n"
+                f"📖 `help` / `panduan`\n"
+                f"  Daftar command + tutorial.\n"
             )
+            nav = ["1", "← Kembali", "3", "Selanjutnya →"]
 
-        text += l6 + l7 + l8
+        elif page == 3:
+            text = (
+                f"💎 *PRO — Rp49rb/bulan* ← PALING DIMINATI  |  3/5\n"
+                f"━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
+                f"🔍 `screener momentum` — saham momentum kencang\n"
+                f"🔄 `screener reversal` — siap balik arah\n"
+                f"💥 `screener breakout` — tembus level kunci\n"
+                f"🐋 `screener smart money` — jejak akumulasi bandar\n\n"
+                f"📋 `plan TLKM entry 2500 sl 2400 tp 2700`\n"
+                f"  Auto plan + bot pantau SL/TP — kirim notif kalau kena.\n\n"
+                f"🔔 `alert TLKM >2600`\n"
+                f"  Alert harga real-time, maks 50 alert.\n"
+                f"  _Contoh: `alert BBCA >6000`_\n\n"
+                f"💼 `portfolio`\n"
+                f"  Tracking posisi + P/L.\n\n"
+                f"🌅 `premarket`\n"
+                f"  Kondisi pre-market Wall Street + IHSG.\n\n"
+                f"📊 `briefing`\n"
+                f"  Ringkasan pasar harian.\n"
+            )
+            if tier in ("pro", "premium", "admin"):
+                nav = ["2", "← Kembali", "4", "Selanjutnya →"]
+            else:
+                text += f"\n💳 Upgrade: /pricing"
+                nav = ["2", "← Kembali", "4", "Selanjutnya →"]
 
-        await update.message.reply_text(text, parse_mode="Markdown", disable_web_page_preview=True)
+        elif page == 4:
+            text = (
+                f"👑 *PREMIUM — Rp149rb/bulan*  |  4/5\n"
+                f"━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
+                f"🎰 `bandarmology`\n"
+                f"  Deteksi aktivitas bandar — broker akumulasi / distribusi.\n"
+                f"  Skor: Strong Buy → Buy → Hold → Sell → Strong Sell.\n\n"
+                f"📰 `event`\n"
+                f"  Klasifikasi berita: RUPS, dividen, right issue, IPO.\n"
+                f"  _Contoh: `event BBCA`_\n\n"
+                f"📝 `report`\n"
+                f"  Laporan performa mingguan — win rate, P/L.\n\n"
+                f"👣 `jejak`\n"
+                f"  Profit trail — history per saham.\n\n"
+                f"🏆 `leaderboard`\n"
+                f"  Top trader minggu ini.\n\n"
+                f"⭐ `points`\n"
+                f"  XP & rank dari aktivitas trading.\n"
+            )
+            if tier in ("premium", "admin"):
+                nav = ["3", "← Kembali", "5", "Selanjutnya →"]
+            else:
+                text += f"\n💳 Upgrade: /pricing"
+                nav = ["3", "← Kembali", "5", "Selanjutnya →"]
+
+        else:  # page == 5
+            text = (
+                f"🎯 *TIPS + FAQ*  |  5/5\n"
+                f"━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
+                f"🎯 *TIPS TRADER IDX*\n"
+                f"1. Pagi (08:00-09:30) analisa LQ45: BBCA, BBRI, TLKM, ASII\n"
+                f"2. Screener pagi: momentum + breakout. Siang: reversal + smart money\n"
+                f"3. SL maks 5-8%. Risk/Reward minimal 1:2\n"
+                f"4. Sesi 1 (09:00-12:00) entry, Sesi 2 (13:30-15:00) manajemen\n"
+                f"5. Pantau asing: net buy >Rp50M dalam 3 hari = sinyal kuat\n\n"
+                f"💡 *FAQ*\n"
+                f"*Q: Data real-time?*\n"
+                f"  Pro/Premium: real-time BEI. Free: delay 15 menit.\n\n"
+                f"*Q: AI akurat?*\n"
+                f"  AI pakai teknikal + fundamental + broker flow.\n"
+                f"  Score 10 = sinyal kuat. Score <6 = hati-hati.\n\n"
+                f"*Q: Bisa di HP?*\n"
+                f"  Ya! Telegram Android/iPhone/Web — gak perlu install apa-apa.\n\n"
+                f"*Q: Support?*\n"
+                f"  DM @alwayscuanbos — respon <1 jam (09:00-17:00 WIB).\n\n"
+                f"🔗 *LINK*\n"
+                f"📊 Dashboard: https://botidx.aitradepulse.com/dashboard\n"
+                f"🤖 Bot: @vilonidxbot\n"
+            )
+            nav = ["4", "← Kembali", None, None]
+
+        # Build inline keyboard
+        row = []
+        if nav[0]:
+            row.append(InlineKeyboardButton(f"← {nav[1]}", callback_data=f"panduan:{nav[0]}"))
+        if nav[2]:
+            row.append(InlineKeyboardButton(f"{nav[3]} →", callback_data=f"panduan:{nav[2]}"))
+        keyboard = [row] if row else []
+
+        return text, keyboard
 
     async def analisa_direct(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """Direct handler for /analisa command."""
@@ -1505,6 +1465,17 @@ class BotHandlers:
         elif data == "onboarding:step4":
             await self._onboarding_step(update, context, 5)
             return
+        elif data.startswith("panduan:"):
+            page_str = data.split(":")[1]
+            tier = context.user_data.get("panduan_tier", "free")
+            badge = context.user_data.get("panduan_badge", "🆓")
+            page = int(page_str)
+            text, keyboard = self._panduan_page(page, tier, badge)
+            await query.edit_message_text(
+                text, parse_mode="Markdown", reply_markup=InlineKeyboardMarkup(keyboard)
+            )
+            return
+
         elif data == "onboarding:pricing":
             await self.pricing(update, context)
             return
