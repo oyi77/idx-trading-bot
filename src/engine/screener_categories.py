@@ -42,7 +42,10 @@ class CategoryResult:
 
 # ── Stock Universe ──────────────────────────────────────────────
 
-IDX_STOCKS = [
+try:
+    from src.engine.idx_universe import IDX_UNIVERSE as IDX_STOCKS
+except ImportError:
+    IDX_STOCKS = [
     # ⚠️ AUTO-GENERATED — use src/engine/idx_universe.py for updates
     "AADI","AALI","ABBA","ABDA","ABMM","ACES","ACRO","ADCP","ADHI","ADMF","ADMG",
     "ADRO","AGAR","AGII","AGRS","AHAP","AIMS","AISA","AKKU","AKPI","AKRA","AKSI",
@@ -111,7 +114,7 @@ IDX_STOCKS = [
     "VICI","VICO","VIVA","VOKS","VRNA","VTNY","WAPO","WARU","WEGE","WEHA","WICO",
     "WIFI","WIIM","WIKA","WINE","WINS","WIRG","WMPP","WMUU","WOOD","WORX","WSBP",
     "WSKT","WTON","XPDC","YELO","YPAS","YULE","ZATA","ZBRA","ZONE","ZRIN","ZYRX",
-]
+    ]
 
 
 class CategoryScreener:
