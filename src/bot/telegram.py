@@ -85,6 +85,7 @@ class BotHandlers:
             "• `/news` — berita pasar terbaru (umum)\n"
             "• `/news BBCA` — berita spesifik saham\n"
             "• `/report` — laporan mingguan lengkap (foreign flow + sektor + sentiment)\n"
+            "• `/trending` — saham trending minggu ini (top gainers/losers)🔥\n"
             "• `/ihsg` — ringkasan IHSG (data real-time)\n"
             "• `/sector` — forecast volatilitas 11 sektor (7 hari)\n\n"
             "*🎰 Bandar & Sentiment*\n"
@@ -744,6 +745,8 @@ class BotHandlers:
             # Route to news handler with symbol
             context.args = [cmd.symbol] if cmd.symbol else []
             await self.news(update, context)
+        elif cmd.intent == Intent.TRENDING:
+            await self.trending(update, context)
         elif cmd.intent == Intent.PLAN:
             try:
                 db = await self._get_db()
@@ -977,6 +980,21 @@ class BotHandlers:
             await msg.edit_text(
                 f"❌ Gagal membuat laporan: {str(e)[:100]}\n\nCoba lagi nanti."
             )
+
+    async def trending(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """Show trending stocks (weekly momentum)."""
+        msg = await update.message.reply_text("🔥 Menganalisa tren 39 saham IDX... (60-90 detik)")
+        try:
+            from src.engine.trending import analyze_trending, format_trending
+            report = await analyze_trending()
+            card = format_trending(report)
+            await msg.edit_text(card, parse_mode="Markdown")
+        except Exception as e:
+            await msg.edit_text(
+                f"❌ Gagal menganalisa tren: {str(e)[:100]}\n\nCoba lagi nanti."
+            )
+
+    # ── News ──
 
     async def news(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """Fetch latest news for a stock symbol.
@@ -1430,6 +1448,7 @@ def create_app() -> Application:
     app.add_handler(CommandHandler("briefing", handlers.briefing))
     app.add_handler(CommandHandler("news", handlers.news))
     app.add_handler(CommandHandler("report", handlers.report))
+    app.add_handler(CommandHandler("trending", handlers.trending))
     app.add_handler(MessageHandler(filters.TEXT, handlers.handle_message))
     app.add_handler(CallbackQueryHandler(handlers.button_callback, pattern="^sub_"))
 
