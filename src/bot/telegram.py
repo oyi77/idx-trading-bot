@@ -96,7 +96,8 @@ class BotHandlers:
             "• /screener akumulasi asing — saham diakumulasi asing\n"
             "• /screener volume spike — saham dengan volume tinggi\n\n"
             "*📋 Trading Plan*\n"
-            "• /plan TLKM entry 4600 sl 4500 tp 4800\n\n"
+            "• /plan TLKM entry 4600 sl 4500 tp 4800\n"
+            "• /portfolio — kelola posisi & P&L real-time\n\n"
             "*🔔 Alert Harga*\n"
             "• /alert TLKM \\>4600 — notifikasi harga menyentuh level\n\n"
             "*💳 Akun*\n"
@@ -178,7 +179,9 @@ class BotHandlers:
             "   _Contoh: /alert BBRI \\<2800, /alert TLKM \\>5000_\n\n"
             "• /myplans — Lihat semua trading plan aktif.\n"
             "• /myalerts — Lihat semua alert terpasang.\n"
-            "• /performance — Track performa trading: win rate, profit/loss.\n\n"
+            "• /performance — Track performa trading: win rate, profit/loss.\n"
+            "• /portfolio — Track posisi real: tambah, lihat P&L, close, history.\n"
+            "   _Contoh: /portfolio add BBCA 4500 100 → /portfolio close BBCA 4800_\n\n"
             "*6️⃣ Watchlist — Pantau Favorit Lo*\n"
             "──────────────────────────────\n"
             "🎯 *Goal:* Fokus ke 3-12 saham pilihan lo.\n\n"
@@ -1554,6 +1557,66 @@ class BotHandlers:
             logger.warning(f"Points error: {e}")
             await update.message.reply_text("❌ Gagal load poin. Coba lagi.")
 
+    # ── Portfolio Tracker ──
+
+    async def portfolio(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """Portfolio management: /portfolio [add|close|history] [symbol] [price] [qty]"""
+        try:
+            from src.engine.portfolio import PortfolioEngine
+            engine = PortfolioEngine()
+            user_id = update.effective_user.id
+            args = context.args or []
+
+            if not args:
+                # Show portfolio
+                msg = await update.message.reply_text("📊 Loading portfolio...")
+                positions = engine.load(user_id)
+                positions = await engine.refresh_prices(positions)
+                text = engine.format_portfolio(positions)
+                await msg.edit_text(text, parse_mode="Markdown")
+                return
+
+            action = args[0].lower()
+
+            if action == "add" and len(args) >= 4:
+                symbol = args[1].upper()
+                try:
+                    entry_price = float(args[2])
+                    quantity = int(args[3])
+                except ValueError:
+                    await update.message.reply_text("❌ Format harga/qty salah. Contoh: `/portfolio add BBCA 4500 100`")
+                    return
+                ok, msg = engine.add(user_id, symbol, entry_price, quantity)
+                await update.message.reply_text(msg, parse_mode="Markdown")
+
+            elif action == "close" and len(args) >= 3:
+                symbol = args[1].upper()
+                try:
+                    exit_price = float(args[2])
+                except ValueError:
+                    await update.message.reply_text("❌ Format harga salah. Contoh: `/portfolio close BBCA 4800`")
+                    return
+                ok, msg = engine.close(user_id, symbol, exit_price)
+                await update.message.reply_text(msg, parse_mode="Markdown")
+
+            elif action == "history":
+                positions = engine.load(user_id)
+                text = engine.format_history(positions)
+                await update.message.reply_text(text, parse_mode="Markdown")
+
+            else:
+                await update.message.reply_text(
+                    "📊 *Portfolio*\n\n"
+                    "`/portfolio` — lihat portfolio\n"
+                    "`/portfolio add BBCA 4500 100` — tambah posisi\n"
+                    "`/portfolio close BBCA 4800` — tutup posisi\n"
+                    "`/portfolio history` — riwayat trading",
+                    parse_mode="Markdown",
+                )
+        except Exception as e:
+            logger.warning(f"Portfolio error: {e}")
+            await update.message.reply_text("❌ Gagal akses portfolio. Coba lagi.")
+
     async def premarket(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """Pre-market briefing — global context before IDX opens."""
         mode = "compact" if context.args and context.args[0].lower() == "quick" else "full"
@@ -1622,6 +1685,7 @@ def create_app() -> Application:
     app.add_handler(CommandHandler("leaderboard", handlers.leaderboard))
     app.add_handler(CommandHandler("points", handlers.points))
     app.add_handler(CommandHandler("premarket", handlers.premarket))
+    app.add_handler(CommandHandler("portfolio", handlers.portfolio))
     app.add_handler(MessageHandler(filters.TEXT, handlers.handle_message))
     app.add_handler(CallbackQueryHandler(handlers.button_callback, pattern="^sub_"))
     app.add_handler(CallbackQueryHandler(handlers.button_callback, pattern="^share_"))
