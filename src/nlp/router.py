@@ -16,6 +16,7 @@ class Intent(Enum):
     STATS = "stats"
     CHART = "chart"
     BACKTEST = "backtest"
+    BRIEFING = "briefing"
     HELP = "help"
     PRICING = "pricing"
     UNKNOWN = "unknown"
@@ -61,6 +62,7 @@ class NLPRouter:
 
     _HELP_TRIGGERS = ("/help", "help", "bantuan", "tolong", "h")
     _BACKTEST_TRIGGERS = ("backtest", "/backtest", "uji sinyal", "test strategi")
+    _BRIEFING_TRIGGERS = ("/briefing", "briefing", "morning", "pagi", "daily report", "laporan pagi")
     _PRICING_TRIGGERS = ("/pricing", "pricing", "harga", "subscription",
                          "/subscription", "langganan", "beli", "upgrade",
                          "/subscribe")
@@ -120,6 +122,12 @@ class NLPRouter:
                 logger.info(f"NLPRouter: BACKTEST symbol={symbol} from '{text}'")
                 return ParsedCommand(Intent.BACKTEST, symbol)
 
+        # ── BRIEFING ──
+        for trigger in self._BRIEFING_TRIGGERS:
+            if trigger in lower or lower.startswith(trigger):
+                logger.info(f"NLPRouter: BRIEFING from '{text}'")
+                return ParsedCommand(Intent.BRIEFING)
+
         # ── HELP ──
         if lower in self._HELP_TRIGGERS or lower.split()[0] in self._HELP_TRIGGERS:
             return ParsedCommand(Intent.HELP)
@@ -151,36 +159,66 @@ class NLPRouter:
 
     def _parse_screener_rules(self, text: str) -> list:
         """Parse natural language to screener rules.
-        
-        Maps natural language to ScreenerEngine rule categories:
-        - asing/foreign/NF3D/NF5D → foreign_flow
-        - volume/spike → volume
-        - akumulasi → accumulation
-        - fundamental/murah/value → fundamental
+
+        Handles rich phrases like:
+        - "saham murah fundamental bagus" → fundamental
+        - "saham diakumulasi asing 3 hari" → accumulation, foreign_flow
+        - "volume spike tinggi banget" → volume
+        - "saham lagi naik banyak" → momentum
+        - "saham anjlok fundamental kuat" → fundamental
         """
         text_lower = text.lower()
         rules = []
 
-        # Always include technical
+        # Always include technical baseline
         rules.append("technical")
 
-        if "asing" in text_lower or "foreign" in text_lower or "nf" in text_lower:
+        # Foreign flow patterns
+        if any(w in text_lower for w in ("asing", "foreign", "nf", "bandar", "broker")):
             rules.append("foreign_flow")
+        if any(w in text_lower for w in ("3 hari", "5 hari", "7 hari", "minggu ini",
+                                           "mingguan", "seminggu", "sebulan")):
+            rules.append("foreign_flow")  # timeframe implies accumulation tracking
 
-        if "volume" in text_lower or "spike" in text_lower or "ramai" in text_lower:
+        # Volume patterns
+        if any(w in text_lower for w in ("volume", "spike", "ramai", "likuid", "transaksi",
+                                           "nilai transaksi", "frekuensi")):
             rules.append("volume")
 
-        if "akumulasi" in text_lower or "accumulation" in text_lower:
+        # Accumulation patterns
+        if any(w in text_lower for w in ("akumulasi", "accumulation", "dikumpulin",
+                                           "distribusi", "distribution")):
             rules.append("accumulation")
 
-        if "fundamental" in text_lower or "murah" in text_lower or "value" in text_lower:
+        # Fundamental patterns
+        if any(w in text_lower for w in ("fundamental", "murah", "value", "diskon",
+                                           "per", "pbv", "roe", "der", "dividen")):
+            rules.append("fundamental")
+        if any(w in text_lower for w in ("berkualitas", "bagus", "kuat", "sehat",
+                                           "profit", "laba", "growth", "tumbuh")):
+            rules.append("fundamental")
+        if any(w in text_lower for w in ("big cap", "large cap", "blue chip", "lq45",
+                                           "idx30", "kompas100")):
             rules.append("fundamental")
 
-        # Default: all categories
-        if not rules or len(rules) == 1:  # only technical
-            rules.extend(["fundamental", "foreign_flow"])
+        # Momentum patterns
+        if any(w in text_lower for w in ("naik", "bullish", "uptrend", "breakout",
+                                           "rally", "hijau", "gain")):
+            rules.append("momentum")
+        if any(w in text_lower for w in ("turun", "bearish", "downtrend", "breakdown",
+                                           "anjlok", "merah", "loss")):
+            rules.append("momentum")
 
-        # Deduplicate
+        # Smart money patterns
+        if any(w in text_lower for w in ("smart money", "big player", "institusi",
+                                           "institutional")):
+            rules.extend(["foreign_flow", "accumulation"])
+
+        # Default: comprehensive screening
+        if len(rules) <= 1:  # only technical
+            rules.extend(["fundamental", "foreign_flow", "momentum"])
+
+        # Deduplicate while preserving order
         return list(dict.fromkeys(rules))
 
     def _parse_plan(self, text: str) -> ParsedCommand:

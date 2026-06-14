@@ -727,6 +727,14 @@ class BotHandlers:
             except Exception as e:
                 text = f"❌ Screening error: {str(e)[:100]}"
             await update.message.reply_text(text, parse_mode="Markdown")
+        elif cmd.intent == Intent.BRIEFING:
+            try:
+                await self.briefing(update, context)
+            except Exception as e:
+                logger.error(f"Briefing failed: {e}", exc_info=True)
+                await update.message.reply_text(
+                    f"❌ Gagal briefing: {str(e)[:100]}"
+                )
         elif cmd.intent == Intent.PLAN:
             try:
                 db = await self._get_db()
@@ -1281,6 +1289,20 @@ class BotHandlers:
             logger.warning(f"Watchlist error: {e}")
             await update.message.reply_text("❌ Gagal mengakses watchlist. Coba lagi.")
 
+    async def briefing(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """Daily AI Briefing — morning market snapshot."""
+        msg = await update.message.reply_text("☀️ Menyusun briefing pagi... (30 detik)")
+        try:
+            from src.engine.briefing import build_briefing
+            card = await build_briefing()
+            await msg.edit_text(card, parse_mode="Markdown")
+        except Exception as e:
+            logger.error(f"Briefing error: {e}", exc_info=True)
+            await msg.edit_text(
+                f"❌ Gagal membuat briefing: {str(e)[:100]}\n\n"
+                f"Coba cek koneksi atau ulangi nanti."
+            )
+
 
 def create_app() -> Application:
     """Create Telegram bot application instance."""
@@ -1308,6 +1330,7 @@ def create_app() -> Application:
     app.add_handler(CommandHandler("sectorforecast", handlers.sectorforecast))
     app.add_handler(CommandHandler("ihsg", handlers.ihsg))
     app.add_handler(CommandHandler("watchlist", handlers.watchlist))
+    app.add_handler(CommandHandler("briefing", handlers.briefing))
     app.add_handler(MessageHandler(filters.TEXT, handlers.handle_message))
     app.add_handler(CallbackQueryHandler(handlers.button_callback, pattern="^sub_"))
 
