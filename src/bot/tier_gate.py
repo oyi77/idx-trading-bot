@@ -74,6 +74,7 @@ TIER_LEVELS = {
     "premium":   2,
     "lifetime":  3,
     "whitelabel": 4,
+    "admin":     5,
 }
 
 
@@ -155,6 +156,7 @@ def get_tier_badge(tier: str) -> str:
         "premium": "👑",
         "lifetime": "🌟",
         "whitelabel": "🏢",
+        "admin": "⚡",
     }
     return badges.get(tier, "🆓")
 
