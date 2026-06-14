@@ -11,9 +11,13 @@ from src.config import settings
 
 async def run_telegram():
     """Start Telegram bot."""
-    from src.bot.telegram import create_app
+    from src.bot.telegram import create_app, COMMANDS
     app = create_app()
     await app.initialize()
+
+    # Register bot command list (Telegram menu)
+    await app.bot.set_my_commands(COMMANDS)
+    print(f"✅ {len(COMMANDS)} commands synced to Telegram", flush=True)
 
     if settings.webhook_url:
         await app.start()
