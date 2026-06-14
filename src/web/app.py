@@ -38,7 +38,7 @@ async def dashboard(request: Request):
 
 @app.get("/dashboard", response_class=HTMLResponse)
 async def admin_dashboard(request: Request):
-    """Admin tracking dashboard — live stats."""
+    """Premium cinematic admin dashboard — particles, glassmorphism, live data."""
     from datetime import datetime, timedelta
     from sqlalchemy import create_engine, func
     from sqlalchemy.orm import sessionmaker
@@ -59,111 +59,623 @@ async def admin_dashboard(request: Request):
         subs = dict(session.query(Subscription.tier, func.count(Subscription.id)).group_by(Subscription.tier).all())
         pro = subs.get("pro", 0)
         premium = subs.get("premium", 0)
+        free = subs.get("free", 0)
+        lifetime = subs.get("lifetime", 0)
 
         analyses_today = session.query(func.count(AnalysisJournal.id)).filter(AnalysisJournal.timestamp >= today).scalar() or 0
         analyses_week = session.query(func.count(AnalysisJournal.id)).filter(AnalysisJournal.timestamp >= week).scalar() or 0
+        total_analyses = session.query(func.count(AnalysisJournal.id)).scalar() or 0
 
         active_alerts = session.query(func.count(Alert.id)).filter(Alert.is_active == True, Alert.is_triggered == False).scalar() or 0
         active_plans = session.query(func.count(TradePlan.id)).filter(TradePlan.status == "active").scalar() or 0
 
+        # Resolved accuracy
+        total_resolved = session.query(func.count(AnalysisJournal.id)).filter(
+            AnalysisJournal.resolved == True, AnalysisJournal.accuracy_pct.isnot(None)
+        ).scalar() or 0
+        accurate = session.query(func.count(AnalysisJournal.id)).filter(
+            AnalysisJournal.resolved == True, AnalysisJournal.accuracy_pct > 0
+        ).scalar() or 0
+        ai_acc = round(accurate / total_resolved * 100, 1) if total_resolved > 0 else 0
+
         revenue = pro * 49000 + premium * 149000
+
+        # Top symbols
+        top_syms = session.query(
+            AnalysisJournal.symbol, func.count(AnalysisJournal.id).label("cnt")
+        ).filter(AnalysisJournal.timestamp >= today).group_by(
+            AnalysisJournal.symbol
+        ).order_by(func.count(AnalysisJournal.id).desc()).limit(8).all()
 
     engine.dispose()
 
-    cards = [
-        ("👥 Total User", total_users, f"+{new_today} hari ini"),
-        ("💰 Revenue/bln", f"Rp{revenue:,}", f"{pro + premium} berbayar"),
-        ("📊 Analisa Hari Ini", analyses_today, f"{analyses_week} minggu ini"),
-        ("🔔 Alert Aktif", active_alerts, f"{active_plans} plan"),
-    ]
+    import json
+    top_json = json.dumps([{"symbol": s, "count": c} for s, c in top_syms])
 
-    cards_html = ""
-    for title, value, sub in cards:
-        cards_html += f"""
-        <div class="card">
-            <div class="card-title">{title}</div>
-            <div class="card-value">{value}</div>
-            <div class="card-sub">{sub}</div>
-        </div>"""
-
-    html = f"""<!DOCTYPE html>
+    return HTMLResponse(f"""<!DOCTYPE html>
 <html lang="id">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Vilona Saham — Dashboard</title>
+<title>Vilona Saham — Live Dashboard</title>
 <style>
-* {{ margin:0; padding:0; box-sizing:border-box; }}
-body {{
-    background: #0a0a0a;
-    color: #e0e0e0;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
-    min-height: 100vh;
-    padding: 2rem;
+:root {{
+    --cyan: #00f0ff;
+    --purple: #a855f7;
+    --amber: #f59e0b;
+    --bg: #000000;
+    --surface: rgba(255,255,255,0.03);
+    --border: rgba(255,255,255,0.06);
+    --text: #c8c8c8;
+    --text-dim: #666;
 }}
-.container {{ max-width: 1100px; margin: 0 auto; }}
-h1 {{
-    font-size: 2rem;
+
+* {{ margin:0; padding:0; box-sizing:border-box; }}
+
+body {{
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'SF Pro Display', system-ui, sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+    cursor: none;
+}}
+
+/* ── Canvas Particle Background ── */
+#particles {{
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+}}
+
+/* ── Cursor Glow ── */
+.cursor-glow {{
+    position: fixed;
+    width: 400px;
+    height: 400px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(0,240,255,0.06) 0%, rgba(168,85,247,0.03) 40%, transparent 70%);
+    pointer-events: none;
+    z-index: 1;
+    transform: translate(-50%, -50%);
+    transition: opacity 0.3s;
+}}
+
+/* ── Main Layout ── */
+.container {{
+    position: relative;
+    z-index: 2;
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 2.5rem 2rem;
+}}
+
+/* ── Header ── */
+.header {{
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 2.5rem;
+    flex-wrap: wrap;
+    gap: 1rem;
+}}
+
+.logo-section h1 {{
+    font-size: 2.2rem;
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    background: linear-gradient(135deg, var(--cyan) 0%, var(--purple) 50%, var(--cyan) 100%);
+    background-size: 200% auto;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: shimmer 3s ease infinite;
+}}
+
+@keyframes shimmer {{
+    0%, 100% {{ background-position:0% center; }}
+    50% {{ background-position:200% center; }}
+}}
+
+.status-row {{
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.85rem;
+    color: #888;
+    margin-top: 0.3rem;
+}}
+
+.pulse {{
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #22c55e;
+    box-shadow: 0 0 12px #22c55e;
+    animation: pulse 2s ease-in-out infinite;
+}}
+
+@keyframes pulse {{
+    0%, 100% {{ opacity: 1; transform: scale(1); }}
+    50% {{ opacity: 0.5; transform: scale(1.5); }}
+}}
+
+.live-badge {{
+    font-size: 0.7rem;
+    padding: 0.3rem 0.7rem;
+    border-radius: 100px;
+    background: rgba(34,197,94,0.1);
+    border: 1px solid rgba(34,197,94,0.3);
+    color: #22c55e;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    font-weight: 600;
+}}
+
+/* ── Stats Grid ── */
+.stats-grid {{
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}}
+
+@media (max-width: 900px) {{
+    .stats-grid {{ grid-template-columns: repeat(2, 1fr); }}
+}}
+
+@media (max-width: 500px) {{
+    .stats-grid {{ grid-template-columns: 1fr; }}
+}}
+
+/* ── Glass Card ── */
+.card {{
+    position: relative;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 1.5rem;
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    overflow: hidden;
+}}
+
+.card::before {{
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 16px;
+    padding: 1px;
+    background: linear-gradient(135deg, rgba(255,255,255,0.06), rgba(0,240,255,0.05));
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+}}
+
+.card:hover {{
+    border-color: rgba(0,240,255,0.2);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.4), 0 0 80px rgba(0,240,255,0.05);
+}}
+
+.card-label {{
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-dim);
+    margin-bottom: 0.6rem;
+    font-weight: 500;
+}}
+
+.card-value {{
+    font-size: 2.4rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    background: linear-gradient(135deg, var(--cyan), var(--purple));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    line-height: 1.1;
+}}
+
+.card-context {{
+    font-size: 0.8rem;
+    color: var(--text-dim);
+    margin-top: 0.4rem;
+}}
+
+.card-context .positive {{ color: #22c55e; }}
+.card-context .negative {{ color: #ef4444; }}
+
+/* ── Two-Column Section ── */
+.section-grid {{
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}}
+
+@media (max-width: 900px) {{
+    .section-grid {{ grid-template-columns: 1fr; }}
+}}
+
+/* ── Ticker Ribbon ── */
+.ticker-card {{
+    margin-bottom: 1.5rem;
+}}
+
+.ticker-ribbon {{
+    display: flex;
+    gap: 2rem;
+    overflow: hidden;
+    white-space: nowrap;
+}}
+
+.ticker-item {{
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.85rem;
+    font-weight: 500;
+}}
+
+.ticker-sym {{
+    color: #fff;
     font-weight: 700;
-    margin-bottom: 0.5rem;
-    background: linear-gradient(135deg, #00f0ff, #a855f7);
+}}
+
+.ticker-price {{
+    color: var(--text);
+}}
+
+.ticker-change {{
+    font-weight: 600;
+}}
+
+.ticker-change.up {{ color: #22c55e; }}
+.ticker-change.down {{ color: #ef4444; }}
+
+/* ── Top Symbols Table ── */
+.symbol-list {{
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}}
+
+.symbol-row {{
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.6rem 0;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+}}
+
+.symbol-row:last-child {{ border-bottom: none; }}
+
+.symbol-name {{
+    font-weight: 600;
+    color: #fff;
+    font-size: 0.9rem;
+}}
+
+.symbol-count {{
+    font-size: 0.85rem;
+    color: var(--text-dim);
+}}
+
+.symbol-bar {{
+    height: 3px;
+    border-radius: 3px;
+    background: linear-gradient(90deg, var(--cyan), var(--purple));
+    margin-top: 0.25rem;
+}}
+
+/* ── Accuracy Gauge ── */
+.gauge-section {{
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.8rem;
+}}
+
+.gauge-ring {{
+    position: relative;
+    width: 120px;
+    height: 120px;
+}}
+
+.gauge-ring svg {{
+    transform: rotate(-90deg);
+}}
+
+.gauge-value {{
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+    font-weight: 800;
+    background: linear-gradient(135deg, var(--cyan), var(--purple));
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
 }}
-.subtitle {{ color: #888; margin-bottom: 2rem; font-size: 0.95rem; }}
-.grid {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1rem; margin-bottom: 2rem; }}
-.card {{
-    background: rgba(255,255,255,0.03);
-    border: 1px solid rgba(255,255,255,0.08);
-    border-radius: 12px;
-    padding: 1.5rem;
-    backdrop-filter: blur(10px);
+
+.gauge-label {{
+    font-size: 0.8rem;
+    color: var(--text-dim);
+    text-align: center;
 }}
-.card:hover {{ border-color: rgba(0,240,255,0.3); }}
-.card-title {{ font-size: 0.85rem; color: #888; margin-bottom: 0.5rem; }}
-.card-value {{ font-size: 2rem; font-weight: 700; background: linear-gradient(135deg, #00f0ff, #a855f7); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }}
-.card-sub {{ font-size: 0.8rem; color: #666; margin-top: 0.3rem; }}
-.section {{ margin-bottom: 2rem; }}
-.section-title {{ font-size: 1.1rem; font-weight: 600; margin-bottom: 1rem; color: #aaa; }}
-.api-link {{
-    display: inline-block;
-    margin-top: 1rem;
-    padding: 0.6rem 1.2rem;
-    background: rgba(0,240,255,0.1);
-    border: 1px solid rgba(0,240,255,0.2);
-    border-radius: 8px;
-    color: #00f0ff;
+
+/* ── Footer ── */
+.footer {{
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 2rem;
+    border-top: 1px solid rgba(255,255,255,0.04);
+    flex-wrap: wrap;
+    gap: 1rem;
+}}
+
+.footer-links {{
+    display: flex;
+    gap: 1.5rem;
+}}
+
+.footer-links a {{
+    color: var(--text-dim);
     text-decoration: none;
-    font-size: 0.85rem;
+    font-size: 0.8rem;
+    transition: color 0.2s;
 }}
-.api-link:hover {{ background: rgba(0,240,255,0.15); }}
-.refresh {{ color: #666; font-size: 0.8rem; margin-top: 2rem; }}
+
+.footer-links a:hover {{ color: var(--cyan); }}
+
+.footer-time {{
+    font-size: 0.8rem;
+    color: var(--text-dim);
+}}
 </style>
 </head>
 <body>
+
+<!-- Particle Canvas -->
+<canvas id="particles"></canvas>
+
+<!-- Cursor Glow -->
+<div class="cursor-glow" id="cursorGlow"></div>
+
 <div class="container">
-    <h1>⚡ Vilona Saham</h1>
-    <p class="subtitle">Admin Dashboard — Live Stats</p>
-
-    <div class="grid">
-        {cards_html}
+    <!-- Header -->
+    <div class="header">
+        <div class="logo-section">
+            <h1>Vilona Saham</h1>
+            <div class="status-row">
+                <div class="pulse"></div>
+                <span>System Online</span>
+                <span class="live-badge">LIVE</span>
+            </div>
+        </div>
     </div>
 
-    <div class="section">
-        <div class="section-title">📡 API Endpoints</div>
-        <a class="api-link" href="/api/stats">📊 /api/stats — Full JSON</a>
-        <a class="api-link" href="/api/health">🫀 /api/health — Status</a>
+    <!-- Stats Cards -->
+    <div class="stats-grid" id="statsGrid">
+        <div class="card">
+            <div class="card-label">Total Users</div>
+            <div class="card-value" data-target="{total_users}">0</div>
+            <div class="card-context"><span class="positive">+{new_today}</span> hari ini</div>
+        </div>
+        <div class="card">
+            <div class="card-label">Revenue Estimasi</div>
+            <div class="card-value" data-target="{revenue // 1000}">0</div>
+            <div class="card-context">Rp{revenue:,}/bln · {pro + premium + lifetime} berbayar</div>
+        </div>
+        <div class="card">
+            <div class="card-label">Analisa Hari Ini</div>
+            <div class="card-value" data-target="{analyses_today}">0</div>
+            <div class="card-context">{total_analyses:,} total · {analyses_week} minggu ini</div>
+        </div>
+        <div class="card">
+            <div class="card-label">Alert & Plan Aktif</div>
+            <div class="card-value" data-target="{active_alerts + active_plans}">0</div>
+            <div class="card-context">{active_alerts} alert · {active_plans} plan</div>
+        </div>
     </div>
 
-    <p class="refresh">Auto-refresh: 60 detik</p>
+    <!-- Two-Column: Top Symbols + Accuracy -->
+    <div class="section-grid">
+        <div class="card" id="topSymbols">
+            <div class="card-label">Top Analisa Hari Ini</div>
+            <div class="symbol-list"></div>
+        </div>
+        <div class="card">
+            <div class="card-label">AI Accuracy</div>
+            <div class="gauge-section">
+                <div class="gauge-ring">
+                    <svg width="120" height="120" viewBox="0 0 120 120">
+                        <circle cx="60" cy="60" r="52" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="8"/>
+                        <circle cx="60" cy="60" r="52" fill="none" stroke="url(#gaugeGrad)" stroke-width="8"
+                            stroke-dasharray="{ai_acc * 3.267:.0f} 326.7" stroke-linecap="round" id="gaugeArc"/>
+                        <defs>
+                            <linearGradient id="gaugeGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                                <stop offset="0%" stop-color="#00f0ff"/>
+                                <stop offset="100%" stop-color="#a855f7"/>
+                            </linearGradient>
+                        </defs>
+                    </svg>
+                    <div class="gauge-value">{ai_acc}%</div>
+                </div>
+                <div class="gauge-label">{total_resolved} prediksi ter-resolve</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+        <div class="footer-links">
+            <a href="/api/stats">API Stats</a>
+            <a href="/api/health">Health</a>
+            <a href="https://t.me/vilonidxbot">Bot Telegram</a>
+        </div>
+        <div class="footer-time" id="clock"></div>
+    </div>
 </div>
+
 <script>
-setTimeout(() => location.reload(), 60000);
+const TOP_SYMBOLS = {top_json};
+
+// ── Particles ──
+const canvas = document.getElementById('particles');
+const ctx = canvas.getContext('2d');
+let particles = [];
+
+function resize() {{
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+}}
+resize();
+window.addEventListener('resize', resize);
+
+class Particle {{
+    constructor() {{
+        this.reset();
+        this.y = Math.random() * canvas.height;
+    }}
+    reset() {{
+        this.x = Math.random() * canvas.width;
+        this.y = -10;
+        this.size = Math.random() * 2 + 0.5;
+        this.speed = Math.random() * 0.4 + 0.1;
+        this.opacity = Math.random() * 0.5 + 0.1;
+        this.hue = Math.random() > 0.5 ? '0,240,255' : '168,85,247';
+    }}
+    update() {{
+        this.y += this.speed;
+        this.x += Math.sin(this.y * 0.01) * 0.3;
+        if (this.y > canvas.height + 10) this.reset();
+    }}
+    draw() {{
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(${{this.hue}},${{this.opacity}})`;
+        ctx.fill();
+    }}
+}}
+
+for (let i = 0; i < 80; i++) {{
+    particles.push(new Particle());
+}}
+
+function animate() {{
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    particles.forEach(p => {{ p.update(); p.draw(); }});
+    requestAnimationFrame(animate);
+}}
+animate();
+
+// ── Cursor Glow ──
+const glow = document.getElementById('cursorGlow');
+document.addEventListener('mousemove', e => {{
+    glow.style.left = e.clientX + 'px';
+    glow.style.top = e.clientY + 'px';
+    glow.style.opacity = '1';
+}});
+document.addEventListener('mouseleave', () => glow.style.opacity = '0');
+
+// ── Count-Up Animation ──
+function countUp(el) {{
+    const target = parseInt(el.dataset.target);
+    if (!target) return;
+    const duration = 1200;
+    const start = performance.now();
+    function update(ts) {{
+        const progress = Math.min((ts - start) / duration, 1);
+        const eased = 1 - Math.pow(1 - progress, 3);
+        const current = Math.floor(eased * target);
+        el.textContent = current.toLocaleString();
+        if (progress < 1) requestAnimationFrame(update);
+    }}
+    requestAnimationFrame(update);
+}}
+
+document.querySelectorAll('.card-value[data-target]').forEach(countUp);
+
+// ── Top Symbols ──
+(function() {{
+    const container = document.getElementById('topSymbols').querySelector('.symbol-list');
+    if (!TOP_SYMBOLS.length) {{
+        container.innerHTML = '<div style="color:#666;font-size:0.85rem;text-align:center;padding:1rem;">Belum ada analisa hari ini</div>';
+        return;
+    }}
+    const maxCount = TOP_SYMBOLS[0].count;
+    TOP_SYMBOLS.forEach(s => {{
+        const row = document.createElement('div');
+        row.className = 'symbol-row';
+        row.innerHTML = `
+            <div>
+                <div class="symbol-name">${{s.symbol}}</div>
+                <div class="symbol-bar" style="width:${{(s.count / maxCount * 100)}}%"></div>
+            </div>
+            <div class="symbol-count">${{s.count}}x</div>
+        `;
+        container.appendChild(row);
+    }});
+}})();
+
+// ── Live Clock ──
+function updateClock() {{
+    const now = new Date();
+    document.getElementById('clock').textContent =
+        'WIB ' + now.toLocaleTimeString('id-ID', {{ hour:'2-digit', minute:'2-digit', second:'2-digit' }});
+}}
+updateClock();
+setInterval(updateClock, 1000);
+
+// ── Live Polling (no full refresh) ──
+async function refreshStats() {{
+    try {{
+        const res = await fetch('/api/stats');
+        const d = await res.json();
+        // Update cards
+        const cards = document.querySelectorAll('#statsGrid .card');
+        if (cards.length >= 4) {{
+            const vals = [
+                d.users.total,
+                d.revenue.estimated_monthly / 1000,
+                d.activity.analyses_today,
+                (d.activity.active_alerts || 0) + (d.activity.active_plans || 0)
+            ];
+            const ctxs = [
+                `<span class="${{d.users.new_today > 0 ? 'positive' : ''}}">+${{d.users.new_today}}</span> hari ini`,
+                `Rp${{d.revenue.estimated_monthly.toLocaleString()}}/bln · ${{d.revenue.pro_count + d.revenue.premium_count + d.revenue.lifetime_count}} berbayar`,
+                `${{d.activity.total_analyses.toLocaleString()}} total · ${{d.activity.analyses_this_week}} minggu ini`,
+                `${{d.activity.active_alerts}} alert · ${{d.activity.active_plans}} plan`
+            ];
+            vals.forEach((v, i) => {{
+                const el = cards[i].querySelector('.card-value');
+                const ctx = cards[i].querySelector('.card-context');
+                if (el) {{ el.dataset.target = v; countUp(el); }}
+                if (ctx) ctx.innerHTML = ctxs[i];
+            }});
+        }}
+        // Update accuracy gauge
+        const accPct = d.ai.accuracy_pct || 0;
+        const gaugeArc = document.getElementById('gaugeArc');
+        if (gaugeArc) {{
+            gaugeArc.setAttribute('stroke-dasharray', `${{accPct * 3.267}} 326.7`);
+        }}
+        const gaugeVal = document.querySelector('.gauge-value');
+        if (gaugeVal) gaugeVal.textContent = accPct + '%';
+        const gaugeLab = document.querySelector('.gauge-label');
+        if (gaugeLab) gaugeLab.textContent = `${{d.ai.total_resolved}} prediksi ter-resolve`;
+    }} catch(e) {{}}
+}}
+setInterval(refreshStats, 15000);
 </script>
 </body>
-</html>"""
-
-    return HTMLResponse(html)
+</html>""")
 
 @app.get("/api/health")
 async def health():
