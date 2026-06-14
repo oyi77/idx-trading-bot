@@ -11,6 +11,10 @@ logger = logging.getLogger(__name__)
 class Intent(Enum):
     ANALYZE = "analyze"
     SCREEN = "screen"
+    SCREEN_MOMENTUM = "screen_momentum"
+    SCREEN_REVERSAL = "screen_reversal"
+    SCREEN_BREAKOUT = "screen_breakout"
+    SCREEN_SMARTMONEY = "screen_smartmoney"
     PLAN = "plan"
     ALERT = "alert"
     STATS = "stats"
@@ -52,6 +56,18 @@ class NLPRouter:
     # ── Screener aliases ──
     _SCREEN_TRIGGERS = ("screener", "screen", "/screener", "/scr", "filter")
 
+    # ── Screener category keywords ──
+    _SCREEN_CATEGORIES = {
+        Intent.SCREEN_MOMENTUM: ("momentum", "tenaga naik", "buy on strength", "swing up",
+                                  "52w high", "volume spike screener"),
+        Intent.SCREEN_REVERSAL: ("reversal", "berbalik", "buy on weakness", "near support",
+                                  "oversold", "rsi oversold"),
+        Intent.SCREEN_BREAKOUT: ("breakout", "menembus", "price vol", "ma crossover",
+                                  "golden cross"),
+        Intent.SCREEN_SMARTMONEY: ("smart money", "smartmoney", "akumulasi", "bandar",
+                                    "volume 3d", "volume 3 hari"),
+    }
+
     # ── Plan aliases ──
     _PLAN_PREFIXES = ("plan", "/plan", "rencana", "buat plan", "trading plan")
 
@@ -90,6 +106,11 @@ class NLPRouter:
         # ── SCREEN ──
         for trigger in self._SCREEN_TRIGGERS:
             if trigger in lower:
+                # Check for category-specific keywords first
+                for intent, keywords in self._SCREEN_CATEGORIES.items():
+                    if any(kw in lower for kw in keywords):
+                        logger.info(f"NLPRouter: {intent.value} from '{text}'")
+                        return ParsedCommand(intent)
                 rules = self._parse_screener_rules(text)
                 logger.info(f"NLPRouter: SCREEN rules={rules} from '{text}'")
                 return ParsedCommand(Intent.SCREEN, "", {"rules": rules})

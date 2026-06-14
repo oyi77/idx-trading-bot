@@ -196,3 +196,56 @@ def vwap(highs: List[float], lows: List[float], closes: List[float], volumes: Li
     total_tp_v = sum(tp * v for tp, v in zip(typical_prices, volumes))
     total_v = sum(volumes)
     return total_tp_v / total_v if total_v > 0 else None
+
+
+# ── Stochastic Oscillator ──────────────────────────────────────
+
+@dataclass
+class StochasticResult:
+    k: float
+    d: float
+    signal: str  # oversold / overbought / neutral
+
+
+def stochastic(
+    highs: List[float], lows: List[float], closes: List[float],
+    k_period: int = 14, d_period: int = 3,
+) -> Optional[StochasticResult]:
+    """Stochastic Oscillator (%K, %D) — momentum indicator 0-100.
+
+    %K = (Close - Lowest Low) / (Highest High - Lowest Low) * 100
+    %D = 3-period SMA of %K
+
+    Signal: oversold < 20, overbought > 80, neutral otherwise.
+    """
+    if len(closes) < k_period + d_period:
+        return None
+
+    hh = max(highs[-k_period:])
+    ll = min(lows[-k_period:])
+
+    if hh == ll:
+        return StochasticResult(k=50, d=50, signal="neutral")
+
+    k = (closes[-1] - ll) / (hh - ll) * 100
+
+    # Calculate previous %K values for %D smoothing
+    k_values = []
+    for i in range(-d_period, 0):
+        hh_i = max(highs[i - k_period + 1:i + 1])
+        ll_i = min(lows[i - k_period + 1:i + 1])
+        if hh_i != ll_i:
+            k_values.append((closes[i] - ll_i) / (hh_i - ll_i) * 100)
+        else:
+            k_values.append(50)
+
+    d = sum(k_values) / len(k_values) if k_values else k
+
+    if k < 20:
+        signal = "oversold"
+    elif k > 80:
+        signal = "overbought"
+    else:
+        signal = "neutral"
+
+    return StochasticResult(k=round(k, 1), d=round(d, 1), signal=signal)

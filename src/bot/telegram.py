@@ -53,16 +53,17 @@ class BotHandlers:
     async def start(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         text = (
             "🚀 *Vilona Saham — AI Co-Pilot Trading IDX*\n\n"
-            "Satu-satunya bot yang kasih **TradingView chart** + **AI insight** + **Bandar flow** "
-            "dalam 10 detik.\n\n"
+            "Satu-satunya bot yang kasih **TradingView chart** + **AI DeepSeek** + **Bandar flow** + "
+            "**Trading Plan Auto** dalam 10 detik.\n\n"
             "📌 *Coba sekarang:*\n"
-            "• /analisa — analisa lengkap + chart + bandar\n"
-            "• /screener akumulasi asing — screening saham\n"
-            "• /bandarmology — deteksi akumulasi bandar asing\n"
-            "• /sector — forecast volatilitas 11 sektor\n"
-            "• /event — klasifikasi event korporat\n"
-            "• /watchlist — pantau saham favorit\n"
-            "• /ihsg — ringkasan market 30 tahun\n\n"
+            "• /analisa BBCA — analisa + chart + AI + trading plan auto\n"
+            "• /screener_momentum — saham momentum kuat\n"
+            "• /screener_reversal — saham siap reversal\n"
+            "• /screener_breakout — saham breakout level kunci\n"
+            "• /screener_smartmoney — jejak akumulasi bandar\n"
+            "• /portfolio add BBCA 5800 50 — tracking posisi (hari ke-N + BOW/BOS)\n"
+            "• /jejak — profit trail + performance distribution\n"
+            "• /plan TLKM — auto trading plan (Entry/SL/TP/RR/Grade)\n\n"
             "💡 *3.000+ analisa udah dihasilkan.* Gak perlu hafal 300 command. "
             "Cukup ketik natural.\n\n"
             "━━━━━━━━━━━━━━━━━\n"
@@ -99,9 +100,14 @@ class BotHandlers:
             "• /screener_reversal — Saham siap berbalik arah\n"
             "• /screener_breakout — Saham breakout level kunci\n"
             "• /screener_smartmoney — Jejak akumulasi bandar\n\n"
-            "*📋 Trading Plan*\n"
-            "• /plan TLKM entry 4600 sl 4500 tp 4800\n"
-            "• /portfolio — kelola posisi & P&L real-time\n\n"
+            "*📋 Trading Plan & Portfolio*\n"
+            "• /plan TLKM — auto trading plan (Entry/SL/TP/RR + Confidence 0-20 + Grade A-D)\n"
+            "• /plan TLKM entry 4600 sl 4500 tp 4800 — manual plan\n"
+            "• /portfolio — posisi aktif (hari ke-N + BOW/BOS tag + P&L)\n"
+            "• /portfolio add BBCA 5800 50 — tambah posisi (auto BOW tag)\n"
+            "• /portfolio close BBCA 6000 — tutup posisi\n"
+            "• /jejak — Jejak Cuan: Controlled Loss + Performance Distribution\n"
+            "• /journal — trading journal (catat lesson)\n\n"
             "*🔔 Alert Harga*\n"
             "• /alert TLKM \\>4600 — notifikasi harga menyentuh level\n\n"
             "*💳 Akun*\n"
@@ -241,20 +247,24 @@ class BotHandlers:
             "• 5 screening/hari\n"
             "• Watchlist 3 saham\n"
             "• Data delay 15 menit\n"
-            "• 5 alert\n\n"
+            "• 5 alert\n"
+            "• AI basic (skor 1-10)\n\n"
             "💎 *Pro — Rp49.000/bulan*\n"
-            "• ✅ Unlimited screening\n"
+            "• ✅ Unlimited screening (4 kategori)\n"
             "• ✅ Watchlist 10 saham\n"
             "• ✅ 50 alert\n"
             "• ✅ Real-time data\n"
-            "• ✅ AI trade setup\n\n"
+            "• ✅ AI trade setup + Confidence Score 0-20\n"
+            "• ✅ Auto Trading Plan (Entry/SL/TP/RR/Grade)\n\n"
             "👑 *Premium — Rp149.000/bulan*\n"
             "• ✅ Semua Pro + 200 alert\n"
             "• ✅ Bandar View + Market Sentiment\n"
+            "• ✅ SMC Structure (BOS/BOW/CHoCH tag)\n"
             "• ✅ Sector Forecast (11 sektor, 7 hari)\n"
             "• ✅ Event Classifier (11 kelas korporat)\n"
             "• ✅ Auto-Report Mingguan (Senin pagi)\n"
             "• ✅ Watchlist Smart + daily digest\n"
+            "• ✅ Jejak Cuan — Controlled Loss + Perf Distribution\n"
             "• ✅ Priority response\n\n"
             "🌟 *Lifetime — Rp1.999.000*\n"
             "• Akses selamanya (sisa 998 seat)\n\n"
@@ -432,6 +442,20 @@ class BotHandlers:
             signal = "oversold" if rsi < 30 else ("overbought" if rsi > 70 else "netral")
             rsi_emoji = "🟢" if rsi < 30 else ("🔴" if rsi > 70 else "➖")
             text += f"  {rsi_emoji} RSI(14): {rsi:.1f} ({signal})\n"
+
+        # Stochastic
+        try:
+            from src.engine.indicator_defs import stochastic
+            stoch = stochastic(
+                [float(k.get("high", 0) or 0) for k in klines_raw if isinstance(k, dict)],
+                [float(k.get("low", 0) or 0) for k in klines_raw if isinstance(k, dict)],
+                [float(k.get("close", 0) or 0) for k in klines_raw if isinstance(k, dict)],
+            )
+            if stoch:
+                sto_emoji = "🟢" if stoch.signal == "oversold" else ("🔴" if stoch.signal == "overbought" else "➖")
+                text += f"  {sto_emoji} STOCH: %K {stoch.k:.0f} %D {stoch.d:.0f} ({stoch.signal})\n"
+        except Exception:
+            pass
 
         macd = ind.get("MACD", analysis_body.get("macd", {}))
         if isinstance(macd, dict) and "trend" in macd:
@@ -922,9 +946,19 @@ class BotHandlers:
                 await update.message.reply_text(
                     f"❌ Gagal menganalisa: {str(e)[:100]}"
                 )
+        # ── Category Screeners (NLP routed) ──
+        elif cmd.intent in (Intent.SCREEN_MOMENTUM, Intent.SCREEN_REVERSAL,
+                             Intent.SCREEN_BREAKOUT, Intent.SCREEN_SMARTMONEY):
+            cat_map = {
+                Intent.SCREEN_MOMENTUM: "momentum",
+                Intent.SCREEN_REVERSAL: "reversal",
+                Intent.SCREEN_BREAKOUT: "breakout",
+                Intent.SCREEN_SMARTMONEY: "smartmoney",
+            }
+            await self._run_category_screener(update, cat_map[cmd.intent])
+            return
         elif cmd.intent == Intent.SCREEN:
             rules = cmd.params.get('rules', ['technical', 'fundamental', 'foreign_flow'])
-            # Use all available IDX stocks (from encyclopedia)
             try:
                 from src.engine.idx_encyclopedia import all_stocks
                 symbols = list(all_stocks().keys())

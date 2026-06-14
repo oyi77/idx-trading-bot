@@ -71,6 +71,18 @@ async def main():
     print(f"   DeepSeek: {'✅' if settings.deepseek_api_key else '❌'}", flush=True)
     print(f"   Groq: {'✅' if settings.groq_api_key else '❌'}", flush=True)
 
+    # Ensure DB tables exist BEFORE starting API or Telegram bot
+    try:
+        from src.models import get_engine, Base
+        from sqlalchemy.ext.asyncio import AsyncEngine
+        engine = get_engine()
+        async with engine.begin() as conn:
+            await conn.run_sync(Base.metadata.create_all)
+        print("   DB: ✅ tables ready", flush=True)
+        await engine.dispose()
+    except Exception as e:
+        print(f"   DB: ⚠️ table init failed: {e}", flush=True)
+
     await asyncio.gather(
         run_telegram(),
         run_api(),
