@@ -77,10 +77,12 @@ class BotHandlers:
             "Cukup ketik natural — gak perlu hafal command:\n\n"
             "*📊 Analisa Saham*\n"
             "• /analisa — teknikal + fundamental + bandar flow\n"
-            "• /stats — high, low, volume, nilai\n\n"
+            "• /stats — high, low, volume, nilai\n"
+            "• /breadth — advance/decline, MA50, 52w high/low\n\n"
             "*☀️ Briefing & Pasar*\n"
             "• /premarket — kondisi global sebelum pasar buka (Dow, Nikkei, komoditas, USD/IDR)\n"
             "• /briefing — ringkasan pasar harian (IHSG + top movers)\n"
+            "• /calendar — kalender ekonomi (BI rate, FOMC, CPI, GDP)\n"
             "• /news — berita pasar terbaru (umum)\n"
             "• /news BBCA — berita spesifik saham\n"
             "• /report — laporan mingguan lengkap (foreign flow + sektor + sentiment)\n"
@@ -1676,6 +1678,52 @@ class BotHandlers:
             logger.warning(f"Journal error: {e}")
             await update.message.reply_text("❌ Gagal akses journal. Coba lagi.")
 
+    # ── Economic Calendar ──
+
+    async def calendar(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """Economic calendar: /calendar [next|all]"""
+        try:
+            from src.engine.eco_calendar import get_upcoming_events, get_events_for_month, format_calendar
+            from datetime import datetime
+
+            args = context.args or []
+            action = args[0].lower() if args else ""
+
+            if action == "next":
+                now = datetime.now()
+                if now.month == 12:
+                    events = get_events_for_month(now.year + 1, 1)
+                else:
+                    events = get_events_for_month(now.year, now.month + 1)
+                title = f"Bulan Depan ({now.month+1}/{now.year})"
+            elif action == "all":
+                events = get_upcoming_events(20)
+                title = "All Upcoming Events"
+            else:
+                now = datetime.now()
+                events = get_events_for_month(now.year, now.month)
+                title = f"Bulan Ini — {now.strftime('%B %Y')}"
+
+            text = format_calendar(events, title)
+            await update.message.reply_text(text, parse_mode="Markdown")
+        except Exception as e:
+            logger.warning(f"Calendar error: {e}")
+            await update.message.reply_text("❌ Gagal load calendar. Coba lagi.")
+
+    # ── Market Breadth ──
+
+    async def breadth(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """Market breadth: scan 39 IDX stocks for advance/decline, MA50, 52w H/L."""
+        msg = await update.message.reply_text("📊 Menghitung market breadth... (30-60 detik)")
+        try:
+            from src.engine.breadth import compute_breadth, format_breadth
+            data = await compute_breadth()
+            text = format_breadth(data)
+            await msg.edit_text(text, parse_mode="Markdown")
+        except Exception as e:
+            logger.warning(f"Breadth error: {e}")
+            await msg.edit_text(f"❌ Gagal breadth: {str(e)[:100]}")
+
     async def premarket(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         mode = "compact" if context.args and context.args[0].lower() == "quick" else "full"
         msg = await update.message.reply_text("🌅 Fetching pre-market data... (15-30 detik)")
@@ -1745,6 +1793,8 @@ def create_app() -> Application:
     app.add_handler(CommandHandler("premarket", handlers.premarket))
     app.add_handler(CommandHandler("portfolio", handlers.portfolio))
     app.add_handler(CommandHandler("journal", handlers.journal))
+    app.add_handler(CommandHandler("calendar", handlers.calendar))
+    app.add_handler(CommandHandler("breadth", handlers.breadth))
     app.add_handler(MessageHandler(filters.TEXT, handlers.handle_message))
     app.add_handler(CallbackQueryHandler(handlers.button_callback, pattern="^sub_"))
     app.add_handler(CallbackQueryHandler(handlers.button_callback, pattern="^share_"))
