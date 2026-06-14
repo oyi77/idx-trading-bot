@@ -25,6 +25,10 @@ class User(Base):
     language = Column(String(10), default="id")
     created_at = Column(DateTime, default=datetime.utcnow)
     last_active = Column(DateTime, default=datetime.utcnow)
+    activity_count = Column(Integer, default=0)  # total commands used
+    followup_stage = Column(Integer, default=0)  # 0=no followup yet, 1-3=stage
+    last_followup_at = Column(DateTime, nullable=True)  # anti-spam
+    followup_segment = Column(String(20), default="new")  # new, active_free, sleeping, power_free
     is_active = Column(Boolean, default=True)
 
     # Relationships

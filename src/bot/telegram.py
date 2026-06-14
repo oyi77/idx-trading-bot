@@ -1,4 +1,5 @@
 """Telegram bot handlers — entry points for all user interactions."""
+import asyncio
 from typing import Optional
 
 import logging
@@ -49,9 +50,52 @@ class BotHandlers:
             self._db = Session()
         return self._db
 
+    async def _track_activity(self, user_id: int, update: Update):
+        """Update user activity_count + last_active for follow-up engine."""
+        try:
+            from datetime import datetime, timezone, timedelta
+            from sqlalchemy import create_engine, func
+            from sqlalchemy.orm import sessionmaker
+            from src.config import settings
+            from src.models import User
+
+            WIB = timezone(timedelta(hours=7))
+            sync_url = settings.database_url.replace("+aiosqlite", "").replace("+asyncpg", "")
+            engine = create_engine(sync_url, echo=False)
+            Session = sessionmaker(bind=engine)
+
+            with Session() as session:
+                user = session.query(User).filter_by(telegram_id=user_id).first()
+                if user:
+                    user.activity_count = (user.activity_count or 0) + 1
+                    user.last_active = datetime.now(WIB)
+                    session.commit()
+                else:
+                    # New user — create record
+                    new_user = User(
+                        telegram_id=user_id,
+                        username=update.effective_user.username or "",
+                        full_name=update.effective_user.full_name or "",
+                        activity_count=1,
+                        last_active=datetime.now(WIB),
+                        created_at=datetime.now(WIB),
+                    )
+                    session.add(new_user)
+                    session.commit()
+            engine.dispose()
+        except Exception:
+            pass  # never let tracker crash the bot
+
     async def _check_tier(self, update: Update, command: str) -> bool:
-        """Check tier access. Returns True if allowed, sends message and returns False if not."""
+        """Check tier access + track user activity for follow-up engine."""
         user_id = update.effective_user.id
+
+        # Track activity (async fire-and-forget — don't block response)
+        try:
+            asyncio.create_task(self._track_activity(user_id, update))
+        except Exception:
+            pass
+
         has_access, tier, msg = check_tier(user_id, command)
         if not has_access:
             logger.info(f"Tier gate: user={user_id} tier={tier} blocked={command}")
@@ -1771,81 +1815,49 @@ class BotHandlers:
     # ── Upgrade (Payment) ──
 
     async def upgrade(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
-        """Initiate payment for tier upgrade."""
-        if not await self._check_tier(update, "upgrade"): return
-        tier = context.args[0].lower() if context.args else ""
+        """Initiate upgrade via Scalev product page."""
+        if not await self._check_tier(update, "upgrade"):
+            return
+        args = context.args or []
+        tier = args[0].lower() if args else ""
         valid_tiers = ["pro", "premium", "lifetime", "whitelabel"]
-
         if tier not in valid_tiers:
             keyboard = [
-                [InlineKeyboardButton("💎 Pro Rp49rb/bln", callback_data="pay_pro")],
-                [InlineKeyboardButton("👑 Premium Rp149rb/bln", callback_data="pay_premium")],
-                [InlineKeyboardButton("🌟 Lifetime Rp1.999rb", callback_data="pay_lifetime")],
+                [InlineKeyboardButton("💎 Pro", callback_data="pay_pro")],
+                [InlineKeyboardButton("👑 Premium", callback_data="pay_premium")],
+                [InlineKeyboardButton("🌟 Lifetime", callback_data="pay_lifetime")],
             ]
             await update.message.reply_text(
-                "💳 *Upgrade Langganan*\n\n"
-                "Pilih paket yang diinginkan:\n\n"
-                "💎 *Pro* — Rp49.000/bulan\n"
-                "👑 *Premium* — Rp149.000/bulan\n"
-                "🌟 *Lifetime* — Rp1.999.000 (sekali bayar)\n\n"
-                "Pembayaran via QRIS / Bank Transfer — otomatis aktif setelah bayar.",
-                parse_mode="Markdown",
+                "💳 Upgrade Langganan\nPilih paket: Pro / Premium / Lifetime.",
                 reply_markup=InlineKeyboardMarkup(keyboard),
             )
             return
+        await self._open_scalev_checkout(update, tier)
 
-        await self._process_upgrade(update, tier)
-
-    async def _process_upgrade(self, update, tier: str):
-        """Create Tripay payment and send QR/payment link."""
-        await update.message.reply_text("🔄 Membuat invoice pembayaran...")
-
+    async def _open_scalev_checkout(self, update: Update, tier: str) -> None:
         try:
-            from src.services.payment import create_payment
+            from src.services.scalev import build_purchase_link
 
             user = update.effective_user
-            result = create_payment(
-                user_id=user.id,
-                username=user.username or user.first_name or "",
+            link = build_purchase_link(
                 tier=tier,
+                user_id=user.id,
+                source="telegram",
+                note=(user.username or user.first_name or ""),
             )
-
-            if result.get("success"):
-                amount = result["amount"]
-                pmt_url = result.get("payment_url", "")
-                qr_url = result.get("qr_url", "")
-                pay_code = result.get("pay_code", "")
-
-                tier_label = {"pro": "Pro", "premium": "Premium", "lifetime": "Lifetime"}
-                text = (
-                    f"💳 *Pembayaran {tier_label.get(tier, tier)}*\n\n"
-                    f"💰 Jumlah: *Rp{amount:,}*\n\n"
-                )
-                if qr_url:
-                    text += f"📱 [Scan QRIS / Lihat QR]({qr_url})\n\n"
-                if pay_code:
-                    text += f"🔢 Kode Bayar: `{pay_code}`\n\n"
-                if pmt_url:
-                    text += f"🔗 [Buka Halaman Pembayaran]({pmt_url})\n\n"
-
-                text += (
-                    "✅ Setelah bayar, akun otomatis upgrade dalam 1-2 menit.\n"
-                    "📋 Cek status: /myplans"
-                )
-                await update.message.reply_text(
-                    text, parse_mode="Markdown", disable_web_page_preview=True,
-                )
-            else:
-                error = result.get("error", "Gagal membuat pembayaran")
-                await update.message.reply_text(
-                    f"❌ Gagal: {error}\n\nCoba lagi atau hubungi admin.",
-                    parse_mode="Markdown",
-                )
-        except Exception as e:
-            logger.warning(f"Upgrade error: {e}")
+            keyboard = [
+                [InlineKeyboardButton("🔗 Bayar di Scalev", url=link["purchase_url"])],
+                [InlineKeyboardButton("📋 Cek Status", callback_data="cek_pembayaran")],
+            ]
             await update.message.reply_text(
-                "❌ Sistem pembayaran sedang sibuk. Coba lagi beberapa saat.",
-                parse_mode="Markdown",
+                "Selesaikan pembayaran di halaman Scalev. "
+                "Setelah bayar, akses akan aktif otomatis.",
+                reply_markup=InlineKeyboardMarkup(keyboard),
+            )
+        except Exception as e:
+            logger.warning(f"Scalev checkout error: {e}")
+            await update.message.reply_text(
+                "❌ Gagal membuka halaman pembayaran. Coba lagi."
             )
 
     # ── Bandarmology ──

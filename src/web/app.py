@@ -10,6 +10,9 @@ from src.config import settings
 
 logger = logging.getLogger(__name__)
 
+# Import CAPI bridge
+from src.web.capi_bridge import handle_capi
+
 app = FastAPI(title="IDX AI Trading Bot", version="0.1.0")
 
 # Register webhook routes
@@ -753,23 +756,8 @@ async def health():
     return {"status": "ok", "version": "0.1.0"}
 
 
-@app.post("/api/capi")
-async def capi(request: Request):
-    """Proxy Conversions API events to Meta via phantomfx backend.
-    Browser sends events here so the domain stays botidx.aitradepulse.com."""
-    import httpx
-    try:
-        body = await request.json()
-        async with httpx.AsyncClient(timeout=10) as client:
-            resp = await client.post(
-                "https://phantomfx.aitradepulse.com/api/capi",
-                json=body,
-                headers={"Content-Type": "application/json"},
-            )
-        return {"status": "ok", "proxy_status": resp.status_code}
-    except Exception as e:
-        logger.warning(f"CAPI proxy error: {e}")
-        return {"status": "error", "detail": str(e)}
+# CAPI endpoint — handled by bridge module
+app.add_api_route("/api/capi", handle_capi, methods=["POST"])
 
 
 @app.get("/api/market-overview")
