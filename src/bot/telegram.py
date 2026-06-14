@@ -2478,6 +2478,43 @@ class BotHandlers:
                 f"Coba lagi nanti atau `/premarket quick`"
             )
 
+    async def mystats(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """Personal analytics dashboard — usage, top stocks, time saved."""
+        if not await self._check_tier(update, "mystats"): return
+        user_id = update.effective_user.id
+        try:
+            from datetime import datetime, timezone, timedelta
+            from sqlalchemy import create_engine
+            from sqlalchemy.orm import sessionmaker
+            from src.config import settings
+            from src.models import User
+            from src.engine.value_nudge import compute_personal_stats, format_personal_stats
+
+            WIB = timezone(timedelta(hours=7))
+            sync_url = settings.database_url.replace("+aiosqlite", "").replace("+asyncpg", "")
+            engine = create_engine(sync_url)
+            Session = sessionmaker(bind=engine)
+
+            with Session() as session:
+                user = session.query(User).filter_by(telegram_id=user_id).first()
+                if not user:
+                    await update.message.reply_text("🔍 Belum ada data. Coba `/analisa BBCA` dulu!")
+                    engine.dispose()
+                    return
+
+                from src.models import Subscription
+                sub = session.query(Subscription).filter_by(user_id=user.id).first()
+                user.subscription = sub
+
+                stats = compute_personal_stats(user, session)
+                card = format_personal_stats(stats)
+                await update.message.reply_text(card, parse_mode="Markdown")
+
+            engine.dispose()
+        except Exception as e:
+            logger.warning(f"MyStats error: {e}")
+            await update.message.reply_text("❌ Gagal generate stats. Coba lagi.")
+
     async def briefing(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """Daily AI Briefing — morning market snapshot."""
         if not await self._check_tier(update, "briefing"): return
@@ -2543,6 +2580,7 @@ def create_app() -> Application:
     app.add_handler(CommandHandler("points", handlers.points))
     app.add_handler(CommandHandler("pricing", handlers.pricing))
     app.add_handler(CommandHandler("upgrade", handlers.upgrade))
+    app.add_handler(CommandHandler("mystats", handlers.mystats))
     # NLP fallback — last handler
     app.add_handler(MessageHandler(filters.TEXT, handlers.handle_message))
     app.add_handler(CallbackQueryHandler(handlers.button_callback))
@@ -2592,4 +2630,5 @@ COMMANDS = [
     ("points", "Poin & rank kamu"),
     ("pricing", "Paket langganan"),
     ("upgrade", "Upgrade ke Pro/Premium"),
+    ("mystats", "Statistik personal lo"),
 ]
