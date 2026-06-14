@@ -314,7 +314,7 @@ LANDING_HTML = r"""<!DOCTYPE html>
     <section class="hero" style="padding-bottom:40px">
       <div class="container" style="text-align:center">
         <div class="hero-badge reveal">
-          <span class="dot"></span> Live di Telegram — @sahamidx_bot
+          <span class="dot"></span> Live di Telegram — @vilonidxbot
         </div>
         <h1 class="reveal" style="transition-delay:0.1s">
           <span class="line grad-text">AI Co-Pilot</span>
@@ -328,7 +328,7 @@ LANDING_HTML = r"""<!DOCTYPE html>
         </p>
 
         <div class="reveal" style="transition-delay:0.3s;display:flex;gap:16px;justify-content:center;flex-wrap:wrap">
-          <a href="https://t.me/sahamidx_bot" class="mag-btn magnetic">🚀 Coba Gratis Sekarang</a>
+          <a href="https://t.me/vilonidxbot" class="mag-btn magnetic">🚀 Coba Gratis Sekarang</a>
           <a href="#pricing" class="mag-btn-outline magnetic">Lihat Harga ↓</a>
         </div>
 
@@ -436,13 +436,13 @@ LANDING_HTML = r"""<!DOCTYPE html>
     <section>
       <div class="container">
         <h2 class="reveal">Lihat Langsung <span class="grad-text">Cara Kerjanya</span></h2>
-        <p class="sect-sub reveal">Buka Telegram, ketik <span class="mono" style="color:var(--cyan)">@sahamidx_bot</span> — gak ribet.</p>
+        <p class="sect-sub reveal">Buka Telegram, ketik <span class="mono" style="color:var(--cyan)">@vilonidxbot</span> — gak ribet.</p>
 
         <div class="term-container reveal">
           <div class="term">
             <div class="term-header">
               <span class="term-dot r"></span><span class="term-dot y"></span><span class="term-dot g"></span>
-              <span style="font-size:12px;color:var(--text-dim);margin-left:8px">@sahamidx_bot — Telegram</span>
+              <span style="font-size:12px;color:var(--text-dim);margin-left:8px">@vilonidxbot — Telegram</span>
             </div>
             <div class="term-body" id="terminal-body">
               <span class="dim">// Ketik di Telegram ⚡</span><br>
@@ -476,7 +476,7 @@ LANDING_HTML = r"""<!DOCTYPE html>
               <li class="dim">Event Classifier</li>
               <li class="dim">Sector Forecast</li>
             </ul>
-            <a href="https://t.me/sahamidx_bot" class="mag-btn price-btn magnetic" style="display:block;text-align:center">Mulai Gratis</a>
+            <a href="https://t.me/vilonidxbot" class="mag-btn price-btn magnetic" style="display:block;text-align:center">Mulai Gratis</a>
           </div>
 
           <!-- Pro -->
@@ -494,7 +494,7 @@ LANDING_HTML = r"""<!DOCTYPE html>
               <li class="dim">Bandar View</li>
               <li class="dim">Event Classifier</li>
             </ul>
-            <a href="https://t.me/sahamidx_bot" class="mag-btn price-btn magnetic" style="display:block;text-align:center;background:linear-gradient(135deg,var(--purple),var(--cyan))">Upgrade Pro</a>
+            <a href="https://t.me/vilonidxbot" class="mag-btn price-btn magnetic" style="display:block;text-align:center;background:linear-gradient(135deg,var(--purple),var(--cyan))">Upgrade Pro</a>
           </div>
 
           <!-- Premium -->
@@ -513,7 +513,7 @@ LANDING_HTML = r"""<!DOCTYPE html>
               <li>📊 Auto-Report Mingguan</li>
               <li>⚡ Priority AI response</li>
             </ul>
-            <a href="https://t.me/sahamidx_bot" class="mag-btn price-btn magnetic" style="display:block;text-align:center;background:linear-gradient(135deg,var(--amber),#fbbf24);color:#000">Upgrade Premium</a>
+            <a href="https://t.me/vilonidxbot" class="mag-btn price-btn magnetic" style="display:block;text-align:center;background:linear-gradient(135deg,var(--amber),#fbbf24);color:#000">Upgrade Premium</a>
           </div>
         </div>
       </div>
@@ -525,7 +525,7 @@ LANDING_HTML = r"""<!DOCTYPE html>
         <p style="font-size:24px;font-weight:800;margin-bottom:8px"><span class="grad-text">Vilona Saham</span></p>
         <p>AI Co-Pilot Trading untuk Bursa Efek Indonesia</p>
         <p style="margin-top:16px">
-          <a href="https://t.me/sahamidx_bot">@sahamidx_bot</a> ·
+          <a href="https://t.me/vilonidxbot">@vilonidxbot</a> ·
           <a href="#pricing">Pricing</a> ·
           <a href="https://tripay.co.id">Powered by Tripay</a>
         </p>
@@ -759,7 +759,7 @@ LANDING_HTML = r"""<!DOCTYPE html>
     var capi=window._capi||function(){};
 
     // ── 1. CTA clicks → Lead ──
-    document.querySelectorAll('a[href*="t.me/sahamidx_bot"]').forEach(function(a){
+    document.querySelectorAll('a[href*="t.me/vilonidxbot"]').forEach(function(a){
       a.addEventListener('click',function(){
         var plan=a.closest('.price-card');
         var tier=plan?plan.querySelector('h3').textContent.trim():'unknown';
