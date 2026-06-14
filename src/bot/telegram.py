@@ -1568,7 +1568,6 @@ class BotHandlers:
             args = context.args or []
 
             if not args:
-                # Show portfolio
                 msg = await update.message.reply_text("📊 Loading portfolio...")
                 positions = engine.load(user_id)
                 positions = await engine.refresh_prices(positions)
@@ -1617,8 +1616,67 @@ class BotHandlers:
             logger.warning(f"Portfolio error: {e}")
             await update.message.reply_text("❌ Gagal akses portfolio. Coba lagi.")
 
+    # ── Trading Journal ──
+
+    async def journal(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """Trading journal: /journal [add|delete|list] [text|id]"""
+        try:
+            from src.engine.journal import JournalEngine
+            engine = JournalEngine()
+            user_id = update.effective_user.id
+            args = context.args or []
+
+            if not args:
+                entries = engine.load(user_id)
+                entries_sorted = sorted(entries, key=lambda e: e.timestamp, reverse=True)
+                text = engine.format_entries(entries_sorted, page=1, per_page=5)
+                await update.message.reply_text(text, parse_mode="Markdown")
+                return
+
+            action = args[0].lower()
+
+            if action == "add":
+                text = " ".join(args[1:]) if len(args) > 1 else ""
+                if not text:
+                    await update.message.reply_text(
+                        "📓 Tambah catatan trading:\n"
+                        "`/journal add TLKM entry 4500 exit 4800 — sabar nunggu pullback`\n\n"
+                        "💡 Auto-detect #tags dan saham dari teks"
+                    )
+                    return
+                ok, msg = engine.add(user_id, text)
+                await update.message.reply_text(msg, parse_mode="Markdown")
+
+            elif action == "delete" and len(args) >= 2:
+                try:
+                    entry_id = int(args[1])
+                except ValueError:
+                    await update.message.reply_text("❌ ID harus angka. Contoh: `/journal delete 3`")
+                    return
+                ok, msg = engine.delete(user_id, entry_id)
+                await update.message.reply_text(msg)
+
+            elif action == "list":
+                page = int(args[1]) if len(args) > 1 and args[1].isdigit() else 1
+                entries = engine.load(user_id)
+                entries_sorted = sorted(entries, key=lambda e: e.timestamp, reverse=True)
+                text = engine.format_entries(entries_sorted, page=page)
+                await update.message.reply_text(text, parse_mode="Markdown")
+
+            else:
+                await update.message.reply_text(
+                    "📓 *Trading Journal*\n\n"
+                    "`/journal` — lihat catatan terbaru\n"
+                    "`/journal add <teks>` — tambah catatan\n"
+                    "`/journal list` — semua catatan\n"
+                    "`/journal delete <id>` — hapus",
+                    parse_mode="Markdown",
+                )
+        except Exception as e:
+            logger.warning(f"Journal error: {e}")
+            await update.message.reply_text("❌ Gagal akses journal. Coba lagi.")
+
     async def premarket(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
-        """Pre-market briefing — global context before IDX opens."""
         mode = "compact" if context.args and context.args[0].lower() == "quick" else "full"
         msg = await update.message.reply_text("🌅 Fetching pre-market data... (15-30 detik)")
         try:
@@ -1686,6 +1744,7 @@ def create_app() -> Application:
     app.add_handler(CommandHandler("points", handlers.points))
     app.add_handler(CommandHandler("premarket", handlers.premarket))
     app.add_handler(CommandHandler("portfolio", handlers.portfolio))
+    app.add_handler(CommandHandler("journal", handlers.journal))
     app.add_handler(MessageHandler(filters.TEXT, handlers.handle_message))
     app.add_handler(CallbackQueryHandler(handlers.button_callback, pattern="^sub_"))
     app.add_handler(CallbackQueryHandler(handlers.button_callback, pattern="^share_"))
