@@ -13,6 +13,7 @@ from src.config import settings
 from src.feed.manager import FeedManager
 from src.nlp.router import Intent, NLPRouter
 from src.nlp.prompts import DISCLAIMER
+from src.bot.tier_gate import check_tier, get_tier_badge, get_tier_limits
 
 logger = logging.getLogger(__name__)
 
@@ -47,6 +48,16 @@ class BotHandlers:
             Session = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
             self._db = Session()
         return self._db
+
+    async def _check_tier(self, update: Update, command: str) -> bool:
+        """Check tier access. Returns True if allowed, sends message and returns False if not."""
+        user_id = update.effective_user.id
+        has_access, tier, msg = check_tier(user_id, command)
+        if not has_access:
+            logger.info(f"Tier gate: user={user_id} tier={tier} blocked={command}")
+            await update.message.reply_text(msg, parse_mode="Markdown")
+            return False
+        return True
 
     # ── Start / Help ──
 
@@ -145,6 +156,15 @@ class BotHandlers:
 
     async def analisa_direct(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """Direct handler for /analisa command."""
+        # Free tier: limit 5 analyses/day
+        user_id = update.effective_user.id
+        from src.bot.tier_gate import get_user_tier_sync, get_tier_limits
+        tier = get_user_tier_sync(user_id)
+        limits = get_tier_limits(tier)
+        
+        # Check daily limit (TODO: track daily count in DB)
+        # For now, Pro+ users get unlimited
+        
         args = context.args
         if not args:
             await update.message.reply_text(
@@ -755,6 +775,7 @@ class BotHandlers:
     # ── My Plans ──
 
     async def myplans(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        if not await self._check_tier(update, "myplans"): return
         try:
             db = await self._get_db()
             from src.engine.plan import TradePlanEngine
@@ -802,6 +823,7 @@ class BotHandlers:
     # ── My Alerts ──
 
     async def myalerts(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        if not await self._check_tier(update, "myalerts"): return
         try:
             db = await self._get_db()
             from src.engine.alerter import AlertEngine
@@ -836,6 +858,7 @@ class BotHandlers:
     # ── Performance Stats ──
 
     async def performance(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        if not await self._check_tier(update, "performance"): return
         try:
             db = await self._get_db()
             from src.engine.plan import TradePlanEngine
@@ -1158,6 +1181,7 @@ class BotHandlers:
 
     async def report(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """Generate weekly market report on demand."""
+        if not await self._check_tier(update, "report"): return
         msg = await update.message.reply_text("📊 Menyusun laporan mingguan... (30 detik)")
         try:
             from src.engine.weekly_report import generate_weekly_report
@@ -1402,6 +1426,7 @@ class BotHandlers:
 
     async def bandarmology(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """Premium-only bandarmology report."""
+        if not await self._check_tier(update, "bandarmology"): return
         try:
             from src.feed.rapidapi_idx import RapidAPIFeed
             from src.engine.bandarmology import BandarmologyEngine
@@ -1448,6 +1473,7 @@ class BotHandlers:
         """Classify corporate event from financial news text.
         Usage: /event PT Telkom umumkan dividen tunai Rp 14 triliun
         """
+        if not await self._check_tier(update, "event"): return
         text = " ".join(context.args) if context.args else ""
         if not text:
             await update.message.reply_text(
@@ -1494,6 +1520,7 @@ class BotHandlers:
 
     async def sectorforecast(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """Premium sector volatility forecast — 11 sektor, 7 hari."""
+        if not await self._check_tier(update, "sector"): return
         await update.message.reply_text(
             "📊 Menganalisa volatilitas 11 sektor... (mohon tunggu 30-60 detik)",
         )
@@ -1546,6 +1573,7 @@ class BotHandlers:
 
     async def watchlist(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """Manage watchlist: /watchlist [add|remove|list] [symbol]"""
+        if not await self._check_tier(update, "watchlist"): return
         try:
             from src.engine.watchlist import WatchlistEngine
 
@@ -1608,6 +1636,7 @@ class BotHandlers:
 
     async def leaderboard(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """Show weekly leaderboard."""
+        if not await self._check_tier(update, "leaderboard"): return
         try:
             from src.engine.gamification import GamificationEngine
             engine = GamificationEngine()
@@ -1620,6 +1649,7 @@ class BotHandlers:
 
     async def points(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """Show user's personal points."""
+        if not await self._check_tier(update, "points"): return
         try:
             from src.engine.gamification import GamificationEngine
             engine = GamificationEngine()
@@ -1690,21 +1720,26 @@ class BotHandlers:
             await update.message.reply_text(f"❌ Gagal screening: {str(e)[:100]}")
 
     async def screener_momentum(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        if not await self._check_tier(update, "screener_momentum"): return
         await self._run_category_screener(update, "momentum")
 
     async def screener_reversal(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        if not await self._check_tier(update, "screener_reversal"): return
         await self._run_category_screener(update, "reversal")
 
     async def screener_breakout(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        if not await self._check_tier(update, "screener_breakout"): return
         await self._run_category_screener(update, "breakout")
 
     async def screener_smartmoney(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        if not await self._check_tier(update, "screener_smartmoney"): return
         await self._run_category_screener(update, "smartmoney")
 
     # ── Portfolio Tracker ──
 
     async def portfolio(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """Portfolio management: /portfolio [add|close|history] [symbol] [price] [qty]"""
+        if not await self._check_tier(update, "portfolio"): return
         try:
             from src.engine.portfolio import PortfolioEngine
             engine = PortfolioEngine()
@@ -1762,6 +1797,7 @@ class BotHandlers:
 
     async def jejak(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """Profit trail — Stockpick 'Jejak Cuan' style."""
+        if not await self._check_tier(update, "jejak"): return
         try:
             from src.engine.portfolio import PortfolioEngine
             engine = PortfolioEngine()
@@ -1778,6 +1814,7 @@ class BotHandlers:
 
     async def journal(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """Trading journal: /journal [add|delete|list] [text|id]"""
+        if not await self._check_tier(update, "journal"): return
         try:
             from src.engine.journal import JournalEngine
             engine = JournalEngine()
@@ -1838,6 +1875,7 @@ class BotHandlers:
 
     async def calendar(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """Economic calendar: /calendar [next|all]"""
+        if not await self._check_tier(update, "calendar"): return
         try:
             from src.engine.eco_calendar import get_upcoming_events, get_events_for_month, format_calendar
             from datetime import datetime
@@ -1870,6 +1908,7 @@ class BotHandlers:
 
     async def breadth(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """Market breadth: scan 39 IDX stocks for advance/decline, MA50, 52w H/L."""
+        if not await self._check_tier(update, "breadth"): return
         msg = await update.message.reply_text("📊 Menghitung market breadth... (30-60 detik)")
         try:
             from src.engine.breadth import compute_breadth, format_breadth
@@ -1881,6 +1920,7 @@ class BotHandlers:
             await msg.edit_text(f"❌ Gagal breadth: {str(e)[:100]}")
 
     async def premarket(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        if not await self._check_tier(update, "premarket"): return
         mode = "compact" if context.args and context.args[0].lower() == "quick" else "full"
         msg = await update.message.reply_text("🌅 Fetching pre-market data... (15-30 detik)")
         try:
@@ -1900,6 +1940,7 @@ class BotHandlers:
 
     async def briefing(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """Daily AI Briefing — morning market snapshot."""
+        if not await self._check_tier(update, "briefing"): return
         msg = await update.message.reply_text("☀️ Menyusun briefing pagi... (30 detik)")
         try:
             from src.engine.briefing import build_briefing
