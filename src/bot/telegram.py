@@ -63,93 +63,130 @@ class BotHandlers:
 
     async def start(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         if not await self._check_tier(update, "start"): return
-        text = (
-            "🚀 *Vilona Saham — AI Co-Pilot Trading IDX*\n\n"
-            "Satu-satunya bot yang kasih **TradingView chart** + **AI DeepSeek** + **Bandar flow** + "
-            "**Trading Plan Auto** dalam 10 detik.\n\n"
-            "📌 *Coba sekarang:*\n"
-            "• /analisa BBCA — analisa + chart + AI + trading plan auto\n"
-            "• /screener_momentum — saham momentum kuat\n"
-            "• /screener_reversal — saham siap reversal\n"
-            "• /screener_breakout — saham breakout level kunci\n"
-            "• /screener_smartmoney — jejak akumulasi bandar\n"
-            "• /portfolio add BBCA 5800 50 — tracking posisi (hari ke-N + BOW/BOS)\n"
-            "• /jejak — profit trail + performance distribution\n"
-            "• /plan TLKM — auto trading plan (Entry/SL/TP/RR/Grade)\n\n"
-            "💡 *3.000+ analisa udah dihasilkan.* Gak perlu hafal 300 command. "
-            "Cukup ketik natural.\n\n"
-            "━━━━━━━━━━━━━━━━━\n"
-            "🎁 *Coba Premium gratis 7 hari* — /pricing\n"
-            "📖 *Bantuan* — /help"
-        )
+        
+        user_id = update.effective_user.id
+        from src.bot.tier_gate import get_user_tier_sync, get_tier_badge
+        tier = get_user_tier_sync(user_id)
+        badge = get_tier_badge(tier)
+        
+        # Admin-specific welcome
+        if tier == "admin":
+            text = (
+                "⚡ *Admin Panel — Vilona Saham*\n"
+                "━━━━━━━━━━━━━━━━━━━━━━━\n\n"
+                f"👤 Status: *Admin* {badge}\n"
+                "🔓 Akses: *FULL* (34 commands)\n\n"
+                "📊 *Quick Actions:*\n"
+                "• `analisa BBCA` — analisa lengkap\n"
+                "• `screener momentum` — scan 704 saham\n"
+                "• `plan TLKM` — auto trading plan\n\n"
+                "🔧 *Admin Tools:*\n"
+                "• /stats — statistik bot\n"
+                "• /leaderboard — top traders\n"
+                "• /points — points system\n\n"
+                "━━━━━━━━━━━━━━━━━━━━━━━\n"
+                "📖 *Help* — /help\n"
+                "💳 *Pricing* — /pricing"
+            )
+        else:
+            # Regular user welcome
+            text = (
+                "🚀 *Vilona Saham — AI Co-Pilot Trading IDX*\n\n"
+                "Satu-satunya bot yang kasih **TradingView chart** + **AI DeepSeek** + **Bandar flow** + "
+                "**Trading Plan Auto** dalam 10 detik.\n\n"
+                f"👤 Status: *{tier.title()}* {badge}\n\n"
+                "📌 *Coba sekarang:*\n"
+                "• `analisa BBCA` — analisa + chart + AI + trading plan\n"
+                "• `screener momentum` — saham momentum kuat\n"
+                "• `plan TLKM` — auto trading plan\n\n"
+                "━━━━━━━━━━━━━━━━━━━━━━━\n"
+                "📖 *Bantuan* — /help\n"
+                "💳 *Langganan* — /pricing"
+            )
+        
         await update.message.reply_text(text, parse_mode="Markdown")
 
     async def help(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         if not await self._check_tier(update, "help"): return
-        text = (
+        
+        user_id = update.effective_user.id
+        from src.bot.tier_gate import get_user_tier_sync, get_tier_badge
+        tier = get_user_tier_sync(user_id)
+        badge = get_tier_badge(tier)
+        
+        # Core commands (all tiers)
+        core = (
             "📖 *Vilona Saham — Semua Command*\n"
             "━━━━━━━━━━━━━━━━━━━━━━━\n\n"
+            f"👤 Status: *{tier.title()}* {badge}\n\n"
             "💡 *Ketik natural — gak perlu hafal.*\n"
             "Contoh: `analisa BBCA`, `screener momentum`, `plan TLKM`\n\n"
-
-            "*📊 Analisa Saham*\n"
-            "• /analisa BBCA — teknikal + fundamental + bandar + trading plan\n"
-            "• /stats BBCA — high, low, volume, nilai transaksi\n"
-            "• /breadth — advance/decline ratio market\n\n"
-
-            "*☀️ Briefing & Pasar*\n"
-            "• /premarket — kondisi global sebelum buka (Dow, Nikkei, komoditas)\n"
-            "• /briefing — ringkasan pasar harian\n"
-            "• /calendar — kalender ekonomi minggu ini\n"
-            "• /ihsg — data IHSG real-time\n"
-            "• /sector — forecast 11 sektor IDX\n\n"
-
-            "*📰 Berita & Trend*\n"
-            "• /news — berita pasar terbaru\n"
-            "• /news BBCA — berita spesifik saham\n"
-            "• /trending — saham trending minggu ini\n"
-            "• /bandarmology — deteksi akumulasi bandar asing\n"
-            "• /event — klasifikasi event korporat\n"
-            "• /report — laporan mingguan (foreign flow + sektor)\n\n"
-
-            "*🔍 Screening*\n"
-            "• /screener_momentum — saham tenaga naik kuat\n"
-            "• /screener_reversal — saham siap reversal\n"
-            "• /screener_breakout — saham breakout level kunci\n"
-            "• /screener_smartmoney — jejak akumulasi bandar\n\n"
-
-            "*📋 Trading Plan*\n"
-            "• /plan TLKM — auto plan (Entry/SL/TP/RR/Grade)\n"
-            "• /plan TLKM entry 4600 sl 4500 tp 4800 — manual\n"
-            "• /myplans — plan aktif\n\n"
-
-            "*🔔 Alert*\n"
-            "• /alert TLKM >4600 — notifikasi harga\n"
-            "• /myalerts — alert aktif\n\n"
-
-            "*💼 Portfolio*\n"
-            "• /portfolio — posisi aktif + P&L\n"
-            "• /portfolio add BBCA 5800 50 — tambah posisi\n"
-            "• /portfolio close BBCA 6000 — tutup posisi\n"
-            "• /jejak — profit trail + performance distribution\n\n"
-
-            "*📝 Journal*\n"
-            "• /journal — catat lesson learned\n"
-            "• /watchlist — pantau saham favorit\n"
-            "• /performance — win rate & P&L\n"
-            "• /feedback BBCA 7 — rating analisa\n\n"
-
-            "*🏆 Gamification*\n"
-            "• /leaderboard — top trader minggu ini\n"
-            "• /points — poin & rank kamu\n\n"
-
-            "*💳 Langganan*\n"
-            "• /pricing — lihat paket langganan\n"
-            "• /upgrade — upgrade ke Pro/Premium\n\n"
-
+            
             "━━━━━━━━━━━━━━━━━━━━━━━\n"
+            "📊 *Quick Actions:*\n"
+            "• `analisa BBCA` — analisa lengkap\n"
+            "• `screener momentum` — scan 704 saham\n"
+            "• `plan TLKM` — auto trading plan\n\n"
+        )
+        
+        # Free commands
+        free = (
+            "━━━━━━━━━━━━━━━━━━━━━━━\n"
+            "🆓 *Free (12 commands):*\n"
+            "• /analisa BBCA — analisa + chart + AI\n"
+            "• /stats BBCA — data pasar\n"
+            "• /ihsg — data IHSG real-time\n"
+            "• /news — berita pasar\n"
+            "• /trending — saham trending\n\n"
+        )
+        
+        # Pro commands (gated)
+        pro = (
+            "━━━━━━━━━━━━━━━━━━━━━━━\n"
+            "💎 *Pro (16 commands) — Rp49k/bulan:*\n"
+            "• /screener_momentum — saham momentum kuat\n"
+            "• /screener_reversal — saham reversal\n"
+            "• /screener_breakout — breakout detector\n"
+            "• /screener_smartmoney — smart money flow\n"
+            "• /plan TLKM — auto trading plan\n"
+            "• /alert — notifikasi harga\n"
+            "• /portfolio — tracking posisi\n"
+            "• /premarket — kondisi global\n"
+            "• /briefing — ringkasan pasar\n\n"
+        )
+        
+        # Premium commands (gated)
+        premium = (
+            "━━━━━━━━━━━━━━━━━━━━━━━\n"
+            "👑 *Premium (9 commands) — Rp149k/bulan:*\n"
+            "• /bandarmology — bandar + asing flow\n"
+            "• /event — klasifikasi event\n"
+            "• /report — laporan mingguan\n"
+            "• /jejak — profit trail + performance\n"
+            "• /leaderboard — top traders\n"
+            "• /points — points system\n\n"
+        )
+        
+        # Footer
+        footer = (
+            "━━━━━━━━━━━━━━━━━━━━━━━\n"
+            "💳 *Langganan* — /pricing\n"
             "📊 *Scanning 704 saham IDX real-time*"
         )
+        
+        # Build based on tier
+        text = core
+        
+        if tier == "admin":
+            # Admin sees all
+            text += free + pro + premium + footer
+        elif tier == "premium":
+            text += free + pro + premium + footer
+        elif tier == "pro":
+            text += free + pro + "\n👑 *Upgrade Premium untuk 9 command lagi!*\n" + footer
+        else:
+            text += free + "\n💎 *Upgrade Pro untuk 16 command lagi!*\n" + footer
+        
         await update.message.reply_text(text, parse_mode="Markdown")
 
     async def panduan(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
