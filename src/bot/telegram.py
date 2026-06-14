@@ -2041,6 +2041,36 @@ class BotHandlers:
                 reply_markup=reply_markup
             )
 
+            # ── Log screener run to DB for dashboard ──
+            try:
+                import json
+                from src.models import ScreenerLog, get_engine
+                from sqlalchemy import create_engine
+                from sqlalchemy.orm import sessionmaker
+
+                sync_url = settings.database_url.replace("+aiosqlite", "").replace("+asyncpg", "")
+                eng = create_engine(sync_url)
+                Sess = sessionmaker(bind=eng)
+                with Sess() as sess:
+                    hits_data = [{
+                        "symbol": h.symbol,
+                        "score": h.score,
+                        "strategy": h.strategy,
+                        "change_pct": h.change_pct,
+                    } for h in result.hits[:10]]
+                    log = ScreenerLog(
+                        user_id=update.effective_user.id,
+                        category=category,
+                        total_scanned=scanned,
+                        total_hits=result.total_signals,
+                        hits_json=json.dumps(hits_data),
+                    )
+                    sess.add(log)
+                    sess.commit()
+                eng.dispose()
+            except Exception as log_err:
+                logger.warning(f"Screener log failed: {log_err}")
+
         except Exception as e:
             logger.warning(f"Category screener error: {e}")
             await update.message.reply_text(f"❌ Gagal screening: {str(e)[:100]}")

@@ -160,6 +160,21 @@ class AnalysisJournal(Base):
     feedback_at = Column(DateTime, nullable=True)
 
 
+# ── Screener Activity Log ──
+
+class ScreenerLog(Base):
+    """Records every screener run for dashboard stats."""
+    __tablename__ = "screener_logs"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    category = Column(String(20), nullable=False)  # momentum, reversal, breakout, smartmoney
+    total_scanned = Column(Integer, default=0)
+    total_hits = Column(Integer, default=0)
+    hits_json = Column(Text, default="[]")  # JSON array of top hits {symbol, score, strategy}
+    timestamp = Column(DateTime, default=datetime.utcnow)
+
+
 # ── Database Setup ──
 
 def get_engine():

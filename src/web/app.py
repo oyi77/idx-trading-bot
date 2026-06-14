@@ -512,6 +512,30 @@ body {{
         </div>
     </div>
 
+    <!-- Screener Activity -->
+    <div class="section-grid" id="screenerSection">
+        <div class="card" id="screenerStats">
+            <div class="card-label">Screener Hari Ini</div>
+            <div style="display:flex;align-items:center;gap:1.5rem;flex-wrap:wrap;">
+                <div>
+                    <div class="card-value" style="font-size:2rem;" id="scrRuns">-</div>
+                    <div class="card-context">runs</div>
+                </div>
+                <div>
+                    <div class="card-value" style="font-size:2rem;" id="scrHits">-</div>
+                    <div class="card-context">total hits</div>
+                </div>
+            </div>
+            <div id="scrCategories" style="display:flex;gap:0.8rem;margin-top:0.8rem;flex-wrap:wrap;"></div>
+        </div>
+        <div class="card" id="screenerLatest">
+            <div class="card-label">Latest Screener Hits</div>
+            <div class="symbol-list" id="scrLatestHits">
+                <div style="color:#666;font-size:0.85rem;text-align:center;padding:1rem;">Belum ada screener run</div>
+            </div>
+        </div>
+    </div>
+
     <!-- Footer -->
     <div class="footer">
         <div class="footer-links">
@@ -673,6 +697,54 @@ async function refreshStats() {{
     }} catch(e) {{}}
 }}
 setInterval(refreshStats, 15000);
+
+// ── Screener Stats Refresh ──
+async function refreshScreener() {{
+    try {{
+        const res = await fetch('/api/screener-stats');
+        const d = await res.json();
+
+        // Runs today
+        const scrRuns = document.getElementById('scrRuns');
+        if (scrRuns) scrRuns.textContent = d.runs_today || 0;
+
+        // Total hits
+        const scrHits = document.getElementById('scrHits');
+        if (scrHits) scrHits.textContent = d.total_hits_today || 0;
+
+        // Category badges
+        const scrCat = document.getElementById('scrCategories');
+        if (scrCat && d.by_category) {{
+            const cats = ['momentum','reversal','breakout','smartmoney'];
+            const icons = {{momentum:'🔥', reversal:'🔄', breakout:'💥', smartmoney:'🐋'}};
+            scrCat.innerHTML = cats.map(c => {{
+                const count = d.by_category[c] || 0;
+                const alpha = count > 0 ? '1' : '0.3';
+                return `<span style="font-size:0.75rem;padding:0.25rem 0.6rem;border-radius:100px;
+                    background:rgba(0,240,255,0.08);border:1px solid rgba(0,240,255,0.15);
+                    color:#c8c8c8;opacity:${{alpha}}">${{icons[c]}} ${{c}} ${{count}}x</span>`;
+            }}).join('');
+        }}
+
+        // Latest hits
+        const scrLatest = document.getElementById('scrLatestHits');
+        if (scrLatest && d.latest && d.latest.top_hits.length) {{
+            scrLatest.innerHTML = d.latest.top_hits.map(h => `
+                <div class="symbol-row">
+                    <div>
+                        <div class="symbol-name">${{h.symbol}} <span style="font-size:0.7rem;color:#888;">${{h.strategy}}</span></div>
+                        <div class="symbol-bar" style="width:${{h.score}}%"></div>
+                    </div>
+                    <div class="symbol-count">${{h.score}}/100</div>
+                </div>
+            `).join('');
+        }} else if (scrLatest && (!d.latest || !d.latest.top_hits.length)) {{
+            scrLatest.innerHTML = '<div style="color:#666;font-size:0.85rem;text-align:center;padding:1rem;">Belum ada screener run</div>';
+        }}
+    }} catch(e) {{}}
+}}
+refreshScreener();
+setInterval(refreshScreener, 15000);
 </script>
 </body>
 </html>""")
@@ -721,6 +793,65 @@ async def market_overview():
         except Exception:
             pass
     return {"stocks": results, "count": len(results)}
+
+@app.get("/api/screener-stats")
+async def screener_stats():
+    """Screener activity for dashboard — today's runs + latest hits."""
+    from datetime import datetime, timedelta
+    from sqlalchemy import create_engine, func
+    from sqlalchemy.orm import sessionmaker
+    from src.models import ScreenerLog
+    import json
+
+    sync_url = settings.database_url.replace("+aiosqlite", "").replace("+asyncpg", "")
+    engine = create_engine(sync_url)
+    Session = sessionmaker(bind=engine)
+
+    with Session() as session:
+        now = datetime.utcnow()
+        today = now.replace(hour=0, minute=0, second=0, microsecond=0)
+
+        runs_today = session.query(func.count(ScreenerLog.id)).filter(
+            ScreenerLog.timestamp >= today
+        ).scalar() or 0
+
+        # Per-category counts
+        by_cat = session.query(
+            ScreenerLog.category, func.count(ScreenerLog.id)
+        ).filter(ScreenerLog.timestamp >= today).group_by(ScreenerLog.category).all()
+        categories = {c: n for c, n in by_cat}
+
+        total_hits_today = session.query(func.sum(ScreenerLog.total_hits)).filter(
+            ScreenerLog.timestamp >= today
+        ).scalar() or 0
+
+        # Latest run
+        latest = session.query(ScreenerLog).order_by(
+            ScreenerLog.timestamp.desc()
+        ).first()
+
+    engine.dispose()
+
+    result = {
+        "runs_today": runs_today,
+        "total_hits_today": total_hits_today,
+        "by_category": categories,
+    }
+
+    if latest:
+        try:
+            hits = json.loads(latest.hits_json) if latest.hits_json else []
+        except json.JSONDecodeError:
+            hits = []
+        result["latest"] = {
+            "category": latest.category,
+            "scanned": latest.total_scanned,
+            "hits_count": latest.total_hits,
+            "timestamp": latest.timestamp.isoformat() if latest.timestamp else None,
+            "top_hits": hits[:5],
+        }
+
+    return result
 
 @app.get("/api/quote/{symbol}")
 async def get_quote(symbol: str):
