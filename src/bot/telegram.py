@@ -80,12 +80,14 @@ class BotHandlers:
             "• `analisa TLKM` — teknikal + fundamental + bandar flow\n"
             "• `backtest BBCA` — validasi performa 3 tahun\n"
             "• `stats TLKM` — high, low, volume, nilai\n\n"
+            "*☀️ Briefing & Pasar*\n"
+            "• `/briefing` — ringkasan pasar harian (IHSG + top movers)\n"
+            "• `/ihsg` — ringkasan IHSG (data real-time)\n"
+            "• `/sector` — forecast volatilitas 11 sektor (7 hari)\n\n"
             "*🎰 Bandar & Sentiment*\n"
             "• `/bandarmology` — deteksi akumulasi bandar asing\n"
-            "• `/sector` — forecast volatilitas 11 sektor (7 hari)\n"
             "• `/event <berita>` — klasifikasi event korporat (11 kelas)\n"
             "• `/watchlist` — pantau saham favorit (daily digest)\n"
-            "• `/ihsg` — ringkasan IHSG (data 30 tahun)\n"
             "• `/watchlist add BBCA` — tambah ke watchlist\n\n"
             "*🔍 Screening*\n"
             "• `screener akumulasi asing` — saham diakumulasi asing\n"
@@ -469,7 +471,7 @@ class BotHandlers:
 
                 # ─── Fetch klines for zone + indicator text ─────
                 try:
-                    klines = await feed.get_klines(cmd.symbol, interval="1d", limit=90)
+                    klines = await feed.get_klines(symbol, interval="1d", limit=90)
                     if klines:
                         from src.engine.zone_finder import ZoneFinder
                         from src.engine.technical import TechnicalEngine
