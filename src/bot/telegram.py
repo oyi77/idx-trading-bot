@@ -74,160 +74,101 @@ class BotHandlers:
 
     async def help(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         text = (
-            "📖 *Bantuan Vilona Saham*\n\n"
-            "Cukup ketik natural — gak perlu hafal command:\n\n"
+            "📖 *Vilona Saham — Semua Command*\n"
+            "━━━━━━━━━━━━━━━━━━━━━━━\n\n"
+            "💡 *Ketik natural — gak perlu hafal.*\n"
+            "Contoh: `analisa BBCA`, `screener momentum`, `plan TLKM`\n\n"
+
             "*📊 Analisa Saham*\n"
-            "• /analisa — teknikal + fundamental + bandar flow\n"
-            "• /stats — high, low, volume, nilai\n"
-            "• /breadth — advance/decline, MA50, 52w high/low\n\n"
+            "• /analisa BBCA — teknikal + fundamental + bandar + trading plan\n"
+            "• /stats BBCA — high, low, volume, nilai transaksi\n"
+            "• /breadth — advance/decline ratio market\n\n"
+
             "*☀️ Briefing & Pasar*\n"
-            "• /premarket — kondisi global sebelum pasar buka (Dow, Nikkei, komoditas, USD/IDR)\n"
-            "• /briefing — ringkasan pasar harian (IHSG + top movers)\n"
-            "• /calendar — kalender ekonomi (BI rate, FOMC, CPI, GDP)\n"
-            "• /news — berita pasar terbaru (umum)\n"
+            "• /premarket — kondisi global sebelum buka (Dow, Nikkei, komoditas)\n"
+            "• /briefing — ringkasan pasar harian\n"
+            "• /calendar — kalender ekonomi minggu ini\n"
+            "• /ihsg — data IHSG real-time\n"
+            "• /sector — forecast 11 sektor IDX\n\n"
+
+            "*📰 Berita & Trend*\n"
+            "• /news — berita pasar terbaru\n"
             "• /news BBCA — berita spesifik saham\n"
-            "• /report — laporan mingguan lengkap (foreign flow + sektor + sentiment)\n"
-            "• /trending — saham trending minggu ini (top gainers/losers)🔥\n"
-            "• /ihsg — ringkasan IHSG (data real-time)\n"
-            "• /sector — forecast volatilitas 11 sektor (7 hari)\n\n"
-            "*🎰 Bandar & Sentiment*\n"
+            "• /trending — saham trending minggu ini\n"
             "• /bandarmology — deteksi akumulasi bandar asing\n"
-            "• /event — klasifikasi event korporat (11 kelas)\n"
-            "• /watchlist — pantau saham favorit (daily digest)\n"
-            "• /watchlist add BBCA — tambah ke watchlist\n\n"
+            "• /event — klasifikasi event korporat\n"
+            "• /report — laporan mingguan (foreign flow + sektor)\n\n"
+
             "*🔍 Screening*\n"
-            "• /screener_momentum — Saham tenaga naik kuat\n"
-            "• /screener_reversal — Saham siap berbalik arah\n"
-            "• /screener_breakout — Saham breakout level kunci\n"
-            "• /screener_smartmoney — Jejak akumulasi bandar\n\n"
-            "*📋 Trading Plan & Portfolio*\n"
-            "• /plan TLKM — auto trading plan (Entry/SL/TP/RR + Confidence 0-20 + Grade A-D)\n"
-            "• /plan TLKM entry 4600 sl 4500 tp 4800 — manual plan\n"
-            "• /portfolio — posisi aktif (hari ke-N + BOW/BOS tag + P&L)\n"
-            "• /portfolio add BBCA 5800 50 — tambah posisi (auto BOW tag)\n"
+            "• /screener_momentum — saham tenaga naik kuat\n"
+            "• /screener_reversal — saham siap reversal\n"
+            "• /screener_breakout — saham breakout level kunci\n"
+            "• /screener_smartmoney — jejak akumulasi bandar\n\n"
+
+            "*📋 Trading Plan*\n"
+            "• /plan TLKM — auto plan (Entry/SL/TP/RR/Grade)\n"
+            "• /plan TLKM entry 4600 sl 4500 tp 4800 — manual\n"
+            "• /myplans — plan aktif\n\n"
+
+            "*🔔 Alert*\n"
+            "• /alert TLKM >4600 — notifikasi harga\n"
+            "• /myalerts — alert aktif\n\n"
+
+            "*💼 Portfolio*\n"
+            "• /portfolio — posisi aktif + P&L\n"
+            "• /portfolio add BBCA 5800 50 — tambah posisi\n"
             "• /portfolio close BBCA 6000 — tutup posisi\n"
-            "• /jejak — Jejak Cuan: Controlled Loss + Performance Distribution\n"
-            "• /journal — trading journal (catat lesson)\n\n"
-            "*🔔 Alert Harga*\n"
-            "• /alert TLKM \\>4600 — notifikasi harga menyentuh level\n\n"
-            "*💳 Akun*\n"
-            "• /pricing — lihat paket langganan\n"
-            "• /myplans — trading plan aktif\n"
-            "• /myalerts — alert terpasang\n"
-            "• /performance — performa trading\n"
-            "• /feedback TLKM 5 — rating analisa\n"
-            "• /leaderboard — top trader minggu ini 🏆\n"
+            "• /jejak — profit trail + performance distribution\n\n"
+
+            "*📝 Journal*\n"
+            "• /journal — catat lesson learned\n"
+            "• /watchlist — pantau saham favorit\n"
+            "• /performance — win rate & P&L\n"
+            "• /feedback BBCA 7 — rating analisa\n\n"
+
+            "*🏆 Gamification*\n"
+            "• /leaderboard — top trader minggu ini\n"
             "• /points — poin & rank kamu\n\n"
-            "━━━━━━━━━━━━━━━━━\n"
-            "📘 *Panduan lengkap semua fitur* — /panduan\n"
-            "🎁 *Baru?* Coba Premium gratis 7 hari: /pricing"
+
+            "*💳 Langganan*\n"
+            "• /pricing — lihat paket langganan\n"
+            "• /upgrade — upgrade ke Pro/Premium\n\n"
+
+            "━━━━━━━━━━━━━━━━━━━━━━━\n"
+            "📊 *Scanning 704 saham IDX real-time*"
         )
         await update.message.reply_text(text, parse_mode="Markdown")
 
     async def panduan(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
-        """Comprehensive user guide explaining every feature and its goal."""
-        text = (
-            "📘 *PANDUAN LENGKAP VILONA SAHAM*\n"
-            "━━━━━━━━━━━━━━━━━━━━━━━\n\n"
-            "💡 *Semua command bisa diklik — tinggal tap aja.*\n\n"
-            "*1️⃣ Analisa Saham — Keputusan Entry/Exit*\n"
-            "──────────────────────────────\n"
-            "🎯 *Goal:* Dapetin setup trading lengkap dalam 10 detik tanpa harus buka "
-            "6 aplikasi berbeda.\n\n"
-            "• /analisa — Analisa lengkap: teknikal (RSI, MACD, SuperTrend, "
-            "support/resistance) + fundamental + broker flow asing. Hasil: skor 1-10 + "
-            "rekomendasi BUY/SELL/HOLD.\n"
-            "   _Contoh: /analisa BBCA_\n\n"
-            "• /stats — Data harga: high, low, volume, nilai transaksi. Quick check "
-            "sebelum entry.\n"
-            "   _Contoh: /stats BBRI_\n\n"
-            "*2️⃣ Briefing & Pasar — Big Picture Harian*\n"
-            "──────────────────────────────\n"
-            "🎯 *Goal:* Tau kondisi market secara keseluruhan sebelum trading.\n\n"
-            "• /premarket — Briefing pra-buka: IHSG, Dow, Nikkei, Hang Seng, Shanghai, "
-            "komoditas (gold, oil, copper), USD/IDR, foreign flow kemarin, market sentiment, "
-            "event hari ini. Semua yang perlu lo tau sebelum jam 09:00.\n"
-            "   _Wajib tiap pagi sebelum entry._\n\n"
-            "• /briefing — Ringkasan pasar harian: status IHSG, top gainers/losers, "
-            "outlook sektor. AI-generated dari data real-time.\n"
-            "   _Pagi hari sebelum trading session._\n\n"
-            "• /trending — Saham trending minggu ini: 7 top gainers + 7 top losers + "
-            "5 most active. Skor momentum. 🔥\n\n"
-            "• /ihsg — Data IHSG real-time: harga, perubahan, YTD, ATH, "
-            "support/resistance, volume.\n\n"
-            "• /sector — Forecast volatilitas 11 sektor IDX untuk 7 hari ke depan.\n\n"
-            "• /news — Berita pasar terbaru dari 3 sumber.\n"
-            "   /news BBCA — Berita spesifik satu saham.\n\n"
-            "• /report — Laporan mingguan lengkap: foreign flow, top broker asing, "
-            "market sentiment, outlook sektor (Premium).\n\n"
-            "*3️⃣ Bandar & Sentiment — Ikuti Smart Money*\n"
-            "──────────────────────────────\n"
-            "🎯 *Goal:* Deteksi jejak bandar/asing sebelum harga bergerak.\n\n"
-            "• /bandarmology — Deteksi akumulasi asing: saham mana yang lagi "
-            "dikoleksi, mana yang lagi didistribusi.\n"
-            "   _Premium: detil per broker + akumulasi score._\n\n"
-            "• /event — Klasifikasi event korporat: RUPS, dividen, right issue, "
-            "stock split, akuisisi, buyback, dan 5 kelas lainnya.\n"
-            "   _Contoh: /event BBCA bagi dividen Rp 500 per saham_\n\n"
-            "*4️⃣ Screening — Nemuin Saham Potensial*\n"
-            "──────────────────────────────\n"
-            "*🔍 Screening*\n"
-            "• /screener_momentum — Saham tenaga naik kuat\n"
-            "• /screener_reversal — Saham siap berbalik arah\n"
-            "• /screener_breakout — Saham breakout level kunci\n"
-            "• /screener_smartmoney — Jejak akumulasi bandar\n\n"
-            "• /screener breakout — Saham yang breakout resistance.\n"
-            "• /screener reversal — Saham potensi reversal dari support.\n"
-            "• /screener saham murah — Saham di bawah 500, PBV < 1.\n"
-            "• /screener top gainer — Top gainers hari ini.\n"
-            "• /screener yang turun tajam — Saham yang lagi turun.\n"
-            "   _Pro/Premium: unlimited screening._\n\n"
-            "*5️⃣ Trading Plan & Alert — Disiplin Eksekusi*\n"
-            "──────────────────────────────\n"
-            "🎯 *Goal:* Disiplin entry/exit. Rencanain sebelum eksekusi.\n\n"
-            "• /plan — Bikin trading plan. Auto-hitung risk/reward + posisi size.\n"
-            "   _Contoh: /plan TLKM entry 4600 sl 4500 tp 4800_\n\n"
-            "• /alert — Notifikasi real-time saat harga menyentuh level.\n"
-            "   _Contoh: /alert BBRI \\<2800, /alert TLKM \\>5000_\n\n"
-            "• /myplans — Lihat semua trading plan aktif.\n"
-            "• /myalerts — Lihat semua alert terpasang.\n"
-            "• /performance — Track performa trading: win rate, profit/loss.\n"
-            "• /portfolio — Track posisi real: tambah, lihat P&L, close, history.\n"
-            "   _Contoh: /portfolio add BBCA 4500 100 → /portfolio close BBCA 4800_\n\n"
-            "*6️⃣ Watchlist — Pantau Favorit Lo*\n"
-            "──────────────────────────────\n"
-            "🎯 *Goal:* Fokus ke 3-12 saham pilihan lo.\n\n"
-            "• /watchlist — Lihat watchlist + ringkasan performa.\n"
-            "• /watchlist add — Tambah saham ke watchlist.\n"
-            "• /watchlist remove — Hapus dari watchlist.\n"
-            "   _Free: 3 saham. Pro: 10. Premium: 12 + daily digest._\n\n"
-            "*7️⃣ Learning Loop — Improve Terus*\n"
-            "──────────────────────────────\n"
-            "🎯 *Goal:* Bot belajar dari feedback lo.\n\n"
-            "• /feedback — Rate analisa 1-10. Bot nyimpen journal + improve akurasi.\n"
-            "   _Contoh: /feedback BBCA 7_\n\n"
-            "*8️⃣ Akun & Langganan*\n"
-            "──────────────────────────────\n"
-            "• /pricing — Lihat paket: Free / Pro (Rp49k) / Premium (Rp149k) / "
-            "Lifetime (Rp1.999k) / White-label.\n"
-            "• /upgrade — Upgrade tier langsung dari bot.\n\n"
-            "*9️⃣ Gamification — Kumpulin Poin 🏆*\n"
-            "──────────────────────────────\n"
-            "🎯 *Goal:* Kompetisi sehat + reward untuk trader paling aktif.\n\n"
-            "• /leaderboard — Top 10 trader minggu ini. Lihat siapa paling aktif.\n"
-            "• /points — Poin kamu + level + rank + streak.\n\n"
-            "📊 *Cara dapetin poin:*\n"
-            "• analisa saham → +1 pt (max 5/hari)\n"
-            "• feedback rating → +2 pts\n"
-            "• bikin trading plan → +3 pts (max 10/hari)\n"
-            "• tambah watchlist → +1 pt (max 5/hari)\n\n"
-            "━━━━━━━━━━━━━━━━━━━━━━━\n"
-            "💡 *Trading pakai bot ini ibarat punya analis pribadi 24/7.* "
-            "Gak perlu buka RTI + Stockbit + TradingView + Yahoo Finance + "
-            "CNBC — semuanya di satu tempat.\n\n"
-            "🎁 *Baru?* Coba Premium gratis 7 hari: /pricing"
-        )
-        await update.message.reply_text(text, parse_mode="Markdown")
+        """Redirect to /help — panduan merged."""
+        await self.help(update, context)
+
+    async def analisa_direct(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """Direct handler for /analisa command."""
+        args = context.args
+        if not args:
+            await update.message.reply_text(
+                "📝 *Cara pakai:* /analisa BBCA\n\n"
+                "Ketik nama saham setelah command.",
+                parse_mode="Markdown"
+            )
+            return
+        symbol = args[0].upper()
+        await self.analyze(update, context, symbol)
+
+    async def stats_direct(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """Direct handler for /stats command."""
+        args = context.args
+        if not args:
+            await update.message.reply_text(
+                "📝 *Cara pakai:* /stats BBCA\n\n"
+                "Ketik nama saham setelah command.",
+                parse_mode="Markdown"
+            )
+            return
+        symbol = args[0].upper()
+        # Route to analyze with stats focus
+        await self.analyze(update, context, symbol)
 
     async def pricing(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         keyboard = [
@@ -1982,42 +1923,48 @@ def create_app() -> Application:
     handlers = BotHandlers()
     app = Application.builder().token(settings.bot_token).build()
 
-    # Register handlers
+    # Register handlers — core commands first
     app.add_handler(CommandHandler("start", handlers.start))
     app.add_handler(CommandHandler("help", handlers.help))
-    app.add_handler(CommandHandler("pricing", handlers.pricing))
-    app.add_handler(CommandHandler("myplans", handlers.myplans))
-    app.add_handler(CommandHandler("myalerts", handlers.myalerts))
-    app.add_handler(CommandHandler("performance", handlers.performance))
-    app.add_handler(CommandHandler("feedback", handlers.feedback))
-    app.add_handler(CommandHandler("fb", handlers.feedback))
-    app.add_handler(CommandHandler("bandarmology", handlers.bandarmology))
-    app.add_handler(CommandHandler("event", handlers.event))
-    app.add_handler(CommandHandler("upgrade", handlers.upgrade))
-    app.add_handler(CommandHandler("sector", handlers.sectorforecast))
-    app.add_handler(CommandHandler("sectorforecast", handlers.sectorforecast))
-    app.add_handler(CommandHandler("ihsg", handlers.ihsg))
-    app.add_handler(CommandHandler("watchlist", handlers.watchlist))
-    app.add_handler(CommandHandler("briefing", handlers.briefing))
-    app.add_handler(CommandHandler("news", handlers.news))
-    app.add_handler(CommandHandler("report", handlers.report))
-    app.add_handler(CommandHandler("trending", handlers.trending))
+    app.add_handler(CommandHandler("analisa", handlers.analisa_direct))
+    app.add_handler(CommandHandler("stats", handlers.stats_direct))
     app.add_handler(CommandHandler("panduan", handlers.panduan))
-    app.add_handler(CommandHandler("leaderboard", handlers.leaderboard))
-    app.add_handler(CommandHandler("points", handlers.points))
-    app.add_handler(CommandHandler("premarket", handlers.premarket))
-    app.add_handler(CommandHandler("portfolio", handlers.portfolio))
-    app.add_handler(CommandHandler("journal", handlers.journal))
-    app.add_handler(CommandHandler("calendar", handlers.calendar))
-    app.add_handler(CommandHandler("breadth", handlers.breadth))
+    # Screener
     app.add_handler(CommandHandler("screener_momentum", handlers.screener_momentum))
     app.add_handler(CommandHandler("screener_reversal", handlers.screener_reversal))
     app.add_handler(CommandHandler("screener_breakout", handlers.screener_breakout))
     app.add_handler(CommandHandler("screener_smartmoney", handlers.screener_smartmoney))
+    # Trading
+    app.add_handler(CommandHandler("plan", handlers.myplans))
+    app.add_handler(CommandHandler("myplans", handlers.myplans))
+    app.add_handler(CommandHandler("alert", handlers.myalerts))
+    app.add_handler(CommandHandler("myalerts", handlers.myalerts))
+    app.add_handler(CommandHandler("portfolio", handlers.portfolio))
     app.add_handler(CommandHandler("jejak", handlers.jejak))
+    app.add_handler(CommandHandler("journal", handlers.journal))
+    # Market
+    app.add_handler(CommandHandler("premarket", handlers.premarket))
+    app.add_handler(CommandHandler("briefing", handlers.briefing))
+    app.add_handler(CommandHandler("calendar", handlers.calendar))
+    app.add_handler(CommandHandler("ihsg", handlers.ihsg))
+    app.add_handler(CommandHandler("sector", handlers.sectorforecast))
+    app.add_handler(CommandHandler("news", handlers.news))
+    app.add_handler(CommandHandler("trending", handlers.trending))
+    app.add_handler(CommandHandler("breadth", handlers.breadth))
+    app.add_handler(CommandHandler("bandarmology", handlers.bandarmology))
+    app.add_handler(CommandHandler("event", handlers.event))
+    app.add_handler(CommandHandler("report", handlers.report))
+    # Account
+    app.add_handler(CommandHandler("watchlist", handlers.watchlist))
+    app.add_handler(CommandHandler("performance", handlers.performance))
+    app.add_handler(CommandHandler("feedback", handlers.feedback))
+    app.add_handler(CommandHandler("leaderboard", handlers.leaderboard))
+    app.add_handler(CommandHandler("points", handlers.points))
+    app.add_handler(CommandHandler("pricing", handlers.pricing))
+    app.add_handler(CommandHandler("upgrade", handlers.upgrade))
+    # NLP fallback — last handler
     app.add_handler(MessageHandler(filters.TEXT, handlers.handle_message))
-    app.add_handler(CallbackQueryHandler(handlers.button_callback, pattern="^sub_"))
-    app.add_handler(CallbackQueryHandler(handlers.button_callback, pattern="^share_"))
+    app.add_handler(CallbackQueryHandler(handlers.button_callback))
 
     return app
 
@@ -2025,38 +1972,43 @@ def create_app() -> Application:
 # ── Telegram Bot Command Menu ───────────────────────────────────
 
 COMMANDS = [
+    # Core
     ("start", "Menu utama & status"),
-    ("help", "Semua command yang tersedia"),
-    ("panduan", "Panduan lengkap fitur bot"),
-    ("analisa", "Analisa saham — ex: analisa BBCA"),
-    ("stats", "Statistik saham — ex: stats TLKM"),
-    ("briefing", "Daily AI market briefing"),
-    ("premarket", "Pre-market snapshot IDX"),
-    ("news", "Berita saham terkini"),
-    ("trending", "Top gainers & losers momentum"),
-    ("breadth", "Market breadth A/D ratio"),
-    ("calendar", "Kalender ekonomi minggu ini"),
-    ("ihsg", "Data IHSG real-time"),
-    ("sector", "Sector forecast 11 sektor"),
-    ("bandarmology", "Deteksi akumulasi bandar asing"),
-    ("event", "Event classifier korporat"),
+    ("help", "Semua command"),
+    ("panduan", "Panduan lengkap (→ /help)"),
+    ("analisa", "Analisa saham — ex: /analisa BBCA"),
+    ("stats", "Statistik saham — ex: /stats TLKM"),
+    # Screening
     ("screener_momentum", "Saham momentum kuat"),
-    ("screener_reversal", "Saham siap reversal naik"),
-    ("screener_breakout", "Saham breakout level kunci"),
+    ("screener_reversal", "Saham siap reversal"),
+    ("screener_breakout", "Saham breakout kunci"),
     ("screener_smartmoney", "Jejak akumulasi bandar"),
-    ("plan", "Buat trading plan"),
-    ("alert", "Buat harga alert"),
+    # Trading
+    ("plan", "Trading plan — ex: /plan TLKM"),
+    ("myplans", "Lihat plan aktif"),
+    ("alert", "Harga alert — ex: /alert TLKM >4600"),
+    ("myalerts", "Lihat alert aktif"),
     ("portfolio", "Portfolio — add/close/status"),
     ("jejak", "Jejak Cuan profit trail"),
-    ("journal", "Trading journal catat lesson"),
+    ("journal", "Trading journal"),
+    # Market
+    ("premarket", "Pre-market global snapshot"),
+    ("briefing", "Daily market briefing"),
+    ("calendar", "Kalender ekonomi"),
+    ("ihsg", "Data IHSG real-time"),
+    ("sector", "Forecast 11 sektor IDX"),
+    ("news", "Berita pasar terbaru"),
+    ("trending", "Saham trending minggu ini"),
+    ("breadth", "Market breadth A/D ratio"),
+    ("bandarmology", "Deteksi akumulasi bandar"),
+    ("event", "Event classifier korporat"),
+    ("report", "Weekly report"),
+    # Account
     ("watchlist", "Watchlist saham favorit"),
-    ("leaderboard", "Leaderboard mingguan"),
-    ("points", "Poin gamifikasi kamu"),
-    ("myplans", "Trading plan aktif"),
-    ("myalerts", "Alert harga aktif"),
-    ("performance", "Performa analisa"),
-    ("feedback", "Feedback hasil analisa"),
+    ("performance", "Performa trading"),
+    ("feedback", "Rating analisa — ex: /feedback BBCA 7"),
+    ("leaderboard", "Top trader minggu ini"),
+    ("points", "Poin & rank kamu"),
     ("pricing", "Paket langganan"),
     ("upgrade", "Upgrade ke Pro/Premium"),
-    ("report", "Weekly report"),
 ]
