@@ -62,6 +62,7 @@ class BotHandlers:
     # ── Start / Help ──
 
     async def start(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        if not await self._check_tier(update, "start"): return
         text = (
             "🚀 *Vilona Saham — AI Co-Pilot Trading IDX*\n\n"
             "Satu-satunya bot yang kasih **TradingView chart** + **AI DeepSeek** + **Bandar flow** + "
@@ -84,6 +85,7 @@ class BotHandlers:
         await update.message.reply_text(text, parse_mode="Markdown")
 
     async def help(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        if not await self._check_tier(update, "help"): return
         text = (
             "📖 *Vilona Saham — Semua Command*\n"
             "━━━━━━━━━━━━━━━━━━━━━━━\n\n"
@@ -156,6 +158,7 @@ class BotHandlers:
 
     async def analisa_direct(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """Direct handler for /analisa command."""
+        if not await self._check_tier(update, "analisa"): return
         # Free tier: limit 5 analyses/day
         user_id = update.effective_user.id
         from src.bot.tier_gate import get_user_tier_sync, get_tier_limits
@@ -178,6 +181,7 @@ class BotHandlers:
 
     async def stats_direct(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """Direct handler for /stats command."""
+        if not await self._check_tier(update, "stats"): return
         args = context.args
         if not args:
             await update.message.reply_text(
@@ -191,6 +195,7 @@ class BotHandlers:
         await self.analyze(update, context, symbol)
 
     async def pricing(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        if not await self._check_tier(update, "pricing"): return
         keyboard = [
             [
                 InlineKeyboardButton("💎 Pro Rp49k/bln", callback_data="sub_pro"),
@@ -900,6 +905,9 @@ class BotHandlers:
             await self.panduan(update, context)
             return
 
+        # ── Tier check for NLP-routed commands ──
+        if not await self._check_tier(update, "handle_message"): return
+        
         cmd = self.nlp.parse(text)
 
         if cmd.intent == Intent.ANALYZE:
@@ -1112,6 +1120,11 @@ class BotHandlers:
         query = update.callback_query
         await query.answer()
 
+        # Tier check for callback queries
+        user_id = query.from_user.id
+        from src.bot.tier_gate import get_user_tier_sync
+        user_tier = get_user_tier_sync(user_id)
+        
         data = query.data
         if data == "sub_pro":
             text = (
@@ -1194,6 +1207,7 @@ class BotHandlers:
 
     async def trending(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """Show trending stocks (weekly momentum)."""
+        if not await self._check_tier(update, "trending"): return
         msg = await update.message.reply_text("🔥 Menganalisa tren 39 saham IDX... (60-90 detik)")
         try:
             from src.engine.trending import analyze_trending, format_trending
@@ -1211,6 +1225,7 @@ class BotHandlers:
         """Fetch latest news for a stock symbol.
         Usage: /news TLKM or /news (general market news)
         """
+        if not await self._check_tier(update, "news"): return
         args = context.args or []
         symbol = args[0].upper() if args else ""
 
@@ -1283,6 +1298,7 @@ class BotHandlers:
 
     async def feedback(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """Handle /feedback TLKM 5 or /fb TLKM bagus"""
+        if not await self._check_tier(update, "feedback"): return
         try:
             args = context.args
             if len(args) < 1:
@@ -1347,6 +1363,7 @@ class BotHandlers:
 
     async def upgrade(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """Initiate payment for tier upgrade."""
+        if not await self._check_tier(update, "upgrade"): return
         tier = context.args[0].lower() if context.args else ""
         valid_tiers = ["pro", "premium", "lifetime", "whitelabel"]
 
@@ -1553,6 +1570,7 @@ class BotHandlers:
 
     async def ihsg(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """IHSG market summary — 30 years of historical data."""
+        if not await self._check_tier(update, "ihsg"): return
         await update.message.reply_text(
             "📊 Memuat data IHSG...", 
         )
