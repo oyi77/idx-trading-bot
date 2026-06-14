@@ -242,7 +242,12 @@ class CategoryScreener:
         if not support_levels:
             return None
         
-        nearest_support = max(s for s in support_levels if s < current)
+        # Find nearest support below current price
+        below_support = [s for s in support_levels if s < current]
+        if not below_support:
+            return None
+        
+        nearest_support = max(below_support)
         pct_above = (current / nearest_support - 1) * 100
         
         if pct_above < 3:  # within 3% of support
