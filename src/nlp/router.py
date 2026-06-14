@@ -17,6 +17,7 @@ class Intent(Enum):
     CHART = "chart"
     BACKTEST = "backtest"
     BRIEFING = "briefing"
+    NEWS = "news"
     HELP = "help"
     PRICING = "pricing"
     UNKNOWN = "unknown"
@@ -63,6 +64,7 @@ class NLPRouter:
     _HELP_TRIGGERS = ("/help", "help", "bantuan", "tolong", "h")
     _BACKTEST_TRIGGERS = ("backtest", "/backtest", "uji sinyal", "test strategi")
     _BRIEFING_TRIGGERS = ("/briefing", "briefing", "morning", "pagi", "daily report", "laporan pagi")
+    _NEWS_TRIGGERS = ("/news", "news", "berita", "/berita")
     _PRICING_TRIGGERS = ("/pricing", "pricing", "harga", "subscription",
                          "/subscription", "langganan", "beli", "upgrade",
                          "/subscribe")
@@ -127,6 +129,14 @@ class NLPRouter:
             if trigger in lower or lower.startswith(trigger):
                 logger.info(f"NLPRouter: BRIEFING from '{text}'")
                 return ParsedCommand(Intent.BRIEFING)
+
+        # ── NEWS ──
+        for trigger in self._NEWS_TRIGGERS:
+            if lower.startswith(trigger):
+                # Extract symbol if specified: "news BBCA" or "berita TLKM"
+                parts = text.split()
+                symbol = parts[1].upper() if len(parts) > 1 and len(parts[1]) >= 3 else ""
+                return ParsedCommand(Intent.NEWS, symbol)
 
         # ── HELP ──
         if lower in self._HELP_TRIGGERS or lower.split()[0] in self._HELP_TRIGGERS:

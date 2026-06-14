@@ -82,6 +82,8 @@ class BotHandlers:
             "• `stats TLKM` — high, low, volume, nilai\n\n"
             "*☀️ Briefing & Pasar*\n"
             "• `/briefing` — ringkasan pasar harian (IHSG + top movers)\n"
+            "• `/news` — berita pasar terbaru (umum)\n"
+            "• `/news BBCA` — berita spesifik saham\n"
             "• `/ihsg` — ringkasan IHSG (data real-time)\n"
             "• `/sector` — forecast volatilitas 11 sektor (7 hari)\n\n"
             "*🎰 Bandar & Sentiment*\n"
@@ -737,6 +739,10 @@ class BotHandlers:
                 await update.message.reply_text(
                     f"❌ Gagal briefing: {str(e)[:100]}"
                 )
+        elif cmd.intent == Intent.NEWS:
+            # Route to news handler with symbol
+            context.args = [cmd.symbol] if cmd.symbol else []
+            await self.news(update, context)
         elif cmd.intent == Intent.PLAN:
             try:
                 db = await self._get_db()
@@ -956,6 +962,82 @@ class BotHandlers:
         text += "\n\n📌 Ada pertanyaan? Kirim aja langsung."
 
         await query.edit_message_text(text, parse_mode="Markdown")
+
+    # ── News ──
+
+    async def news(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """Fetch latest news for a stock symbol.
+        Usage: /news TLKM or /news (general market news)
+        """
+        args = context.args or []
+        symbol = args[0].upper() if args else ""
+
+        if not symbol:
+            # General market news from ingestion pipeline
+            msg = await update.message.reply_text("📰 Mencari berita pasar terbaru...")
+            try:
+                from src.ingestion import scrape_all, classify_and_filter
+                articles = scrape_all()
+                if articles:
+                    filtered = classify_and_filter(articles)
+                    out = "📰 *Berita Pasar Terbaru*\n━━━━━━━━━━━━━━━━━\n\n"
+                    for a in filtered[:8]:
+                        emoji_map = {"positive": "🟢", "negative": "🔴", "neutral": "⚪"}
+                        emoji = emoji_map.get(a.get("sentiment", "neutral"), "⚪")
+                        title = a["title"][:80] + "..." if len(a["title"]) > 80 else a["title"]
+                        out += f"{emoji} {title}\n"
+                        if a.get("category"):
+                            out += f"  🏷 {a['category']}\n"
+                        if a.get("source"):
+                            out += f"  📍 {a['source']}\n"
+                        out += "\n"
+                    out += "━━━━━━━━━━━━━━━━━\n"
+                    out += "💡 Ketik `/news BBCA` untuk berita spesifik saham"
+                else:
+                    out = "📰 *Berita Pasar*\n\nTidak ada berita terbaru saat ini.\n\n💡 Coba `/news BBCA` untuk berita spesifik saham."
+                await msg.edit_text(out, parse_mode="Markdown")
+            except Exception as e:
+                await msg.edit_text(
+                    f"❌ Gagal mengambil berita: {str(e)[:100]}\n\n"
+                    "Coba `/news BBCA` untuk berita saham spesifik."
+                )
+            return
+
+        # Symbol-specific news
+        msg = await update.message.reply_text(f"📰 Mencari berita *{symbol}*...")
+        try:
+            from src.engine.news import NewsEngine
+            engine = NewsEngine(max_days=30, max_articles=5)
+            report = await engine.analyze(symbol)
+
+            if report.articles:
+                score_emoji = "🟢" if report.score >= 6 else ("🟡" if report.score >= 4 else "🔴")
+                out = (
+                    f"📰 *Berita {symbol}*\n"
+                    f"━━━━━━━━━━━━━━━━━\n"
+                    f"Sentiment: {score_emoji} *{report.score:.1f}/10* — {report.summary}\n"
+                    f"Artikel: {report.total_articles} "
+                    f"(🟢 {report.positive_count} | 🔴 {report.negative_count} | ⚪ {report.neutral_count})\n\n"
+                )
+                for a in report.articles[:5]:
+                    emoji = "🟢" if a.sentiment == "positive" else ("🔴" if a.sentiment == "negative" else "⚪")
+                    title = a.title[:70] + "..." if len(a.title) > 70 else a.title
+                    out += f"{emoji} *{a.source}*: {title}\n\n"
+
+                out += "━━━━━━━━━━━━━━━━━\n"
+                out += f"💡 Analisa lengkap: `analisa {symbol}`"
+            else:
+                out = (
+                    f"📰 *Berita {symbol}*\n\n"
+                    f"Tidak ada berita terbaru untuk {symbol}.\n\n"
+                    f"💡 Coba `/news` untuk berita pasar umum."
+                )
+            await msg.edit_text(out, parse_mode="Markdown")
+        except Exception as e:
+            await msg.edit_text(
+                f"❌ Gagal mengambil berita {symbol}: {str(e)[:100]}\n\n"
+                "Coba lagi nanti."
+            )
 
     async def feedback(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """Handle /feedback TLKM 5 or /fb TLKM bagus"""
@@ -1333,6 +1415,7 @@ def create_app() -> Application:
     app.add_handler(CommandHandler("ihsg", handlers.ihsg))
     app.add_handler(CommandHandler("watchlist", handlers.watchlist))
     app.add_handler(CommandHandler("briefing", handlers.briefing))
+    app.add_handler(CommandHandler("news", handlers.news))
     app.add_handler(MessageHandler(filters.TEXT, handlers.handle_message))
     app.add_handler(CallbackQueryHandler(handlers.button_callback, pattern="^sub_"))
 
