@@ -504,6 +504,96 @@ class BotHandlers:
         if ai_insight:
             text += f"\n🧠 *AI Insight:*\n  {ai_insight}\n"
 
+        # ─── SMC Structure + Auto Trading Plan ──────────────────
+        smc_trend = ""
+        try:
+            from src.engine.smc_structure import SMCStructureEngine
+            from src.engine.trading_plan import TradingPlanEngine
+
+            # Build OHLC from klines for SMC + plan
+            if klines_raw and len(klines_raw) > 20:
+                ohlc = []
+                for k in klines_raw:
+                    if isinstance(k, dict):
+                        ohlc.append(k)
+                    elif hasattr(k, "close"):
+                        ohlc.append({
+                            "open": float(k.open or 0), "high": float(k.high or 0),
+                            "low": float(k.low or 0), "close": float(k.close or 0),
+                            "volume": float(getattr(k, "volume", 0) or 0),
+                            "timestamp": str(getattr(k, "timestamp", "")),
+                        })
+
+                if ohlc and len(ohlc) >= 20:
+                    # SMC structure
+                    smc = SMCStructureEngine().analyze(ohlc, symbol)
+                    smc_trend = smc.trend
+
+                    # Volume ratio
+                    vols = [float(c.get("volume", 0) or 0) for c in ohlc[-20:]]
+                    vol_avg = sum(vols) / len(vols) if vols else 1
+                    recent_vol = sum(vols[-5:]) / 5 if len(vols) >= 5 else vol_avg
+                    vol_ratio = recent_vol / vol_avg if vol_avg > 0 else 1.0
+
+                    # Accumulation: from bandarmology if available
+                    acc_score = 50
+                    if rapidapi_broker:
+                        fnb = rapidapi_broker.get("foreign_net_buy", 0)
+                        fbo = rapidapi_broker.get("foreign_domestic_ratio", 0) * 100
+                        if fnb > 200_000_000_000:
+                            acc_score = min(100, 60 + int(fbo))
+                        elif fnb > 0:
+                            acc_score = 50 + int(min(fbo, 30))
+                        elif fnb < -200_000_000_000:
+                            acc_score = max(0, 40 - int(fbo))
+
+                    # Generate trading plan
+                    plan = TradingPlanEngine().generate(
+                        symbol, price, ohlc,
+                        smc_trend=smc.trend,
+                        accumulation_score=acc_score,
+                        volume_ratio=vol_ratio,
+                    )
+
+                    # Structure tag
+                    if smc.trend == "BULLISH":
+                        bos_tag = "🟢 BOS" if smc.recent_bos else "🟢 BULLISH"
+                    elif smc.trend == "BEARISH":
+                        bos_tag = "🔴 CHoCH" if smc.recent_choch else "🔴 BEARISH"
+                    else:
+                        bos_tag = "⚪ NEUTRAL"
+
+                    grade_emoji = {"A": "🏆", "B": "✅", "C": "⚠️", "D": "❌"}
+
+                    text += (
+                        f"\n🎯 *Trading Plan*\n"
+                        f"  📐 Structure: {bos_tag}  |  "
+                    )
+                    if smc.liquidity_sweeps:
+                        sweep = smc.liquidity_sweeps[-1]
+                        sweep_icon = "🐻" if sweep.direction == "BEAR_TRAP" else "🐂"
+                        text += f"{sweep_icon} {sweep.direction.replace('_',' ')}\n"
+                    else:
+                        text += "\n"
+
+                    text += (
+                        f"  🎯 Signal: *{plan.signal}*  |  "
+                        f"⭐ *{plan.confidence}/20*{grade_emoji.get(plan.grade, '')} Grade {plan.grade}\n\n"
+                        f"  📍 Entry: *Rp{plan.entry_min:,.0f} – Rp{plan.entry_max:,.0f}*\n"
+                        f"  🛑 SL: *Rp{plan.stop_loss:,.0f}* ({plan.sl_pct}%)\n"
+                        f"  🎯 TP1: *Rp{plan.tp1:,.0f}* (+{plan.tp1_pct}%)\n"
+                        f"  🚀 TP2: *Rp{plan.tp2:,.0f}* (+{plan.tp2_pct}%)\n"
+                        f"  ⚖️ RR: *1:{plan.rr_ratio}*\n"
+                    )
+                    if plan.vwap > 0:
+                        text += f"  📊 VWAP: Rp{plan.vwap:,.0f} ({plan.vwap_pct:+.1f}%)\\n"
+
+                    # BOS/BOW tag for scoring
+                    text += f"\n  🏷️ *{', '.join(plan.reasoning[:2])}*\n"
+
+        except Exception as e:
+            logger.warning(f"SMC/TradingPlan failed: {e}")
+
         # Score & Signal
         # Build final score: technical + fundamental bonuses
         final_score = tech_score
@@ -573,6 +663,9 @@ class BotHandlers:
                         f"{signal_emoji} *{symbol}* — Rp{price:,.0f} ({change:+.1f}%)  |  "
                         f"📊 *{final_score}/10* — *{signal_text}*"
                     )
+                    if smc_trend:
+                        tag = {"BULLISH": "🟢 BULLISH", "BEARISH": "🔴 BEARISH", "NEUTRAL": "⚪ NEUTRAL"}
+                        caption += f"  |  {tag.get(smc_trend, '')}"
                     await update.message.reply_photo(
                         photo=f, caption=caption, parse_mode="Markdown",
                     )
