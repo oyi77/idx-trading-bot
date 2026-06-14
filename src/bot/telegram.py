@@ -65,46 +65,64 @@ class BotHandlers:
         if not await self._check_tier(update, "start"): return
         
         user_id = update.effective_user.id
+        user_name = update.effective_user.first_name or "Trader"
         from src.bot.tier_gate import get_user_tier_sync, get_tier_badge
         tier = get_user_tier_sync(user_id)
         badge = get_tier_badge(tier)
         
-        # Admin-specific welcome
+        from telegram import InlineKeyboardButton, InlineKeyboardMarkup
+        
         if tier == "admin":
             text = (
-                "⚡ *Admin Panel — Vilona Saham*\n"
-                "━━━━━━━━━━━━━━━━━━━━━━━\n\n"
-                f"👤 Status: *Admin* {badge}\n"
-                "🔓 Akses: *FULL* (34 commands)\n\n"
-                "📊 *Quick Actions:*\n"
-                "• `analisa BBCA` — analisa lengkap\n"
-                "• `screener momentum` — scan 704 saham\n"
-                "• `plan TLKM` — auto trading plan\n\n"
-                "🔧 *Admin Tools:*\n"
-                "• /stats — statistik bot\n"
-                "• /leaderboard — top traders\n"
-                "• /points — points system\n\n"
-                "━━━━━━━━━━━━━━━━━━━━━━━\n"
-                "📖 *Help* — /help\n"
-                "💳 *Pricing* — /pricing"
+                f"⚡ *Admin Panel — Vilona Saham*\n"
+                f"━━━━━━━━━━━━━━━━━━━━━━━\n\n"
+                f"👤 *{user_name}*  {badge}\n"
+                f"🔓 Akses *FULL* — 34 commands\n\n"
+                f"📊 *Quick Actions:*\n"
+                f"• `analisa BBCA` — analisa lengkap + chart\n"
+                f"• `screener momentum` — cari saham momentum\n"
+                f"• `plan TLKM` — auto trading plan\n\n"
+                f"━━━━━━━━━━━━━━━━━━━━━━━\n"
+                f"📖 /help — semua command\n"
+                f"💳 /pricing — info langganan"
             )
+            await update.message.reply_text(text, parse_mode="Markdown")
         else:
-            # Regular user welcome
+            # Dynamic stock count
+            try:
+                from src.engine.idx_universe import IDX_UNIVERSE
+                stock_count = len(IDX_UNIVERSE)
+            except:
+                stock_count = 693
+            
             text = (
-                "🚀 *Vilona Saham — AI Co-Pilot Trading IDX*\n\n"
-                "Satu-satunya bot yang kasih **TradingView chart** + **AI DeepSeek** + **Bandar flow** + "
-                "**Trading Plan Auto** dalam 10 detik.\n\n"
-                f"👤 Status: *{tier.title()}* {badge}\n\n"
-                "📌 *Coba sekarang:*\n"
-                "• `analisa BBCA` — analisa + chart + AI + trading plan\n"
-                "• `screener momentum` — saham momentum kuat\n"
-                "• `plan TLKM` — auto trading plan\n\n"
-                "━━━━━━━━━━━━━━━━━━━━━━━\n"
-                "📖 *Bantuan* — /help\n"
-                "💳 *Langganan* — /pricing"
+                f"🚀 *Selamat Datang, {user_name}!*\n\n"
+                f"*Vilona Saham* — AI Copilot trading saham IDX.\n"
+                f"Satu bot: chart TradingView + analisa AI + data bandar + trading plan otomatis.\n\n"
+                f"━━━━━━━━━━━━━━━━━━━━━━━\n"
+                f"📊 *{stock_count} saham IDX* di-scan real-time\n"
+                f"🧠 *AI analisa* dalam Bahasa Indonesia\n"
+                f"📈 *Chart premium* + indikator teknikal\n"
+                f"🏦 *Bandarmology* — deteksi akumulasi institusi\n\n"
+                f"👤 Status: *{tier.title()}* {badge}\n"
+                f"━━━━━━━━━━━━━━━━━━━━━━━\n\n"
+                f"📌 *Coba sekarang:*\n"
+                f"• `analisa BBCA` — analisa lengkap\n"
+                f"• `screener momentum` — cari saham momentum\n"
+                f"• `plan TLKM` — auto trading plan\n\n"
+                f"📖 /help — semua command\n"
+                f"💳 /pricing — langganan"
             )
-        
-        await update.message.reply_text(text, parse_mode="Markdown")
+            
+            keyboard = [
+                [InlineKeyboardButton("🎓 Mulai Tour (5 menit)", callback_data="onboarding:start")],
+                [InlineKeyboardButton("💳 Lihat Harga", callback_data="onboarding:pricing")],
+            ]
+            reply_markup = InlineKeyboardMarkup(keyboard)
+            
+            await update.message.reply_text(
+                text, parse_mode="Markdown", reply_markup=reply_markup
+            )
 
     async def help(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         if not await self._check_tier(update, "help"): return
@@ -119,52 +137,46 @@ class BotHandlers:
             "📖 *Vilona Saham — Semua Command*\n"
             "━━━━━━━━━━━━━━━━━━━━━━━\n\n"
             f"👤 Status: *{tier.title()}* {badge}\n\n"
-            "💡 *Ketik natural — gak perlu hafal.*\n"
+            "💡 *Ketik natural — nggak perlu hafal perintah.*\n"
             "Contoh: `analisa BBCA`, `screener momentum`, `plan TLKM`\n\n"
-            
-            "━━━━━━━━━━━━━━━━━━━━━━━\n"
-            "📊 *Quick Actions:*\n"
-            "• `analisa BBCA` — analisa lengkap\n"
-            "• `screener momentum` — scan 704 saham\n"
-            "• `plan TLKM` — auto trading plan\n\n"
         )
         
         # Free commands
         free = (
             "━━━━━━━━━━━━━━━━━━━━━━━\n"
-            "🆓 *Free (12 commands):*\n"
-            "• /analisa BBCA — analisa + chart + AI\n"
-            "• /stats BBCA — data pasar\n"
-            "• /ihsg — data IHSG real-time\n"
-            "• /news — berita pasar\n"
-            "• /trending — saham trending\n\n"
+            "🆓 *Gratis:*\n"
+            "• `analisa BBCA` — analisa + chart + AI\n"
+            "• `stats BBCA` — data pasar\n"
+            "• `ihsg` — data IHSG real-time\n"
+            "• `news` — berita pasar\n"
+            "• `trending` — saham trending\n\n"
         )
         
         # Pro commands (gated)
         pro = (
             "━━━━━━━━━━━━━━━━━━━━━━━\n"
-            "💎 *Pro (16 commands) — Rp49k/bulan:*\n"
-            "• /screener_momentum — saham momentum kuat\n"
-            "• /screener_reversal — saham reversal\n"
-            "• /screener_breakout — breakout detector\n"
-            "• /screener_smartmoney — smart money flow\n"
-            "• /plan TLKM — auto trading plan\n"
-            "• /alert — notifikasi harga\n"
-            "• /portfolio — tracking posisi\n"
-            "• /premarket — kondisi global\n"
-            "• /briefing — ringkasan pasar\n\n"
+            "💎 *Pro — Rp49k/bulan:*\n"
+            "• `screener momentum` — momentum kuat\n"
+            "• `screener reversal` — siap balik arah\n"
+            "• `screener breakout` — breakout detector\n"
+            "• `screener smart money` — jejak akumulasi\n"
+            "• `plan TLKM` — auto trading plan\n"
+            "• `alert TLKM >4600` — notifikasi harga\n"
+            "• `portfolio` — tracking posisi\n"
+            "• `premarket` — kondisi global\n"
+            "• `briefing` — ringkasan pasar\n\n"
         )
         
         # Premium commands (gated)
         premium = (
             "━━━━━━━━━━━━━━━━━━━━━━━\n"
-            "👑 *Premium (9 commands) — Rp149k/bulan:*\n"
-            "• /bandarmology — bandar + asing flow\n"
-            "• /event — klasifikasi event\n"
-            "• /report — laporan mingguan\n"
-            "• /jejak — profit trail + performance\n"
-            "• /leaderboard — top traders\n"
-            "• /points — points system\n\n"
+            "👑 *Premium — Rp149k/bulan:*\n"
+            "• `bandarmology` — deteksi bandar + asing\n"
+            "• `event` — klasifikasi berita korporat\n"
+            "• `report` — laporan mingguan\n"
+            "• `jejak` — profit trail + performa\n"
+            "• `leaderboard` — top trader\n"
+            "• `points` — poin & rank\n\n"
         )
         
         # Footer
@@ -244,39 +256,46 @@ class BotHandlers:
             ],
         ]
         text = (
-            "💰 *Langganan Vilona Saham*\n\n"
+            "💰 *Vilona Saham — Langganan*\n\n"
+            "_Dari bingung liat chart → langsung tau entry, SL, TP. 10 detik._\n\n"
             "━━━━━━━━━━━━━━━━━\n"
-            "📊 *Free — Rp0*\n"
-            "• 5 screening/hari\n"
-            "• Watchlist 3 saham\n"
+            "🆓 *Gratis — Rp0*\n"
+            "• 5 analisa / hari\n"
+            "• 3 saham watchlist\n"
             "• Data delay 15 menit\n"
             "• 5 alert\n"
-            "• AI basic (skor 1-10)\n\n"
-            "💎 *Pro — Rp49.000/bulan*\n"
-            "• ✅ Unlimited screening (4 kategori)\n"
-            "• ✅ Watchlist 10 saham\n"
-            "• ✅ 50 alert\n"
-            "• ✅ Real-time data\n"
-            "• ✅ AI trade setup + Confidence Score 0-20\n"
-            "• ✅ Auto Trading Plan (Entry/SL/TP/RR/Grade)\n\n"
-            "👑 *Premium — Rp149.000/bulan*\n"
-            "• ✅ Semua Pro + 200 alert\n"
-            "• ✅ Bandar View + Market Sentiment\n"
-            "• ✅ SMC Structure (BOS/BOW/CHoCH tag)\n"
-            "• ✅ Sector Forecast (11 sektor, 7 hari)\n"
-            "• ✅ Event Classifier (11 kelas korporat)\n"
-            "• ✅ Auto-Report Mingguan (Senin pagi)\n"
-            "• ✅ Watchlist Smart + daily digest\n"
-            "• ✅ Jejak Cuan — Controlled Loss + Perf Distribution\n"
-            "• ✅ Priority response\n\n"
-            "🌟 *Lifetime — Rp1.999.000*\n"
-            "• Akses selamanya (sisa 998 seat)\n\n"
+            "• AI basic\n\n"
+            "💎 *Pro — Rp49rb/bulan* ← PALING DIMINATI\n"
+            "━━━━━━━━━━━━━━━━━\n"
+            "✅ Unlimited analisa + screener 693 saham\n"
+            "✅ Trading plan auto (Entry/SL/TP/R:R)\n"
+            "✅ 50 alert real-time\n"
+            "✅ Data real-time\n"
+            "✅ Portfolio tracking\n"
+            "✅ Watchlist 10 saham\n"
+            "✅ AI trade setup + Confidence Score\n\n"
+            "👑 *Premium — Rp149rb/bulan*\n"
+            "━━━━━━━━━━━━━━━━━\n"
+            "✅ SEMUA fitur Pro +\n"
+            "✅ Deteksi Bandar + Arus Asing\n"
+            "✅ Market Sentiment (Fear & Greed)\n"
+            "✅ Forecast 11 Sektor IDX (7 hari)\n"
+            "✅ Event Classifier (RUPS, dividen, rights)\n"
+            "✅ Laporan Mingguan (otomatis Senin pagi)\n"
+            "✅ Jejak Cuan + Distribusi Performa\n"
+            "✅ 200 alert\n"
+            "✅ Notifikasi SL/TP auto\n"
+            "✅ Priority AI response\n\n"
+            "🌟 *Lifetime — Rp1.999rb*\n"
+            "• Akses Premium selamanya\n"
+            "• ⚠️ Sisa 998 dari 1000 seat\n\n"
             "🏢 *White-label — Rp5jt + Rp500rb/bln*\n"
             "• Branding sendiri + panel admin\n"
-            "• Jual ke komunitas lo\n\n"
+            "• Jual ke komunitas kamu\n\n"
             "━━━━━━━━━━━━━━━━━\n"
-            "🎁 *Baru?* GRATIS 7 hari Premium — klik tombol di bawah\n"
-            "💡 Sudah 3.000+ analisa dihasilkan oleh trader lain"
+            "🎁 *Baru?* Coba Premium GRATIS 7 hari — klik di bawah\n"
+            "🔒 Garansi 7 hari: nggak cocok = refund penuh\n"
+            "💡 Trader lain udah pake. Giliran lo."
         )
         await update.message.reply_text(text, parse_mode="Markdown", reply_markup=InlineKeyboardMarkup(keyboard))
 
@@ -428,7 +447,7 @@ class BotHandlers:
 
         # ─── Build Output ─────────────────────────────────────
         if price == 0:
-            await update.message.reply_text(f"❌ Data untuk {symbol} tidak ditemukan.")
+            await update.message.reply_text(f"❌ Data {symbol} tidak ditemukan.")
             return
 
         emoji = "🟢" if change >= 0 else "🔴"
@@ -499,26 +518,26 @@ class BotHandlers:
             text += "  Data fundamental tidak tersedia\n"
 
         # Foreign Flow section
-        text += "\n🏦 *Foreign Flow:*\n"
+        text += "\n🏦 *Arus Asing:*\n"
         if flow_data and flow_data.net_buy != 0:
             dir_emoji = "🟢" if flow_data.is_net_buy() else "🔴"
-            dir_text = "NET BUY" if flow_data.is_net_buy() else "NET SELL"
+            dir_text = "Net Buy" if flow_data.is_net_buy() else "Net Sell"
             text += f"  {dir_emoji} {dir_text}: Rp{abs(flow_data.net_buy):,.0f}\n"
-            text += f"  Buy: Rp{flow_data.foreign_buy:,.0f} | Sell: Rp{flow_data.foreign_sell:,.0f}\n"
+            text += f"  Beli: Rp{flow_data.foreign_buy:,.0f} | Jual: Rp{flow_data.foreign_sell:,.0f}\n"
             if flow_data.streak_days > 0:
                 text += f"  Streak: {flow_data.streak_days} hari\n"
         elif rapidapi_broker:
             fnb = rapidapi_broker.get("foreign_net_buy", 0)
             if fnb != 0:
                 dir_emoji = "🟢" if fnb > 0 else "🔴"
-                dir_text = "NET BUY" if fnb > 0 else "NET SELL"
+                dir_text = "Net Buy" if fnb > 0 else "Net Sell"
                 text += f"  {dir_emoji} {dir_text} Asing: Rp{abs(fnb):,.0f}\n"
-                text += f"  Buy: Rp{rapidapi_broker.get('foreign_buy',0):,.0f} | Sell: Rp{rapidapi_broker.get('foreign_sell',0):,.0f}\n"
-                text += f"  Foreign Ratio: {rapidapi_broker.get('foreign_domestic_ratio',0)*100:.1f}%\n"
+                text += f"  Beli: Rp{rapidapi_broker.get('foreign_buy',0):,.0f} | Jual: Rp{rapidapi_broker.get('foreign_sell',0):,.0f}\n"
+                text += f"  Porsi Asing: {rapidapi_broker.get('foreign_domestic_ratio',0)*100:.1f}%\n"
             else:
                 text += "  Asing net flat hari ini\n"
         else:
-            text += "  Tidak ada aktivitas asing signifikan hari ini\n"
+            text += "  Asing lagi santai hari ini\n"
 
         # News section
         text += "\n📰 *Berita:*\n"
@@ -533,7 +552,7 @@ class BotHandlers:
 
         # AI Insight section
         if ai_insight:
-            text += f"\n🧠 *AI Insight:*\n  {ai_insight}\n"
+            text += f"\n🧠 *Analisa AI:*\n  {ai_insight}\n"
 
         # ─── SMC Structure + Auto Trading Plan ──────────────────
         smc_trend = ""
@@ -744,12 +763,12 @@ class BotHandlers:
 
             out += (
                 f"📍 *Zone Mapping*\n"
-                f"🔴 R: Rp{zones['resistance']:,.0f}    🟢 S: Rp{zones['support']:,.0f}\n"
-                f"🎯 Entry: Rp{zones['entry_zone_low']:,.0f} - Rp{zones['entry_zone_high']:,.0f}\n"
+                f"🔴 Resistance: Rp{zones['resistance']:,.0f}    🟢 Support: Rp{zones['support']:,.0f}\n"
+                f"🎯 Entry Ideal: Rp{zones['entry_zone_low']:,.0f} - Rp{zones['entry_zone_high']:,.0f}\n"
                 f"\n📊 *Indikator*\n"
                 f"RSI: {rsi_str}  │  MACD: {macd_emoji} {macd_trend}\n"
                 f"SMA20: {sma20:,.0f}  │  SMA50: {sma50:,.0f}\n"
-                f"Vol: {vol_status}{bb_str}\n"
+                f"Volume: {vol_status}{bb_str}\n"
             )
             if flow_data:
                 net = getattr(flow_data, "net_buy", 0)
@@ -778,11 +797,11 @@ class BotHandlers:
             fnb = rapidapi_broker.get("foreign_net_buy", 0)
             fbr = rapidapi_broker.get("foreign_domestic_ratio", 0) * 100
             if fnb > 200_000_000_000:
-                out += f"  🟢 Akumulasi Asing: Rp{fnb:,.0f} ({fbr:.1f}% foreign)\n"
+                out += f"  🟢 Asing lagi akumulasi: Rp{fnb:,.0f} ({fbr:.1f}% foreign)\n"
             elif fnb < -200_000_000_000:
-                out += f"  🔴 Distribusi Asing: Rp{abs(fnb):,.0f}\n"
+                out += f"  🔴 Asing distribusi: Rp{abs(fnb):,.0f}\n"
             else:
-                out += f"  ⚪ Netral: Rp{fnb:,.0f}\n"
+                out += f"  ⚪ Asing netral: Rp{fnb:,.0f}\n"
 
             # Top broker
             top_brokers = rapidapi_broker.get("top_brokers", [])
@@ -793,8 +812,8 @@ class BotHandlers:
 
         out += (
             f"\n━━━━━━━━━━━━━━━━━━━━\n"
-            f"💡 Ketik `analisa BBCA` atau `screener asing 3 hari`\n"
-            f"💎 /pricing — real-time + 50 alert + analisa lebih dalam"
+            f"💡 Coba: `screener momentum` atau `plan TLKM`\n"
+            f"💎 /pricing — real-time data + 50 alert"
         )
 
         # Add share button
@@ -836,7 +855,7 @@ class BotHandlers:
                     "📋 *Trading Plan*\n\n"
                     "Belum ada plan. Buat dengan:\n"
                     "`plan TLKM entry 4600 sl 4500 tp 4800`\n\n"
-                    "💡 Bot auto-report plan lo — notifikasi waktu kena SL/TP."
+                    "💡 Nanti saya kabarin kalau kena SL/TP."
                 )
             else:
                 text = "📋 *Trading Plan*\n━━━━━━━━━━━━━━━━━\n"
@@ -917,13 +936,13 @@ class BotHandlers:
             text = (
                 f"📊 *Performa Trading*\n"
                 f"━━━━━━━━━━━━━━━━━\n"
-                f"Total: {perf['total_trades']} trades\n"
-                f"Win: {perf['wins']} | Lose: {perf['losses']}\n"
+                f"Total: {perf['total_trades']} transaksi\n"
+                f"Menang: {perf['wins']} | Kalah: {perf['losses']}\n"
                 f"{wr_color} Win Rate: {perf['win_rate']}%\n"
-                f"{pnl_emoji} P&L: Rp{abs(total_pnl):,.0f}\n"
-                f"Aktif: {perf['active']} plan\n\n"
-                f"📋 Detail plan: /myplans\n"
-                f"💡 Akurasi AI mingguan: kirim `analisa TLKM` sekarang"
+                f"{pnl_emoji} Realisasi: Rp{abs(total_pnl):,.0f}\n"
+                f"Plan aktif: {perf['active']}\n\n"
+                f"📋 Lihat plan: /myplans\n"
+                f"💡 Analisa saham: `analisa BBCA`"
             )
         except Exception as e:
             text = (
@@ -998,7 +1017,7 @@ class BotHandlers:
                 else:
                     text = (
                         "📊 *Hasil Screening*\n\n"
-                        "Tidak ada saham yang lolos filter saat ini.\n\n"
+                        "Nggak ada saham yang lolos kriteria saat ini.\n\n"
                         "Coba kriteria lain: `screener volume spike` atau `screener akumulasi asing 3 hari`"
                     )
             except Exception as e:
@@ -1049,13 +1068,13 @@ class BotHandlers:
                     )
                     if plan:
                         text = (
-                            f"📋 *Trading Plan Tersimpan* — {cmd.symbol}\n"
+                            f"📋 *Plan Tersimpan* — {cmd.symbol}\n"
                             f"Entry: Rp{plan.entry_price:,.0f}\n"
                             f"SL: Rp{plan.stop_loss:,.0f}\n"
                             f"TP: Rp{plan.take_profit:,.0f} "
-                            f"({'✅' if plan.risk_reward >= 2 else '🟡' if plan.risk_reward >= 1.5 else '⚠️'} R/R: {plan.risk_reward}x)\n\n"
-                            "Auto-report aktif — saya akan kirim notifikasi jika harga menyentuh SL/TP.\n"
-                            "📊 Pantau performa: /performance"
+                            f"{'✅' if plan.risk_reward >= 2 else '🟡' if plan.risk_reward >= 1.5 else '⚠️'} R:R {plan.risk_reward}x\n\n"
+                            "Auto-report aktif — saya kirim notifikasi kalau kena SL/TP.\n"
+                            "📊 Cek performa: /performance"
                         )
                         # Also show risk calculation
                         from src.engine.risk import RiskManager
@@ -1105,10 +1124,10 @@ class BotHandlers:
                         limit = 5 if user.tier == "free" else (50 if user.tier == "pro" else 200)
                         text = (
                             f"🔔 *Alert Terpasang* — {cmd.symbol}\n"
-                            f"Kondisi: {alert.symbol} {alert.condition} Rp{alert.value:,.0f}\n"
+                            f"Pantau: {alert.symbol} {alert.condition} Rp{alert.value:,.0f}\n"
                             f"Alert aktif: {active}/{limit}\n\n"
-                            f"Saya akan kirim notifikasi saat harga memenuhi kondisi.\n"
-                            f"📋 Cek alert: /myalerts"
+                            f"Nanti saya kabarin kalau harga nyentuh level ini.\n"
+                            f"📋 Cek semua alert: /myalerts"
                         )
                     else:
                         text = "❌ Kuota alert penuh! Upgrade untuk menambah alert.\n/pricing"
@@ -1125,15 +1144,15 @@ class BotHandlers:
                     f"📈 *Statistik {cmd.symbol}*\n"
                     f"━━━━━━━━━━━━━━━━━\n"
                     f"Harga: Rp{quote.price:,.0f} {chg_emoji}\n"
-                    f"High: Rp{quote.high:,.0f}\n"
-                    f"Low: Rp{quote.low:,.0f}\n"
+                    f"Tertinggi: Rp{quote.high:,.0f}\n"
+                    f"Terendah: Rp{quote.low:,.0f}\n"
                     f"Volume: {quote.volume:,}\n"
                     f"Nilai: Rp{quote.value:,.0f}\n\n"
                     f"💡 Analisa lengkap: `analisa {cmd.symbol}`"
                 )
             else:
                 text = (
-                    f"❌ Data untuk {cmd.symbol} tidak tersedia.\n\n"
+                    f"❌ Data {cmd.symbol} tidak tersedia.\n\n"
                     "Coba: `stats BBCA` atau `analisa TLKM`"
                 )
             await update.message.reply_text(text, parse_mode="Markdown")
@@ -1143,15 +1162,120 @@ class BotHandlers:
             await self.pricing(update, context)
         else:
             await update.message.reply_text(
-                "🤔 *Perintah tidak dikenali*\n\n"
-                "Coba:\n"
+                "🤔 *Perintah nggak dikenal*\n\n"
+                "Coba salah satu ini:\n"
                 "• `analisa TLKM` — analisa saham\n"
-                "• `screener akumulasi asing` — screening\n"
-                "• `plan TLKM entry 4600 sl 4500 tp 4800` — plan\n"
-                "• /help — bantuan lengkap\n\n"
-                "Atau kirim kode saham langsung — `TLKM` aja cukup.",
+                "• `screener momentum` — cari saham panas\n"
+                "• `plan TLKM entry 4600 sl 4500 tp 4800` — trading plan\n"
+                "• /help — semua perintah\n\n"
+                "Atau kirim kode saham aja kayak `TLKM`",
                 parse_mode="Markdown",
             )
+
+    async def _onboarding_step(self, update: Update, context: ContextTypes.DEFAULT_TYPE, step: int) -> None:
+        """Interactive onboarding tour — guided walkthrough of 4 core features."""
+        from telegram import InlineKeyboardButton, InlineKeyboardMarkup
+        
+        query = update.callback_query
+        user_tier_query = query.message.chat.id
+        
+        if step == 1:
+            text = (
+                f"🎓 *Tour Vilona Saham — 1/5*\\n"
+                f"━━━━━━━━━━━━━━━━━━━━━━━\\n\\n"
+                f"📊 *Analisa Saham*\\n\\n"
+                f"Ketik `analisa BBCA` untuk dapet:\\n"
+                f"• 📈 Chart TradingView (dark theme)\\n"
+                f"• 🧠 AI narasi — bahasa Indonesia natural\\n"
+                f"• 🏦 Data bandar & asing\\n"
+                f"• 📋 Auto trading plan (entry, SL, TP)\\n"
+                f"• 📊 Score trading 1-10\\n\\n"
+                f"💡 *10 detik — dari bingung liat chart jadi tau entry.*"
+            )
+            keyboard = [
+                [InlineKeyboardButton("📊 Coba Analisa BBCA →", callback_data="analisa:BBCA")],
+                [InlineKeyboardButton("Selanjutnya →", callback_data="onboarding:step1")],
+            ]
+            
+        elif step == 2:
+            text = (
+                f"🔍 *Tour Vilona Saham — 2/5*\\n"
+                f"━━━━━━━━━━━━━━━━━━━━━━━\\n\\n"
+                f"🔍 *Screener Saham*\\n\\n"
+                f"Scan *693 saham IDX* otomatis dalam 5 detik.\\n"
+                f"4 kategori:\\n"
+                f"• 🔥 *Momentum* — saham dengan tenaga naik\\n"
+                f"• 🔄 *Reversal* — siap berbalik arah\\n"
+                f"• 💥 *Breakout* — tembus level kunci\\n"
+                f"• 🐋 *Smart Money* — jejak akumulasi bandar\\n\\n"
+                f"💡 *Gak perlu hafal 300 command — cukup ketik kategori.*"
+            )
+            keyboard = [
+                [InlineKeyboardButton("🔍 Cari Saham Momentum →", callback_data="screener:momentum")],
+                [InlineKeyboardButton("← Kembali", callback_data="onboarding:start"), InlineKeyboardButton("Selanjutnya →", callback_data="onboarding:step2")],
+            ]
+            
+        elif step == 3:
+            text = (
+                f"📋 *Tour Vilona Saham — 3/5*\\n"
+                f"━━━━━━━━━━━━━━━━━━━━━━━\\n\\n"
+                f"📋 *Auto Trading Plan*\\n\\n"
+                f"AI generate trading plan otomatis:\\n"
+                f"• 🎯 Entry zone (support/resistance)\\n"
+                f"• 🛑 Stop Loss (max 8% risk)\\n"
+                f"• 🏆 TP1 & TP2 (risk/reward)\\n"
+                f"• ⭐ Risk/Reward ratio\\n"
+                f"• 📊 Confidence score + Grade (A/B/C/D)\\n\\n"
+                f"💡 *Plan terpicu SL/TP? Bot auto notifikasi.*"
+            )
+            keyboard = [
+                [InlineKeyboardButton("📋 Lihat Plan TLKM →", callback_data="plan:TLKM")],
+                [InlineKeyboardButton("← Kembali", callback_data="onboarding:step1"), InlineKeyboardButton("Selanjutnya →", callback_data="onboarding:step3")],
+            ]
+            
+        elif step == 4:
+            text = (
+                f"🔔 *Tour Vilona Saham — 4/5*\\n"
+                f"━━━━━━━━━━━━━━━━━━━━━━━\\n\\n"
+                f"🔔 *Price Alert + Notifikasi*\\n\\n"
+                f"Pasang alert harga — bot kirim notifikasi\\n"
+                f"otomatis ke Telegram pas harga kena.\\n\\n"
+                f"• `alert BBCA >5500` — naik ke 5500\\n"
+                f"• `alert TLKM <2500` — turun ke 2500\\n"
+                f"• Auto-pantau SL/TP dari trading plan\\n"
+                f"• Notifikasi real-time via DM\\n\\n"
+                f"💡 *Gak perlu manteng chart seharian.*"
+            )
+            keyboard = [
+                [InlineKeyboardButton("🔔 Pasang Alert BBCA →", callback_data="alert_demo")],
+                [InlineKeyboardButton("← Kembali", callback_data="onboarding:step2"), InlineKeyboardButton("Selesai →", callback_data="onboarding:step4")],
+            ]
+            
+        else:  # step == 5 (conclusion)
+            text = (
+                f"🏆 *Tour Vilona Saham — 5/5*\\n"
+                f"━━━━━━━━━━━━━━━━━━━━━━━\\n\\n"
+                f"🎉 *Kamu udah siap!*\\n\\n"
+                f"Sekarang kamu bisa:\\n"
+                f"✅ Analisa saham pakai AI\\n"
+                f"✅ Cari saham momentum/reversal\\n"
+                f"✅ Buat trading plan otomatis\\n"
+                f"✅ Pasang alert real-time\\n\\n"
+                f"━━━━━━━━━━━━━━━━━━━━━━━\\n"
+                f"📌 *Mulai sekarang:*\\n"
+                f"• `analisa BBCA` — analisa lengkap\\n"
+                f"• `screener momentum` — cari saham panas\\n\\n"
+                f"📖 /help — semua command\\n"
+                f"💳 /pricing — upgrade ke Pro/Premium"
+            )
+            keyboard = [
+                [InlineKeyboardButton("📊 Analisa BBCA", callback_data="analisa:BBCA")],
+                [InlineKeyboardButton("🔍 Cari Momentum", callback_data="screener:momentum")],
+                [InlineKeyboardButton("💳 Lihat Harga", callback_data="onboarding:pricing")],
+            ]
+        
+        reply_markup = InlineKeyboardMarkup(keyboard)
+        await query.edit_message_text(text, parse_mode="Markdown", reply_markup=reply_markup)
 
     async def button_callback(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         query = update.callback_query
@@ -1163,6 +1287,59 @@ class BotHandlers:
         user_tier = get_user_tier_sync(user_id)
         
         data = query.data
+        
+        # ── Onboarding Tour Steps ──────────────────────────────
+        if data == "onboarding:start":
+            await self._onboarding_step(update, context, 1)
+            return
+        elif data == "onboarding:step1":
+            await self._onboarding_step(update, context, 2)
+            return
+        elif data == "onboarding:step2":
+            await self._onboarding_step(update, context, 3)
+            return
+        elif data == "onboarding:step3":
+            await self._onboarding_step(update, context, 4)
+            return
+        elif data == "onboarding:step4":
+            await self._onboarding_step(update, context, 5)
+            return
+        elif data == "onboarding:pricing":
+            await self.pricing(update, context)
+            return
+        
+        # ── Inline Screener Trigger ───────────────────────────
+        elif data == "screener:momentum":
+            await query.edit_message_text("🔍 Scanning momentum...")
+            await self._run_category_screener(update, "momentum")
+            return
+        
+        # ── Inline Alert Demo ─────────────────────────────────
+        elif data == "alert_demo":
+            text = (
+                f"🔔 *Demo Alert — BBCA*\n"
+                f"━━━━━━━━━━━━━━━━━━━━━━━\n\n"
+                f"Kalau kamu pasang `alert BBCA >5600`,\n"
+                f"bot otomatis kirim notifikasi ini\n"
+                f"pas harga BBCA tembus 5.600.\n\n"
+                f"📲 *Notifikasi dikirim via DM Telegram.*\n"
+                f"🔁 Bot pantau setiap 15 menit.\n\n"
+                f"━━━━━━━━━━━━━━━━━━━━━━━\n"
+                f"💡 *Coba pasang alert sekarang:*\n"
+                f"`alert BBCA >5600`\n\n"
+                f"📊 /help — semua command"
+            )
+            from telegram import InlineKeyboardButton, InlineKeyboardMarkup
+            keyboard = [[
+                InlineKeyboardButton("← Kembali ke Tour", callback_data="onboarding:step2"),
+                InlineKeyboardButton("Selesai →", callback_data="onboarding:step4"),
+            ]]
+            await query.edit_message_text(
+                text, parse_mode="Markdown",
+                reply_markup=InlineKeyboardMarkup(keyboard)
+            )
+            return
+        
         if data == "sub_pro":
             text = (
                 "💎 *Pro — Rp49.000/bulan*\n\n"
@@ -1291,7 +1468,7 @@ class BotHandlers:
 
         if not symbol:
             # General market news from ingestion pipeline
-            msg = await update.message.reply_text("📰 Mencari berita pasar terbaru...")
+            msg = await update.message.reply_text("📰 Cari berita pasar...")
             try:
                 from src.ingestion import scrape_all, classify_and_filter
                 articles = scrape_all()
@@ -1332,8 +1509,8 @@ class BotHandlers:
                 out = (
                     f"📰 *Berita {symbol}*\n"
                     f"━━━━━━━━━━━━━━━━━\n"
-                    f"Sentiment: {score_emoji} *{report.score:.1f}/10* — {report.summary}\n"
-                    f"Artikel: {report.total_articles} "
+                    f"Sentimen: {score_emoji} *{report.score:.1f}/10* — {report.summary}\n"
+                    f"Ada {report.total_articles} "
                     f"(🟢 {report.positive_count} | 🔴 {report.negative_count} | ⚪ {report.neutral_count})\n\n"
                 )
                 for a in report.articles[:5]:
@@ -1517,24 +1694,24 @@ class BotHandlers:
             engine = BandarmologyEngine()
             report = engine.analyze(broker)
 
-            out = f"🎰 *Bandarmology Report*\n"
+            out = f"🎰 *Aktivitas Bandar*\n"
             out += f"━━━━━━━━━━━━━━━━━━━━\n\n"
             out += f"{report.summary}\n\n"
 
             if report.foreign_accumulation_signals:
-                out += "🟢 *Foreign Accumulation:*\n"
+                out += "🟢 *Akumulasi Asing:*\n"
                 for s in report.foreign_accumulation_signals[:5]:
-                    out += f"  {s.broker_code} {s.broker_name}\n"
-                    out += f"  Net +Rp{s.net_value:,.0f} ({s.strength})\n"
+                    out += f"  {s.broker_code} ({s.broker_name})\n"
+                    out += f"  +Rp{s.net_value:,.0f} ({s.strength})\n"
 
             if report.foreign_distribution_signals:
-                out += "\n🔴 *Foreign Distribution:*\n"
+                out += "\n🔴 *Distribusi Asing:*\n"
                 for s in report.foreign_distribution_signals[:5]:
-                    out += f"  {s.broker_code} {s.broker_name}\n"
-                    out += f"  Net -Rp{abs(s.net_value):,.0f} ({s.strength})\n"
+                    out += f"  {s.broker_code} ({s.broker_name})\n"
+                    out += f"  -Rp{abs(s.net_value):,.0f} ({s.strength})\n"
 
             out += f"\n━━━━━━━━━━━━━━━━━━━━\n"
-            out += f"💎 Upgrade ke Premium untuk alert bandar real-time: /pricing"
+            out += f"💎 Premium: alert bandar real-time — /upgrade"
 
             await update.message.reply_text(out, parse_mode="Markdown")
         except Exception as e:
@@ -1578,11 +1755,11 @@ class BotHandlers:
 
             # Add CTA based on event type
             if result["signal"] > 0:
-                out += "\n\n💡 Saham terkait potensi *BUY* — analisa dengan `analisa <kode>`"
+                out += "\n\n💡 Potensi *POSITIF* — verifikasi: `analisa <kode>`"
             elif result["signal"] < 0:
-                out += "\n\n⚠️ Saham terkait potensi *SELL* — verifikasi dengan `analisa <kode>`"
+                out += "\n\n⚠️ Potensi *NEGATIF* — verifikasi: `analisa <kode>`"
 
-            out += "\n\n💎 Powered by FinBERT-ID + tuntun-news dataset (95.2% akurasi)"
+            out += "\n\n💎 FinBERT-ID classifier (95.2% akurasi)"
             await update.message.reply_text(out, parse_mode="Markdown")
 
         except Exception as e:
@@ -1752,15 +1929,17 @@ class BotHandlers:
         except:
             stock_count = 704
         
-        await update.message.reply_text(
-            f"🔍 Scanning *{category}* — {stock_count} saham IDX...\n"
-            f"⏳ Mohon tunggu ~60 detik",
-            parse_mode="Markdown"
-        )
         try:
             from src.engine.screener_categories import CategoryScreener
+            from src.engine.screener_cache import fetch_all_cached
 
-            data = await CategoryScreener.fetch_all()
+            await update.message.reply_text(
+                f"🔍 Scanning *{category}* — {stock_count} saham IDX...\n"
+                f"⏳ Mohon tunggu ~5 detik",
+                parse_mode="Markdown"
+            )
+
+            data = await fetch_all_cached()
             scanned = len(data)
             failed = stock_count - scanned
             
@@ -1781,7 +1960,7 @@ class BotHandlers:
 
             if not result.hits:
                 await update.message.reply_text(
-                    f"📭 Tidak ada saham dalam kategori *{result.category}* saat ini.\n\n"
+                    f"📭 Belum ada saham yang cocok kategori *{result.category}* saat ini.\n\n"
                     f"💡 Coba: /screener_momentum atau /screener_reversal",
                     parse_mode="Markdown",
                 )
@@ -1790,9 +1969,10 @@ class BotHandlers:
             # Header with scan stats
             now = datetime.now().strftime("%d %b %Y %H:%M")
             text = (
-                f"🔍 *{result.category}* — {result.description}\n"
+                f"🔍 *{result.category}*\n"
+                f"{result.description}\n"
                 f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
-                f"📊 Scanned: *{scanned}/{stock_count}* saham"
+                f"📊 Di-scan: *{scanned}/{stock_count}* saham"
             )
             if failed > 0:
                 text += f" ({failed} gagal fetch)"
@@ -1814,29 +1994,29 @@ class BotHandlers:
             # Score legend
             text += (
                 "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
-                "📊 *Score Legend:*\n"
-                "🔥 80-100 = Strong signal\n"
-                "⭐ 60-79 = Moderate signal\n"
-                "📊 40-59 = Weak signal\n\n"
+                "📊 *Skor:*\n"
+                "🔥 80-100 = Sinyal kuat\n"
+                "⭐ 60-79 = Sinyal sedang\n"
+                "📊 40-59 = Sinyal lemah\n\n"
             )
 
             # Quick actions
             text += (
                 "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
-                "📌 *Quick Actions:*\n"
-                "• `analisa [SYMBOL]` — lihat detail saham\n"
-                "• `/plan [SYMBOL]` — buat trading plan\n"
-                "• `/alert [SYMBOL] >harga` — set alert\n\n"
+                "📌 *Langkah Selanjutnya:*\n"
+                "• `analisa [KODE]` — lihat detail saham\n"
+                "• `plan [KODE]` — buat trading plan\n"
+                "• `alert [KODE] >harga` — pasang alert\n\n"
             )
 
             # Other screeners
             text += (
                 "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
-                "📊 *Other Screeners:*\n"
-                "• /screener_momentum — momentum kuat\n"
-                "• /screener_reversal — reversal siap\n"
-                "• /screener_breakout — breakout detector\n"
-                "• /screener_smartmoney — smart money flow"
+                "📊 *Screener Lainnya:*\n"
+                "• `screener momentum` — momentum kuat\n"
+                "• `screener reversal` — siap balik arah\n"
+                "• `screener breakout` — breakout terdeteksi\n"
+                "• `screener smart money` — jejak akumulasi bandar"
             )
 
             # Add inline keyboard for top 3 stocks
@@ -2068,7 +2248,7 @@ class BotHandlers:
     async def premarket(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         if not await self._check_tier(update, "premarket"): return
         mode = "compact" if context.args and context.args[0].lower() == "quick" else "full"
-        msg = await update.message.reply_text("🌅 Fetching pre-market data... (15-30 detik)")
+        msg = await update.message.reply_text("🌅 Ambil data pre-market... (15-30 detik)")
         try:
             from src.engine.premarket import build_premarket_snapshot, format_premarket, format_premarket_compact
             snapshot = await build_premarket_snapshot()
@@ -2087,7 +2267,7 @@ class BotHandlers:
     async def briefing(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """Daily AI Briefing — morning market snapshot."""
         if not await self._check_tier(update, "briefing"): return
-        msg = await update.message.reply_text("☀️ Menyusun briefing pagi... (30 detik)")
+        msg = await update.message.reply_text("☀️ Nyusun briefing pasar... (30 detik)")
         try:
             from src.engine.briefing import build_briefing
             card = await build_briefing()

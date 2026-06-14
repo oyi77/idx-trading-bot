@@ -255,7 +255,7 @@ class GamificationEngine:
         out += "• /feedback → +2\n"
         out += "• /plan → +3 (max 10/hari)\n"
         out += "• /watchlist add → +1 (max 5/hari)\n\n"
-        out += "🏆 `/leaderboard` untuk liat top trader"
+        out += "🏆 `/leaderboard` buat liat top trader"
 
         return out
 

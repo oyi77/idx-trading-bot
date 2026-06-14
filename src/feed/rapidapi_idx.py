@@ -14,7 +14,7 @@ returns dict-compatible with Yahoo feed for seamless drop-in.
 import asyncio
 import logging
 import time
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Optional
 
 import aiohttp
@@ -179,9 +179,49 @@ class RapidAPIFeed:
             "timestamp": datetime.now().isoformat(),
         }
 
-    # ── Stock-specific analysis ─────────────────────────────────
+    # ── Chart / OHLCV ────────────────────────────────────────────
 
-    async def analyze_stock(self, symbol: str) -> dict:
+    async def get_klines(
+        self, symbol: str, interval: str = "daily", limit: int = 100
+    ) -> list[dict]:
+        """Get historical OHLCV data (real-time from IDX).
+
+        interval: 'daily' | 'weekly' | 'monthly'
+        Returns list of candles with: date, open, high, low, close, volume
+        """
+        today = datetime.now().strftime("%Y-%m-%d")
+        # Go back enough days based on interval
+        if interval == "daily":
+            from_date = (datetime.now() - timedelta(days=limit)).strftime("%Y-%m-%d")
+        elif interval == "weekly":
+            from_date = (datetime.now() - timedelta(weeks=limit)).strftime("%Y-%m-%d")
+        else:
+            from_date = (datetime.now() - timedelta(days=limit * 30)).strftime("%Y-%m-%d")
+
+        params = {"from": from_date, "to": today, "limit": str(limit)}
+        path = f"/api/chart/{symbol}/{interval}"
+
+        data = await self._get(path, params=params)
+        if data.get("success"):
+            inner = data.get("data", {}).get("data", {})
+            candles = inner.get("chartbit", [])
+            return candles
+        return []
+
+    async def get_latest_price(self, symbol: str) -> dict | None:
+        """Get latest OHLCV candle (most recent trading day)."""
+        today = datetime.now().strftime("%Y-%m-%d")
+        yesterday = (datetime.now() - timedelta(days=5)).strftime("%Y-%m-%d")
+        params = {"from": yesterday, "to": today, "limit": "1"}
+        path = f"/api/chart/{symbol}/daily"
+
+        data = await self._get(path, params=params)
+        if data.get("success"):
+            inner = data.get("data", {}).get("data", {})
+            candles = inner.get("chartbit", [])
+            if candles:
+                return candles[-1]  # most recent
+        return None
         """Get comprehensive analysis for a single stock.
         
         Combines: broker flow + sector data + symbol list verification.

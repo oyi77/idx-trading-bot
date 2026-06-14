@@ -236,7 +236,7 @@ def format_premarket(snapshot: PreMarketSnapshot, mode: str = "full") -> str:
     ts = datetime.fromisoformat(snapshot.timestamp)
     date_str = ts.strftime("%d %B %Y, %H:%M WIB")
 
-    out = f"🌅 *Pre-Market Briefing — {date_str}*\n"
+    out = f"🌅 *Briefing Pre-Market — {date_str}*\n"
     out += "━━━━━━━━━━━━━━━━━━━━━━━\n\n"
 
     # ─── IHSG ──────────────────────────────────────────────
@@ -246,60 +246,60 @@ def format_premarket(snapshot: PreMarketSnapshot, mode: str = "full") -> str:
     else:
         out += "*🇮🇩 IHSG*  Data tidak tersedia\n\n"
 
-    # ─── Global Markets ────────────────────────────────────
+    # ─── Pasar Global ────────────────────────────────────
     if snapshot.global_indices:
-        out += "*🌍 Global Markets*\n"
+        out += "*🌍 Pasar Global*\n"
         for idx in snapshot.global_indices:
             if idx.price:
                 d = "🟢" if idx.change_pct > 0 else "🔴"
                 out += f"  {d} {idx.name}: {idx.change_pct:+.1f}%\n"
         out += "\n"
 
-    # ─── Commodities ───────────────────────────────────────
+    # ─── Komoditas ───────────────────────────────────────
     if snapshot.commodities:
-        out += "*🛢 Commodities*\n"
+        out += "*🛢 Komoditas*\n"
         for comm in snapshot.commodities[:5]:
             if comm.price:
                 d = "🟢" if comm.change_pct > 0 else "🔴"
                 out += f"  {d} {comm.name}: {comm.change_pct:+.1f}%\n"
         out += "\n"
 
-    # ─── FX ────────────────────────────────────────────────
+    # ─── Valas ────────────────────────────────────────────────
     if snapshot.fx_rates:
-        out += "*💱 Forex*\n"
+        out += "*💱 Valas*\n"
         for fx in snapshot.fx_rates:
             if fx.price:
                 d = "🟢" if fx.change_pct > 0 else "🔴"
                 out += f"  {d} {fx.name}: Rp{fx.price:,.0f} ({fx.change_pct:+.1f}%)\n"
         out += "\n"
 
-    # ─── Foreign Flow ──────────────────────────────────────
+    # ─── Arus Asing ──────────────────────────────────────
     fnb = snapshot.foreign_net_buy
     fdr = snapshot.foreign_domestic_ratio * 100
     if fnb:
         direction = "Net Buy" if fnb > 0 else "Net Sell"
         d = "🟢" if fnb > 0 else "🔴"
-        out += f"*🏦 Foreign Flow (kemarin)*\n"
-        out += f"  {d} {direction}: Rp{abs(fnb):,.0f} ({fdr:.1f}% foreign)\n\n"
+        out += f"*🏦 Arus Asing (kemarin)*\n"
+        out += f"  {d} {direction}: Rp{abs(fnb):,.0f} (porsi asing {fdr:.1f}%)\n\n"
 
-    # ─── Market Sentiment ──────────────────────────────────
+    # ─── Sentimen Pasar ──────────────────────────────────
     sent = snapshot.market_sentiment
     s_emoji = {"BULLISH": "🟢", "BEARISH": "🔴", "NEUTRAL": "⚪"}.get(sent, "⚪")
-    out += f"*🧠 Market Sentiment*  {s_emoji} {sent}\n\n"
+    out += f"*🧠 Sentimen Pasar*  {s_emoji} {sent}\n\n"
 
-    # ─── Today's Events ────────────────────────────────────
+    # ─── Event Hari Ini ────────────────────────────────────
     if snapshot.events_today:
-        out += "*📅 Events Today*\n"
+        out += "*📅 Event Hari Ini*\n"
         for ev in snapshot.events_today:
             out += f"  {ev}\n"
         out += "\n"
 
-    # ─── Trading Plan Suggestion ───────────────────────────
+    # ─── Saran Trading ───────────────────────────
     out += "━━━━━━━━━━━━━━━━━━━━━━━\n"
     if sent == "BULLISH":
-        out += "💡 *Suggestion:* Market bullish — fokus ke saham akumulasi asing. `/screener akumulasi asing`\n"
+        out += "💡 *Saran:* Market bullish — fokus saham akumulasi asing. `screener momentum`\n"
     elif sent == "BEARISH":
-        out += "⚠️ *Suggestion:* Market bearish — kurangi posisi, tight SL. `/screener yang turun tajam`\n"
+        out += "⚠️ *Saran:* Market bearish — kurangi posisi, pasang SL ketat. `screener reversal`\n"
     else:
         out += "💡 *Suggestion:* Market netral — selective entry. `/analisa <saham>`\n"
 

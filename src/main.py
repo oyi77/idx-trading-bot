@@ -83,6 +83,14 @@ async def main():
     except Exception as e:
         print(f"   DB: ⚠️ table init failed: {e}", flush=True)
 
+    # Start background screener cache refresh
+    try:
+        from src.engine.screener_cache import start_background_refresh
+        start_background_refresh()
+        print("   Cache: ✅ background refresh started", flush=True)
+    except Exception as e:
+        print(f"   Cache: ⚠️ refresh init failed: {e}", flush=True)
+
     await asyncio.gather(
         run_telegram(),
         run_api(),

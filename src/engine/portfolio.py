@@ -284,31 +284,31 @@ class PortfolioEngine:
 
         pnl_emoji = "🟢" if stats.total_pnl >= 0 else "🔴"
 
-        out = "⚡ *Active Positions* — "
-        out += f"{stats.total_positions} positions\n"
+        out = "📊 *Posisi Aktif* — "
+        out += f"{stats.total_positions} posisi\n"
         out += "━━━━━━━━━━━━━━━━━━━━\n"
 
         if not open_positions:
             out += "📭 Belum ada posisi aktif.\n\n"
-            out += "Tambah: `/portfolio add BBCA 4500 100`\n"
+            out += "Tambah: `portfolio add BBCA 4500 100`\n"
             return out
 
         # Summary line
-        out += f"💰 *{pnl_emoji} P&L: Rp{stats.total_pnl:,.0f} ({stats.total_pnl_pct:+.1f}%)*  |  "
-        out += f"📍 {stats.status_zones.get('Risk Zone', 0)} in Risk Zone\n\n"
+        out += f"💰 *{pnl_emoji} Realisasi: Rp{stats.total_pnl:,.0f} ({stats.total_pnl_pct:+.1f}%)*  |  "
+        out += f"📍 {stats.status_zones.get('Risk Zone', 0)} di Zona Risiko\n\n"
 
-        # Controlled Loss section (Stockpick style)
+        # Loss Terkontrol section
         if stats.controlled_loss > 0:
-            out += f"⚠️ *CONTROLLED LOSS* — {stats.controlled_loss} posisi >3% loss\n\n"
+            out += f"⚠️ *LOSS TERKONTROL* — {stats.controlled_loss} posisi >3% rugi\n\n"
         else:
-            out += "✅ *CONTROLLED LOSS* — 0 posisi >3% loss\n\n"
+            out += "✅ *LOSS TERKONTROL* — 0 posisi >3% rugi\n\n"
 
         # Tab-style display
-        out += "*📌 Positions:*\n"
+        out += "*📌 Posisi:*\n"
         for p in open_positions:
             if not p.current_price:
-                out += f"  ⚪ *{p.symbol}* {p.quantity} lot @ Rp{p.entry_price:,.0f}\\n"
-                out += f"     _Menunggu data harga..._\\n\\n"
+                out += f"  ⚪ *{p.symbol}* {p.quantity} lot @ Rp{p.entry_price:,.0f}\n"
+                out += f"     _Menunggu data harga..._\n\n"
                 continue
 
             pnl_icon = "🟢" if p.unrealized_pnl >= 0 else "🔴"
@@ -316,11 +316,11 @@ class PortfolioEngine:
 
             # Status
             if p.unrealized_pnl_pct < -5:
-                status = "🔴 Risk Zone"
+                status = "🔴 Zona Risiko"
             elif p.unrealized_pnl_pct < -1:
-                status = "⚠️ Watch"
+                status = "⚠️ Pantau"
             else:
-                status = "🟢 Neutral"
+                status = "🟢 Netral"
 
             # BOW/BOS tag
             tag_display = f"  `{p.tag}` " if p.tag else ""
@@ -328,14 +328,14 @@ class PortfolioEngine:
             out += (
                 f"  ⚡ *{p.symbol}*{tag_display}| Hari ke-{p.holding_days} | {status}\n"
                 f"     Entry Rp{p.entry_price:,.0f} | "
-                f"Now Rp{p.current_price:,.0f}\n"
-                f"     {pnl_icon} P&L: {pnl_sign}Rp{p.unrealized_pnl:,.0f} "
+                f"Sekarang Rp{p.current_price:,.0f}\n"
+                f"     {pnl_icon} Realisasi: {pnl_sign}Rp{p.unrealized_pnl:,.0f} "
                 f"({pnl_sign}{p.unrealized_pnl_pct:.1f}%)\n\n"
             )
 
-        # Performance Distribution
+        # Performa Distribution
         out += "━━━━━━━━━━━━━━━━━━━━\n"
-        out += "📊 *Performance Distribution*\n"
+        out += "📊 *Distribusi Performa*\n"
 
         perf = stats.perf_distribution
         dist_lines = [
@@ -347,15 +347,15 @@ class PortfolioEngine:
         ]
         for icon, label, count in dist_lines:
             bar = "█" * count if count > 0 else "—"
-            out += f"  {icon} *{label}* {bar} — {count} trades\n"
+            out += f"  {icon} *{label}* {bar} — {count} transaksi\n"
 
         # All-time stats
         closed_positions = [p for p in positions if p.status == "closed"]
         if closed_positions:
             total_closed_pnl = sum(p.pnl for p in closed_positions)
             out += (
-                f"\n📈 *All-Time:* {len(closed_positions)} trades  |  "
-                f"Win: {stats.win_rate:.0f}%  |  P&L: Rp{total_closed_pnl:,.0f}\n"
+                f"\n📈 *Total:* {len(closed_positions)} transaksi  |  "
+                f"Menang: {stats.win_rate:.0f}%  |  Realisasi: Rp{total_closed_pnl:,.0f}\n"
             )
 
         out += (
@@ -382,7 +382,7 @@ class PortfolioEngine:
             out += "✅ *CONTROLLED LOSS* — 0 posisi\\n\\n"
 
         # Performance Distribution
-        out += "*Performance Distribution*\\n"
+        out += "*Distribusi Performa*\n"
         perf = stats.perf_distribution
         dist_items = [
             ("🟢 >10%", perf[">10%"]),
@@ -392,10 +392,10 @@ class PortfolioEngine:
             ("🔴 <-5%", perf["<-3%"]),
         ]
         for label, count in dist_items:
-            out += f"  {label} — {count} trades\\n"
+            out += f"  {label} — {count} transaksi\n"
 
-        out += "\\n*Active Positions* — "
-        out += f"{stats.total_positions} positions\\n"
+        out += "\n*Posisi Aktif* — "
+        out += f"{stats.total_positions} posisi\n"
 
         has_any = False
         for p in open_positions:
@@ -406,33 +406,33 @@ class PortfolioEngine:
             pnl_sign = "+" if p.unrealized_pnl >= 0 else ""
             tag_display = f"  `{p.tag}` " if p.tag else ""
 
-            status = "🟢 Neutral" if p.unrealized_pnl_pct >= -5 else "🔴 Risk Zone"
+            status = "🟢 Netral" if p.unrealized_pnl_pct >= -5 else "🔴 Zona Risiko"
 
             out += (
-                f"  ⚡ *{p.symbol}*{tag_display}| Hari ke-{p.holding_days} | {status}\\n"
+                f"  ⚡ *{p.symbol}*{tag_display}| Hari ke-{p.holding_days} | {status}\n"
                 f"     Entry Rp{p.entry_price:,.0f} | "
-                f"{pnl_icon} {pnl_sign}{p.unrealized_pnl_pct:.1f}%\\n"
+                f"{pnl_icon} {pnl_sign}{p.unrealized_pnl_pct:.1f}%\n"
             )
 
         if not has_any:
-            out += "  📭 Belum ada posisi aktif\\n"
+            out += "  📭 Belum ada posisi aktif\n"
 
-        # Recent closed
+        # Riwayat ditutup
         if closed_positions:
-            out += "\\n*Recent Closed Trades*\\n"
+            out += "\n*Riwayat Ditutup*\n"
             closed_sorted = sorted(closed_positions, key=lambda p: p.exit_date, reverse=True)
             for p in closed_sorted[:5]:
                 pnl_icon = "🟢" if p.pnl >= 0 else "🔴"
                 pnl_sign = "+" if p.pnl >= 0 else ""
                 out += (
                     f"  {pnl_icon} *{p.symbol}* {p.holding_days}d | "
-                    f"{pnl_sign}{p.pnl_pct:.1f}%\\n"
+                    f"{pnl_sign}{p.pnl_pct:.1f}%\n"
                 )
 
         total_closed_pnl = sum(p.pnl for p in closed_positions)
         out += (
-            f"\\n📈 *All-Time:* {len(closed_positions)} trades  |  "
-            f"Win: {stats.win_rate:.0f}%  |  P&L: Rp{total_closed_pnl:,.0f}\\n"
+            f"\n📈 *Total:* {len(closed_positions)} transaksi  |  "
+            f"Menang: {stats.win_rate:.0f}%  |  Realisasi: Rp{total_closed_pnl:,.0f}\n"
         )
 
         return out

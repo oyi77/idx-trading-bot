@@ -121,29 +121,29 @@ def check_tier(telegram_id: int, command: str) -> tuple:
     # Build upgrade message
     if required == "pro":
         msg = (
-            "🔒 *Fitur ini butuh Pro*\n\n"
-            "Upgrade ke Pro untuk akses:\n"
-            "• Unlimited screener 704 saham\n"
-            "• Trading plan + AI insight\n"
-            "• Alert real-time 50 saham\n"
+            "🔒 *Fitur Pro*\n\n"
+            "Upgrade ke Pro buat akses:\n"
+            "• Screener 693 saham (4 kategori)\n"
+            "• Trading plan + AI analisa\n"
+            "• 50 alert real-time\n"
             "• Portfolio tracking\n\n"
-            "💰 Hanya *Rp49.000/bulan*\n\n"
-            "Ketik /upgrade untuk mulai."
+            "💰 Cuma *Rp49rb/bulan*\n\n"
+            "Ketik /upgrade"
         )
     elif required == "premium":
         msg = (
-            "🔒 *Fitur ini butuh Premium*\n\n"
-            "Upgrade ke Premium untuk akses:\n"
-            "• Bandarmology (asing + bandar)\n"
-            "• Market Sentiment (Fear & Greed)\n"
-            "• Sector + Event Analysis\n"
-            "• Auto-Report harian\n"
-            "• Jejak Cuan + Performance\n\n"
-            "💰 Hanya *Rp149.000/bulan*\n\n"
-            "Ketik /upgrade untuk mulai."
+            "🔒 *Fitur Premium*\n\n"
+            "Upgrade ke Premium buat akses:\n"
+            "• Deteksi bandar + asing real-time\n"
+            "• Market Sentiment\n"
+            "• Forecast sektor + event classifier\n"
+            "• Auto-report mingguan\n"
+            "• Jejak Cuan + performa\n\n"
+            "💰 Cuma *Rp149rb/bulan*\n\n"
+            "Ketik /upgrade"
         )
     else:
-        msg = "🔒 Fitur ini tidak tersedia untuk tier kamu."
+        msg = "🔒 Fitur ini nggak tersedia di tier kamu."
     
     return False, user_tier, msg
 
