@@ -1785,6 +1785,20 @@ class BotHandlers:
             logger.warning(f"Portfolio error: {e}")
             await update.message.reply_text("❌ Gagal akses portfolio. Coba lagi.")
 
+    async def jejak(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """Profit trail — Stockpick 'Jejak Cuan' style."""
+        try:
+            from src.engine.portfolio import PortfolioEngine
+            engine = PortfolioEngine()
+            user_id = update.effective_user.id
+            positions = engine.load(user_id)
+            positions = await engine.refresh_prices(positions)
+            text = engine.format_jejak(positions)
+            await update.message.reply_text(text, parse_mode="Markdown")
+        except Exception as e:
+            logger.warning(f"Jejak error: {e}")
+            await update.message.reply_text("❌ Gagal load jejak cuan. Coba lagi.")
+
     # ── Trading Journal ──
 
     async def journal(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -1966,6 +1980,7 @@ def create_app() -> Application:
     app.add_handler(CommandHandler("screener_reversal", handlers.screener_reversal))
     app.add_handler(CommandHandler("screener_breakout", handlers.screener_breakout))
     app.add_handler(CommandHandler("screener_smartmoney", handlers.screener_smartmoney))
+    app.add_handler(CommandHandler("jejak", handlers.jejak))
     app.add_handler(MessageHandler(filters.TEXT, handlers.handle_message))
     app.add_handler(CallbackQueryHandler(handlers.button_callback, pattern="^sub_"))
     app.add_handler(CallbackQueryHandler(handlers.button_callback, pattern="^share_"))
