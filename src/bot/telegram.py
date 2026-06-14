@@ -963,7 +963,7 @@ class BotHandlers:
                 from src.engine.idx_encyclopedia import all_stocks
                 symbols = list(all_stocks().keys())
             except Exception:
-                symbols = ['BBCA', 'BBRI', 'BMRI', 'TLKM', 'ASII', 'ADRO', 'UNVR', 
+                symbols = ['BBCA', 'BBRI', 'BMRI', 'BBNI', 'TLKM', 'ASII', 'ADRO', 'UNVR', 
                           'ICBP', 'INDF', 'PTBA', 'ANTM', 'GGRM', 'HMSP', 'UNTR',
                           'KLBF', 'PGAS', 'SMGR', 'CPIN', 'AMRT', 'ACES', 'BRIS',
                           'TOWR', 'EXCL', 'ISAT', 'MTEL', 'BUKA', 'GOTO', 'EMTK', 'MDKA']
