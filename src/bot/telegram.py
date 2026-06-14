@@ -190,10 +190,10 @@ class BotHandlers:
 
         # Get price from quote
         if quote_raw and isinstance(quote_raw, dict):
-            price = float(quote_raw.get("price", 0))
-            change = float(quote_raw.get("change_pct", 0))
+            price = float(quote_raw.get("price") or 0)
+            change = float(quote_raw.get("change_pct") or 0)
         elif quote_raw and hasattr(quote_raw, "price"):
-            price = float(quote_raw.price)
+            price = float(quote_raw.price or 0)
             change = getattr(quote_raw, "change_pct", 0) or 0
 
         # Parse klines (list of dict)
@@ -206,10 +206,10 @@ class BotHandlers:
                                "close": k.close, "volume": k.volume, "timestamp": getattr(k, "timestamp", 0)})
 
         if len(klines) > 20:
-            closes = [float(k["close"]) for k in klines]
-            highs = [float(k["high"]) for k in klines]
-            lows = [float(k["low"]) for k in klines]
-            volumes = [int(k["volume"]) for k in klines]
+            closes = [float(k["close"]) for k in klines if k.get("close") is not None]
+            highs = [float(k["high"]) for k in klines if k.get("high") is not None]
+            lows = [float(k["low"]) for k in klines if k.get("low") is not None]
+            volumes = [int(k["volume"]) for k in klines if k.get("volume") is not None]
 
             try:
                 tech_analysis = tech.analyze(symbol, closes, highs, lows, volumes)
