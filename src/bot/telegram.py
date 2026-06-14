@@ -95,8 +95,10 @@ class BotHandlers:
             "• /watchlist — pantau saham favorit (daily digest)\n"
             "• /watchlist add BBCA — tambah ke watchlist\n\n"
             "*🔍 Screening*\n"
-            "• /screener akumulasi asing — saham diakumulasi asing\n"
-            "• /screener volume spike — saham dengan volume tinggi\n\n"
+            "• /screener_momentum — Saham tenaga naik kuat\n"
+            "• /screener_reversal — Saham siap berbalik arah\n"
+            "• /screener_breakout — Saham breakout level kunci\n"
+            "• /screener_smartmoney — Jejak akumulasi bandar\n\n"
             "*📋 Trading Plan*\n"
             "• /plan TLKM entry 4600 sl 4500 tp 4800\n"
             "• /portfolio — kelola posisi & P&L real-time\n\n"
@@ -163,9 +165,11 @@ class BotHandlers:
             "   _Contoh: /event BBCA bagi dividen Rp 500 per saham_\n\n"
             "*4️⃣ Screening — Nemuin Saham Potensial*\n"
             "──────────────────────────────\n"
-            "🎯 *Goal:* Scan seluruh pasar buat nemuin saham yang sesuai kriteria.\n\n"
-            "• /screener akumulasi asing — Saham yang lagi diakumulasi asing.\n"
-            "• /screener volume spike — Saham dengan lonjakan volume.\n"
+            "*🔍 Screening*\n"
+            "• /screener_momentum — Saham tenaga naik kuat\n"
+            "• /screener_reversal — Saham siap berbalik arah\n"
+            "• /screener_breakout — Saham breakout level kunci\n"
+            "• /screener_smartmoney — Jejak akumulasi bandar\n\n"
             "• /screener breakout — Saham yang breakout resistance.\n"
             "• /screener reversal — Saham potensi reversal dari support.\n"
             "• /screener saham murah — Saham di bawah 500, PBV < 1.\n"
@@ -1652,6 +1656,76 @@ class BotHandlers:
             logger.warning(f"Points error: {e}")
             await update.message.reply_text("❌ Gagal load poin. Coba lagi.")
 
+    # ── Category Screeners ──
+
+    async def _run_category_screener(self, update: Update, category: str) -> None:
+        """Run a category screener and display results."""
+        await update.message.reply_text(
+            f"🔍 Scanning {category} — 39 saham IDX... (mohon tunggu ~30 detik)",
+        )
+        try:
+            from src.engine.screener_categories import CategoryScreener
+
+            data = await CategoryScreener.fetch_all()
+            screener = CategoryScreener(data)
+
+            screen_map = {
+                "momentum": screener.screen_momentum,
+                "reversal": screener.screen_reversal,
+                "breakout": screener.screen_breakout,
+                "smartmoney": screener.screen_smartmoney,
+            }
+
+            if category not in screen_map:
+                await update.message.reply_text("❌ Kategori tidak dikenal.")
+                return
+
+            result = screen_map[category](limit=10)
+
+            if not result.hits:
+                await update.message.reply_text(
+                    f"📭 Tidak ada saham dalam kategori *{result.category}* saat ini.",
+                    parse_mode="Markdown",
+                )
+                return
+
+            text = f"🔍 *{result.category}* — {result.description}\n"
+            text += f"📊 *{result.total_signals} sinyal* ditemukan\n\n"
+
+            for i, h in enumerate(result.hits[:10], 1):
+                emoji = "🟢" if h.change_pct > 0 else "🔴"
+                text += (
+                    f"*{i}. {h.symbol}*  {emoji} Rp{h.price:,.0f} ({h.change_pct:+.1f}%)\n"
+                    f"   🏷️ {h.strategy}  |  ⭐ {h.score}/100\n"
+                )
+                for r in h.reasons[:2]:
+                    text += f"   └ {r}\n"
+                text += "\n"
+
+            text += (
+                "━━━━━━━━━━━━━━━━━━━━\n"
+                "💡 /screener_momentum | /screener_reversal | /screener_breakout | /screener_smartmoney\n"
+                "💎 /pricing — akses semua screener + real-time data"
+            )
+
+            await update.message.reply_text(text, parse_mode="Markdown")
+
+        except Exception as e:
+            logger.warning(f"Category screener error: {e}")
+            await update.message.reply_text(f"❌ Gagal screening: {str(e)[:100]}")
+
+    async def screener_momentum(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        await self._run_category_screener(update, "momentum")
+
+    async def screener_reversal(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        await self._run_category_screener(update, "reversal")
+
+    async def screener_breakout(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        await self._run_category_screener(update, "breakout")
+
+    async def screener_smartmoney(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        await self._run_category_screener(update, "smartmoney")
+
     # ── Portfolio Tracker ──
 
     async def portfolio(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -1888,6 +1962,10 @@ def create_app() -> Application:
     app.add_handler(CommandHandler("journal", handlers.journal))
     app.add_handler(CommandHandler("calendar", handlers.calendar))
     app.add_handler(CommandHandler("breadth", handlers.breadth))
+    app.add_handler(CommandHandler("screener_momentum", handlers.screener_momentum))
+    app.add_handler(CommandHandler("screener_reversal", handlers.screener_reversal))
+    app.add_handler(CommandHandler("screener_breakout", handlers.screener_breakout))
+    app.add_handler(CommandHandler("screener_smartmoney", handlers.screener_smartmoney))
     app.add_handler(MessageHandler(filters.TEXT, handlers.handle_message))
     app.add_handler(CallbackQueryHandler(handlers.button_callback, pattern="^sub_"))
     app.add_handler(CallbackQueryHandler(handlers.button_callback, pattern="^share_"))
