@@ -52,7 +52,7 @@ class ITickFeed(DataFeed):
                     high=q.get("h", 0),
                     low=q.get("l", 0),
                     volume=int(q.get("v", 0)),
-                    value=float(q.get("tu", 0)),
+                    value=float(q.get("tu", 0) or 0),
                     timestamp=datetime.fromtimestamp(q.get("t", time.time()) / 1000),
                 )
         except Exception as e:

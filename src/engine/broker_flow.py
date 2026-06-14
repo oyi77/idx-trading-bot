@@ -151,10 +151,10 @@ class BrokerFlowEngine:
             symbol = item.get("id", "").upper()
             entry = {
                 "symbol": symbol,
-                "foreign_buy": float(item.get("buy", 0)),
-                "foreign_sell": float(item.get("sell", 0)),
-                "net_buy": float(item.get("nett", 0)),
-                "volume": float(item.get("buy", 0)) + float(item.get("sell", 0)),
+                "foreign_buy": float(item.get("buy", 0) or 0),
+                "foreign_sell": float(item.get("sell", 0) or 0),
+                "net_buy": float(item.get("nett", 0) or 0),
+                "volume": float(item.get("buy", 0) or 0) + float(item.get("sell", 0) or 0),
                 "name": "",
             }
             self._cache["top_foreign_buy"].append(entry)
@@ -165,10 +165,10 @@ class BrokerFlowEngine:
             symbol = item.get("id", "").upper()
             entry = {
                 "symbol": symbol,
-                "foreign_buy": float(item.get("buy", 0)),
-                "foreign_sell": float(item.get("sell", 0)),
-                "net_buy": float(item.get("nett", 0)),  # already negative
-                "volume": float(item.get("buy", 0)) + float(item.get("sell", 0)),
+                "foreign_buy": float(item.get("buy", 0) or 0),
+                "foreign_sell": float(item.get("sell", 0) or 0),
+                "net_buy": float(item.get("nett", 0) or 0),  # already negative
+                "volume": float(item.get("buy", 0) or 0) + float(item.get("sell", 0) or 0),
                 "name": "",
             }
             self._cache["top_foreign_sell"].append(entry)

@@ -100,7 +100,7 @@ class WeeklyReportEngine:
         if foreign_brokers:
             out += f"\n   *Top Broker Asing:*\n"
             for b in foreign_brokers[:3]:
-                net = float(b.get("net_value", 0))
+                net = float(b.get("net_value", 0) or 0)
                 direction = "🔺" if net > 0 else "🔻"
                 out += f"   {direction} {b['code']} {b['name']}: Rp{abs(net):,.0f}\n"
 

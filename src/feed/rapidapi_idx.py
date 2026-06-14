@@ -148,19 +148,19 @@ class RapidAPIFeed:
         if not brokers:
             return {}
 
-        total_value = sum(float(b.get("total_value", 0)) for b in brokers)
+        total_value = sum(float(b.get("total_value", 0) or 0) for b in brokers)
         foreign_net = sum(
-            float(b.get("net_value", 0))
+            float(b.get("net_value", 0) or 0)
             for b in brokers
             if b.get("group") == "BROKER_GROUP_FOREIGN"
         )
         foreign_buy = sum(
-            float(b.get("buy_value", 0))
+            float(b.get("buy_value", 0) or 0)
             for b in brokers
             if b.get("group") == "BROKER_GROUP_FOREIGN"
         )
         foreign_sell = sum(
-            float(b.get("sell_value", 0))
+            float(b.get("sell_value", 0) or 0)
             for b in brokers
             if b.get("group") == "BROKER_GROUP_FOREIGN"
         )
@@ -172,7 +172,7 @@ class RapidAPIFeed:
             "total_value": total_value,
             "top_brokers": sorted(
                 brokers,
-                key=lambda b: float(b.get("total_value", 0)),
+                key=lambda b: float(b.get("total_value", 0) or 0),
                 reverse=True,
             )[:5],
             "foreign_domestic_ratio": foreign_buy / total_value if total_value > 0 else 0,

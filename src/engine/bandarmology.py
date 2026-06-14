@@ -90,10 +90,10 @@ class BandarmologyEngine:
         local_acc = []
 
         for b in all_brokers or top_brokers:
-            net = float(b.get("net_value", 0))
-            buy = float(b.get("buy_value", 0))
-            sell = float(b.get("sell_value", 0))
-            total = float(b.get("total_value", 0))
+            net = float(b.get("net_value", 0) or 0)
+            buy = float(b.get("buy_value", 0) or 0)
+            sell = float(b.get("sell_value", 0) or 0)
+            total = float(b.get("total_value", 0) or 0)
             group = b.get("group", "BROKER_GROUP_LOCAL")
             code = b.get("code", "??")
             name = b.get("name", code)
