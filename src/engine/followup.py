@@ -237,12 +237,15 @@ def should_followup(user_row) -> tuple[bool, Optional[str], Optional[int]]:
     target_delay = STAGE_DELAY_HOURS.get(target_stage, 24)
     
     if stage == 0:
-        # No follow-up yet — check if enough time since signup/last active
-        # For new users: wait 2h after signup
-        created = user_row.created_at.replace(tzinfo=WIB) if user_row.created_at and user_row.created_at.tzinfo is None else user_row.created_at
+        # No follow-up yet — check if enough time since signup
+        # Active users (3+ commands): minimum 10 minutes. New users: 2h.
+        created = user_row.created_at
+        if created and created.tzinfo is None:
+            created = created.replace(tzinfo=WIB)
         if created:
-            hours_since_created = (now - created).total_seconds() / 3600
-            if hours_since_created < 2:
+            hours_elapsed = (now - created).total_seconds() / 3600
+            min_hours = 0.15 if (getattr(user_row, 'activity_count', 0) or 0) >= 3 else 2.0
+            if hours_elapsed < min_hours:
                 return False, None, None
     else:
         # Check if enough time since last stage

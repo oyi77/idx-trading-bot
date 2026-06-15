@@ -229,6 +229,7 @@ async def run_onboarding_drip(dry_run: bool = False):
 
     engine.dispose()
     try:
+        await asyncio.sleep(0.3)
         await bot.close()
     except Exception:
         pass  # bot.close() can hit rate limits — non-critical

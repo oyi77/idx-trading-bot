@@ -265,6 +265,7 @@ async def main():
     # ── Cleanup ──
     await feed.close()
     try:
+        await asyncio.sleep(0.5)
         await bot.close()
     except Exception:
         pass  # Telegram may rate-limit close()

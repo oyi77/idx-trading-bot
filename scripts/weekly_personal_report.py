@@ -146,6 +146,7 @@ async def main():
 
     engine.dispose()
     try:
+        await asyncio.sleep(0.5)
         await bot.close()
     except Exception:
         pass  # ignore transient network/rate-limit errors during close

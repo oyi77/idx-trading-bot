@@ -126,7 +126,9 @@ async def run_followup_dispatcher(dry_run: bool = False):
                 error_count += 1
 
     engine.dispose()
+    await asyncio.sleep(1)
     await bot.close()
+    await asyncio.sleep(2)
 
     logger.info(
         f"Follow-up dispatch complete: {sent_count} sent, "
