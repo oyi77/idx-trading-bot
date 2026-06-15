@@ -873,7 +873,21 @@ class BotHandlers:
         try:
             from datetime import datetime
             import json, hashlib, os
-            from src.models import AnalysisJournal
+            from src.models import AnalysisJournal, User
+            from sqlalchemy import create_engine
+            from sqlalchemy.orm import sessionmaker
+            
+            # Get internal user ID
+            sync_url = settings.database_url.replace("+aiosqlite", "").replace("+asyncpg", "")
+            engine = create_engine(sync_url)
+            Session = sessionmaker(bind=engine)
+            internal_user_id = None
+            with Session() as s:
+                u = s.query(User).filter_by(telegram_id=update.effective_user.id).first()
+                if u:
+                    internal_user_id = u.id
+            engine.dispose()
+            
             db = await self._get_db()
             aid = hashlib.md5(f"{symbol}{datetime.utcnow().isoformat()}{os.urandom(4).hex()}".encode()).hexdigest()[:16]
             indicators = {
@@ -884,6 +898,7 @@ class BotHandlers:
             }
             bias = "BULLISH" if final_score >= 7 else ("BEARISH" if final_score <= 4 else "NEUTRAL")
             entry = AnalysisJournal(
+                user_id=internal_user_id,
                 analysis_id=aid,
                 symbol=symbol,
                 price_at_analysis=price,
@@ -1545,7 +1560,6 @@ class BotHandlers:
                 f"`alert BBCA >5600`\n\n"
                 f"📊 /help — semua command"
             )
-            from telegram import InlineKeyboardButton, InlineKeyboardMarkup
             keyboard = [[
                 InlineKeyboardButton("← Kembali ke Tour", callback_data="onboarding:step2"),
                 InlineKeyboardButton("Selesai →", callback_data="onboarding:step4"),
