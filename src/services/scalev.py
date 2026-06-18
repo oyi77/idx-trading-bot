@@ -224,7 +224,7 @@ def infer_tier_from_amount(amount: Optional[int]) -> Optional[str]:
         return "lifetime"
     if amount >= 149_000:
         return "premium"
-    if amount >= 49_000:
+    if amount >= 79_000:
         return "pro"
     return None
 

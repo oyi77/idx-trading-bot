@@ -57,7 +57,7 @@ class SubscriptionTier:
     }
 
     PRICES = {
-        PRO: 49000,
+        PRO: 79900,
         PREMIUM: 149000,
         LIFETIME: 1999000,
         WHITELABEL: (5_000_000, 500_000),  # setup, monthly

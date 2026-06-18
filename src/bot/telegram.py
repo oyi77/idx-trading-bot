@@ -99,7 +99,9 @@ class BotHandlers:
         has_access, tier, msg = check_tier(user_id, command)
         if not has_access:
             logger.info(f"Tier gate: user={user_id} tier={tier} blocked={command}")
-            await update.message.reply_text(msg, parse_mode="Markdown")
+            reply_target = update.message or (update.callback_query.message if update.callback_query else None)
+            if reply_target:
+                await reply_target.reply_text(msg, parse_mode="Markdown")
             return False
         return True
 
@@ -199,7 +201,7 @@ class BotHandlers:
         # Pro commands (gated)
         pro = (
             "━━━━━━━━━━━━━━━━━━━━━━━\n"
-            "💎 *Pro — Rp49k/bulan:*\n"
+            "💎 *Pro — Rp79.900/bulan:*"
             "• `screener momentum` — momentum kuat\n"
             "• `screener reversal` — siap balik arah\n"
             "• `screener breakout` — breakout detector\n"
@@ -214,7 +216,7 @@ class BotHandlers:
         # Premium commands (gated)
         premium = (
             "━━━━━━━━━━━━━━━━━━━━━━━\n"
-            "👑 *Premium — Rp149k/bulan:*\n"
+            "💎 *Pro — Rp79.900/bulan:*"
             "• `bandarmology` — deteksi bandar + asing\n"
             "• `event` — klasifikasi berita korporat\n"
             "• `report` — laporan mingguan\n"
@@ -349,7 +351,7 @@ class BotHandlers:
 
         elif page == 4:
             text = (
-                f"👑 *PREMIUM — Rp149rb/bulan*  |  4/5\n"
+                f"👑 *PREMIUM — Rp149.000/bulan*  |  4/5\\n"
                 f"━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
                 f"🎰 `bandarmology`\n"
                 f"  Deteksi aktivitas bandar — broker akumulasi / distribusi.\n"
@@ -450,7 +452,7 @@ class BotHandlers:
         if not await self._check_tier(update, "pricing"): return
         keyboard = [
             [
-                InlineKeyboardButton("💎 Pro Rp49k/bln", callback_data="sub_pro"),
+                InlineKeyboardButton("💎 Pro Rp79.900/bln", callback_data="sub_pro"),
                 InlineKeyboardButton("👑 Premium Rp149k/bln", callback_data="sub_premium"),
             ],
             [
@@ -477,7 +479,7 @@ class BotHandlers:
             "✅ Portfolio tracking\n"
             "✅ Watchlist 10 saham\n"
             "✅ AI trade setup + Confidence Score\n\n"
-            "👑 *Premium — Rp149rb/bulan*\n"
+            "💎 *Pro — Rp79.900/bulan:*"
             "━━━━━━━━━━━━━━━━━\n"
             "✅ SEMUA fitur Pro +\n"
             "✅ Deteksi Bandar + Arus Asing\n"
@@ -505,12 +507,19 @@ class BotHandlers:
     # ── Analyze ──
 
     async def analyze(self, update: Update, context: ContextTypes.DEFAULT_TYPE, symbol: str):
+        """Run full analysis for a symbol. Works from both message and callback_query."""
+        # Safely get the message object (handles callback_query where update.message is None)
+        msg = update.message or (update.callback_query.message if update.callback_query else None)
+        if msg is None:
+            logger.warning("analyze called with no message object")
+            return
+
         if not symbol:
-            await update.message.reply_text("Masukkan kode saham. Contoh: `analisa TLKM`")
+            await msg.reply_text("Masukkan kode saham. Contoh: `analisa TLKM`")
             return
 
         symbol = symbol.upper()
-        await update.message.reply_text(
+        await msg.reply_text(
             f"🔍 Menganalisa *{symbol}*... (mohon tunggu 10-15 detik)",
             parse_mode="Markdown",
         )
@@ -650,7 +659,7 @@ class BotHandlers:
 
         # ─── Build Output ─────────────────────────────────────
         if price == 0:
-            await update.message.reply_text(f"❌ Data {symbol} tidak ditemukan.")
+            await msg.reply_text(f"❌ Data {symbol} tidak ditemukan.")
             return
 
         emoji = "🟢" if change >= 0 else "🔴"
@@ -934,7 +943,7 @@ class BotHandlers:
                     if smc_trend:
                         tag = {"BULLISH": "🟢 BULLISH", "BEARISH": "🔴 BEARISH", "NEUTRAL": "⚪ NEUTRAL"}
                         caption += f"  |  {tag.get(smc_trend, '')}"
-                    await update.message.reply_photo(
+                    await msg.reply_photo(
                         photo=f, caption=caption, parse_mode="Markdown",
                     )
                 chart_sent = True
@@ -1039,7 +1048,7 @@ class BotHandlers:
             "📤 Share Analisa",
             callback_data=f"share_an_{symbol}_{final_score}_{signal_text}"
         )]]
-        await update.message.reply_text(
+        await msg.reply_text(
             out, parse_mode="Markdown",
             reply_markup=InlineKeyboardMarkup(keyboard),
         )
@@ -1572,7 +1581,7 @@ class BotHandlers:
         
         if data == "sub_pro":
             text = (
-                "💎 *Pro — Rp49.000/bulan*\n\n"
+                "💎 *Pro — Rp79.900/bulan:*"
                 "✅ Unlimited screening & analisa\n"
                 "✅ Watchlist 10 saham\n"
                 "✅ Real-time data\n"

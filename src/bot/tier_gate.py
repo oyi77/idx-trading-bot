@@ -127,7 +127,7 @@ def check_tier(telegram_id: int, command: str) -> tuple:
             "• Trading plan + AI analisa\n"
             "• 50 alert real-time\n"
             "• Portfolio tracking\n\n"
-            "💰 Cuma *Rp49rb/bulan*\n\n"
+            "💰 Cuma *Rp79.900/bulan*\n\n"
             "Ketik /upgrade"
         )
     elif required == "premium":
@@ -139,7 +139,7 @@ def check_tier(telegram_id: int, command: str) -> tuple:
             "• Forecast sektor + event classifier\n"
             "• Auto-report mingguan\n"
             "• Jejak Cuan + performa\n\n"
-            "💰 Cuma *Rp149rb/bulan*\n\n"
+            "💰 Cuma *Rp149.000/bulan*\n\n"
             "Ketik /upgrade"
         )
     else:

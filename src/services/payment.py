@@ -28,14 +28,14 @@ PROJECT_ROOT = Path(__file__).parent.parent.parent
 PAYMENT_STORE = PROJECT_ROOT / "data" / "payments.json"
 
 TIER_PRICES = {
-    "pro": 49000,
+    "pro": 79900,
     "premium": 149000,
     "lifetime": 1999000,
     "whitelabel": 5000000,
 }
 
 TIER_LABELS = {
-    "pro": "💎 Pro (Rp49rb/bln)",
+    "pro": "💎 Pro (Rp79.900/bln)",
     "premium": "👑 Premium (Rp149rb/bln)",
     "lifetime": "🌟 Lifetime (Rp1.999rb)",
     "whitelabel": "🏢 White-label (Rp5jt + Rp500rb/bln)",
