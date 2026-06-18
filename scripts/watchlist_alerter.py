@@ -170,6 +170,12 @@ async def main():
         for user in users:
             # ── 24h cooldown guard ──
             last_alert = getattr(user, "last_watchlist_alert_at", None)
+            if last_alert is not None:
+                last_alert = (
+                    last_alert.replace(tzinfo=timezone.utc)
+                    if last_alert.tzinfo is None
+                    else last_alert
+                )
             if last_alert is not None and last_alert > cooldown_cutoff:
                 skipped_recent += 1
                 continue
