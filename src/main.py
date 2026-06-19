@@ -2,11 +2,57 @@
 import asyncio
 import sys
 from pathlib import Path
+from datetime import datetime, timedelta, timezone
 
 # Ensure src is on path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from src.config import settings
+
+WIB = timezone(timedelta(hours=7))
+
+
+async def run_autopilot(app):
+    """Background autopilot loop — runs daily/weekly tasks.
+
+    Daily (07:00 WIB): market map + signals + follow-up sweep
+    Weekly (Sunday 08:00 WIB): backtest + marketing post
+    """
+    from src.engine.autopilot import (
+        post_daily_to_channel, post_weekly_report,
+        run_followup_sweep, load_status,
+    )
+
+    # Wait 60s after bot start before first run
+    await asyncio.sleep(60)
+    print("🤖 Autopilot started", flush=True)
+
+    while True:
+        try:
+            now = datetime.now(WIB)
+            hour = now.hour
+            minute = now.minute
+            weekday = now.weekday()  # 0=Mon, 6=Sun
+
+            # Daily tasks at 07:00 WIB (within 5-min window)
+            if hour == 7 and minute < 5:
+                print("📋 Running daily autopilot...", flush=True)
+                await post_daily_to_channel(app)
+                sweep_result = await run_followup_sweep(app)
+                print(f"📋 Daily done. Follow-ups sent: {sweep_result}", flush=True)
+
+            # Weekly tasks on Sunday at 08:00 WIB
+            if weekday == 6 and hour == 8 and minute < 5:
+                print("📊 Running weekly backtest...", flush=True)
+                await post_weekly_report(app)
+                print("📊 Weekly report posted", flush=True)
+
+            # Sleep 4 minutes (check every 4 min for the 5-min window)
+            await asyncio.sleep(240)
+
+        except Exception as e:
+            print(f"⚠️ Autopilot error: {e}", flush=True)
+            await asyncio.sleep(300)  # Wait 5 min on error
 
 
 async def run_telegram():
@@ -56,25 +102,15 @@ async def run_api():
         )
         server = uvicorn.Server(config)
         await server.serve()
-    except (SystemExit, OSError) as e:
-        print(f"⚠️ API server failed to start on port {settings.port}: {e}", flush=True)
-        print("   Bot continues running in polling mode without API server.", flush=True)
+    except Exception as e:
+        print(f"API server error: {e}", flush=True)
 
 
 async def main():
-    """Run both Telegram bot and API server."""
-    print(f"🚀 IDX AI Trading Bot v0.2.0 (Multi-LLM)", flush=True)
-    print(f"   Debug: {settings.debug}", flush=True)
-    print(f"   Bot Token: {'✅' if settings.bot_token else '❌'}", flush=True)
-    print(f"   iTick Key: {'✅' if settings.itick_api_key else '❌'}", flush=True)
-    print(f"   OmniRoute: {'✅' if settings.omniroute_api_key else '❌'}", flush=True)
-    print(f"   DeepSeek: {'✅' if settings.deepseek_api_key else '❌'}", flush=True)
-    print(f"   Groq: {'✅' if settings.groq_api_key else '❌'}", flush=True)
-
+    """Entry point — run Telegram bot + API server + autopilot concurrently."""
     # Ensure DB tables exist BEFORE starting API or Telegram bot
     try:
         from src.models import get_engine, Base
-        from sqlalchemy.ext.asyncio import AsyncEngine
         engine = get_engine()
         async with engine.begin() as conn:
             await conn.run_sync(Base.metadata.create_all)
@@ -91,14 +127,32 @@ async def main():
     except Exception as e:
         print(f"   Cache: ⚠️ refresh init failed: {e}", flush=True)
 
-    await asyncio.gather(
-        run_telegram(),
-        run_api(),
-    )
+    # Run bot + API + autopilot concurrently
+    tasks = [
+        asyncio.create_task(run_telegram()),
+        asyncio.create_task(run_api()),
+    ]
+
+    # Start autopilot after a short delay
+    async def _start_autopilot():
+        await asyncio.sleep(10)
+        try:
+            from src.bot.telegram import create_app
+            app = create_app()
+            await app.initialize()
+            await run_autopilot(app)
+        except Exception as e:
+            print(f"⚠️ Autopilot init failed: {e}", flush=True)
+
+    tasks.append(asyncio.create_task(_start_autopilot()))
+    await asyncio.gather(*tasks)
 
 
 if __name__ == "__main__":
     try:
         asyncio.run(main())
     except KeyboardInterrupt:
-        print("\n👋 Shutting down...")
+        print("\nBot stopped.", flush=True)
+    except Exception as e:
+        print(f"Fatal: {e}", flush=True)
+        sys.exit(1)

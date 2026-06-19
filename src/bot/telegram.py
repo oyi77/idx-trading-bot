@@ -1641,6 +1641,52 @@ class BotHandlers:
                 f"❌ Gagal menganalisa tren: {str(e)[:100]}\n\nCoba lagi nanti."
             )
 
+    # ── Autopilot Commands ──────────────────────────────────────
+
+    async def autopilot_status(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """Show autopilot system status (admin only)."""
+        from src.engine.autopilot import load_status
+        status = load_status()
+
+        text = (
+            f"🤖 *Autopilot Status*\n"
+            f"━━━━━━━━━━━━━━━━━━━━\n\n"
+            f"📋 Last Daily Run: {status.last_daily_run or 'Never'}\n"
+            f"📊 Last Weekly Backtest: {status.last_weekly_backtest or 'Never'}\n"
+            f"📩 Last Follow-up Sweep: {status.last_followup_sweep or 'Never'}\n"
+            f"📢 Last Marketing Post: {status.last_marketing_post or 'Never'}\n\n"
+            f"*Performance:*\n"
+            f"  Swing Win Rate: {status.current_win_rate_swing}%\n"
+            f"  Scalp Win Rate: {status.current_win_rate_scalp}%\n\n"
+            f"*Lifetime Stats:*\n"
+            f"  Signals Posted: {status.total_signals_posted}\n"
+            f"  Follow-ups Sent: {status.total_followups_sent}\n"
+            f"  Marketing Posts: {status.total_marketing_posts}\n"
+        )
+        await update.message.reply_text(text, parse_mode="Markdown")
+
+    async def autopilot_daily(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """Manually trigger daily briefing (admin only)."""
+        from src.engine.autopilot import generate_daily_briefing
+        await update.message.reply_text("📋 Generating daily briefing...")
+        try:
+            briefing = await generate_daily_briefing()
+            await update.message.reply_text(briefing, parse_mode="Markdown")
+        except Exception as e:
+            await update.message.reply_text(f"❌ Error: {str(e)[:100]}")
+
+    async def autopilot_backtest(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """Manually trigger backtest (admin only)."""
+        from src.engine.backtester import run_weekly_backtest, format_report_telegram
+        await update.message.reply_text("📊 Running backtest... (30-60 detik)")
+        try:
+            swing = await run_weekly_backtest("swing")
+            scalp = await run_weekly_backtest("scalp")
+            await update.message.reply_text(format_report_telegram(swing), parse_mode="Markdown")
+            await update.message.reply_text(format_report_telegram(scalp), parse_mode="Markdown")
+        except Exception as e:
+            await update.message.reply_text(f"❌ Error: {str(e)[:100]}")
+
     # ── News ──
 
     async def news(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -2675,6 +2721,10 @@ def create_app() -> Application:
     app.add_handler(CommandHandler("signal_scalp", handlers.signal_scalp))
     app.add_handler(CommandHandler("sinyal_swing", handlers.signal_swing))
     app.add_handler(CommandHandler("sinyal_scalp", handlers.signal_scalp))
+    # Autopilot (admin)
+    app.add_handler(CommandHandler("autopilot_status", handlers.autopilot_status))
+    app.add_handler(CommandHandler("autopilot_daily", handlers.autopilot_daily))
+    app.add_handler(CommandHandler("autopilot_backtest", handlers.autopilot_backtest))
     # Trading
     app.add_handler(CommandHandler("plan", handlers.myplans))
     app.add_handler(CommandHandler("myplans", handlers.myplans))
@@ -2725,6 +2775,9 @@ COMMANDS = [
     ("screener_reversal", "Saham siap reversal"),
     ("screener_breakout", "Saham breakout kunci"),
     ("screener_smartmoney", "Jejak akumulasi bandar"),
+    # Signals
+    ("signal_swing", "Signal swing trade + TP/SL"),
+    ("signal_scalp", "Signal scalping + TP/SL"),
     # Trading
     ("plan", "Trading plan — ex: /plan TLKM"),
     ("myplans", "Lihat plan aktif"),
