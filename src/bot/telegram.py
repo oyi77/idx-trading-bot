@@ -449,64 +449,8 @@ class BotHandlers:
         await self.analyze(update, context, symbol)
 
     async def pricing(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
-        if not await self._check_tier(update, "pricing"): return
-        keyboard = [
-            [
-                InlineKeyboardButton("💎 Pro Rp79.900/bln", callback_data="sub_pro"),
-                InlineKeyboardButton("👑 Premium Rp149k/bln", callback_data="sub_premium"),
-            ],
-            [
-                InlineKeyboardButton("🌟 Lifetime Rp1.999k", callback_data="sub_lifetime"),
-                InlineKeyboardButton("🏢 White-label", callback_data="sub_whitelabel"),
-            ],
-        ]
-        text = (
-            "💰 *Vilona Saham — Langganan*\n\n"
-            "_Dari bingung liat chart → langsung tau entry, SL, TP. 10 detik._\n\n"
-            "━━━━━━━━━━━━━━━━━\n"
-            "🆓 *Gratis — Rp0*\n"
-            "• 5 analisa / hari\n"
-            "• 3 saham watchlist\n"
-            "• Data delay 15 menit\n"
-            "• 5 alert\n"
-            "• AI basic\n\n"
-            "💎 *Pro — Rp79.900/bulan* ← PALING DIMINATI\n"
-            "━━━━━━━━━━━━━━━━━\n"
-            "✅ Unlimited analisa + screener 693 saham\n"
-            "✅ Trading plan auto (Entry/SL/TP/R:R)\n"
-            "✅ 50 alert real-time\n"
-            "✅ Data real-time\n"
-            "✅ Portfolio tracking\n"
-            "✅ Watchlist 10 saham\n"
-            "✅ AI trade setup + Confidence Score\n\n"
-            "💎 *Pro — Rp79.900/bulan:*"
-            "━━━━━━━━━━━━━━━━━\n"
-            "✅ SEMUA fitur Pro +\n"
-            "✅ Deteksi Bandar + Arus Asing\n"
-            "✅ Market Sentiment (Fear & Greed)\n"
-            "✅ Forecast 11 Sektor IDX (7 hari)\n"
-            "✅ Event Classifier (RUPS, dividen, rights)\n"
-            "✅ Laporan Mingguan (otomatis Senin pagi)\n"
-            "✅ Jejak Cuan + Distribusi Performa\n"
-            "✅ 200 alert\n"
-            "✅ Notifikasi SL/TP auto\n"
-            "✅ Priority AI response\n\n"
-            "🌟 *Lifetime — Rp1.999rb*\n"
-            "• Akses Premium selamanya\n"
-            "• ⚠️ Sisa 998 dari 1000 seat\n\n"
-            "🏢 *White-label — Rp5jt + Rp500rb/bln*\n"
-            "• Branding sendiri + panel admin\n"
-            "• Jual ke komunitas kamu\n\n"
-            "━━━━━━━━━━━━━━━━━\n"
-            "🎁 *Baru?* Coba Premium GRATIS 7 hari — klik di bawah\n"
-            "🔒 Garansi 7 hari: nggak cocok = refund penuh\n"
-            "💡 Trader lain udah pake. Giliran lo."
-        )
-        await update.message.reply_text(text, parse_mode="Markdown", reply_markup=InlineKeyboardMarkup(keyboard))
-
-    # ── Analyze ──
-
-    async def analyze(self, update: Update, context: ContextTypes.DEFAULT_TYPE, symbol: str):
+        """Redirect to /upgrade command."""
+        await self.upgrade(update, context)
         """Run full analysis for a symbol. Works from both message and callback_query."""
         # Safely get the message object (handles callback_query where update.message is None)
         msg = update.message or (update.callback_query.message if update.callback_query else None)
@@ -1838,48 +1782,99 @@ class BotHandlers:
     # ── Upgrade (Payment) ──
 
     async def upgrade(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
-        """Initiate upgrade via Scalev product page."""
+        """Initiate upgrade via payment gateway (Tripay/Midtrans)."""
         if not await self._check_tier(update, "upgrade"):
             return
+        
+        from src.services.payment import TIER_LABELS
+        
         args = context.args or []
         tier = args[0].lower() if args else ""
         valid_tiers = ["pro", "premium", "lifetime", "whitelabel"]
+        
         if tier not in valid_tiers:
             keyboard = [
-                [InlineKeyboardButton("💎 Pro", callback_data="pay_pro")],
-                [InlineKeyboardButton("👑 Premium", callback_data="pay_premium")],
-                [InlineKeyboardButton("🌟 Lifetime", callback_data="pay_lifetime")],
+                [InlineKeyboardButton(TIER_LABELS["pro"], callback_data="pay_pro")],
+                [InlineKeyboardButton(TIER_LABELS["premium"], callback_data="pay_premium")],
+                [InlineKeyboardButton(TIER_LABELS["lifetime"], callback_data="pay_lifetime")],
             ]
+            text = (
+                "💰 *Vilona Saham — Upgrade Langganan*\n\n"
+                "_Dari bingung liat chart → langsung tau entry, SL, TP. 10 detik._\n\n"
+                "━━━━━━━━━━━━━━━━━\n"
+                "🆓 *Gratis — Rp0*\n"
+                "• 5 analisa / hari\n"
+                "• 3 saham watchlist\n"
+                "• Data delay 15 menit\n"
+                "• 5 alert\n"
+                "• AI basic\n\n"
+                "💎 *Pro — Rp79.900/bulan* ← PALING DIMINATI\n"
+                "━━━━━━━━━━━━━━━━━\n"
+                "✅ Unlimited analisa + screener 693 saham\n"
+                "✅ Trading plan auto (Entry/SL/TP/R:R)\n"
+                "✅ 50 alert real-time\n"
+                "✅ Data real-time\n"
+                "✅ Portfolio tracking\n"
+                "✅ Watchlist 10 saham\n"
+                "✅ AI trade setup + Confidence Score\n\n"
+                "👑 *Premium — Rp149.000/bulan*\n"
+                "━━━━━━━━━━━━━━━━━\n"
+                "✅ SEMUA fitur Pro +\n"
+                "✅ Deteksi Bandar + Arus Asing\n"
+                "✅ Market Sentiment (Fear & Greed)\n"
+                "✅ Forecast 11 Sektor IDX (7 hari)\n"
+                "✅ Event Classifier (RUPS, dividen, rights)\n"
+                "✅ Priority support\n\n"
+                "🌟 *Lifetime — Rp1.999.000*\n"
+                "━━━━━━━━━━━━━━━━━\n"
+                "✅ SEMUA fitur Premium\n"
+                "✅ Akses selamanya (bayar sekali)\n"
+                "✅ Update gratis selamanya\n"
+                "✅ VIP support\n\n"
+                "📌 *Pilih paket di bawah:*"
+            )
             await update.message.reply_text(
-                "💳 Upgrade Langganan\nPilih paket: Pro / Premium / Lifetime.",
+                text,
+                parse_mode="Markdown",
                 reply_markup=InlineKeyboardMarkup(keyboard),
             )
             return
-        await self._open_scalev_checkout(update, tier)
+        await self._open_payment_checkout(update, tier)
 
-    async def _open_scalev_checkout(self, update: Update, tier: str) -> None:
+    async def _open_payment_checkout(self, update: Update, tier: str) -> None:
         try:
-            from src.services.scalev import build_purchase_link
+            from src.services.payment import create_payment, TIER_LABELS
 
             user = update.effective_user
-            link = build_purchase_link(
+            payment = create_payment(
                 tier=tier,
                 user_id=user.id,
-                source="telegram",
-                note=(user.username or user.first_name or ""),
+                username=user.username or user.first_name or "",
             )
+            
             keyboard = [
-                [InlineKeyboardButton("🔗 Bayar di Scalev", url=link["purchase_url"])],
+                [InlineKeyboardButton("🔗 Bayar Sekarang", url=payment["checkout_url"])],
                 [InlineKeyboardButton("📋 Cek Status", callback_data="cek_pembayaran")],
             ]
+            
+            text = (
+                f"💳 *Invoice Pembayaran*\n\n"
+                f"Paket: {TIER_LABELS.get(tier, tier.title())}\n"
+                f"Harga: Rp{payment['amount']:,}\n"
+                f"Metode: {payment['method']}\n"
+                f"Reference: `{payment['reference']}`\n\n"
+                f"Klik tombol di bawah untuk menyelesaikan pembayaran. "
+                f"Tier akan otomatis diupgrade setelah pembayaran terverifikasi."
+            )
+            
             await update.message.reply_text(
-                "Selesaikan pembayaran di halaman Scalev. "
-                "Setelah bayar, akses akan aktif otomatis.",
+                text,
+                parse_mode="Markdown",
                 reply_markup=InlineKeyboardMarkup(keyboard),
             )
         except Exception as e:
-            logger.warning(f"Scalev checkout error: {e}")
-            await update.message.reply_text(
+            logger.error(f"Payment checkout error: {e}", exc_info=True)
+            await update.message.reply_text("❌ Gagal membuat invoice pembayaran. Coba lagi.")
                 "❌ Gagal membuka halaman pembayaran. Coba lagi."
             )
 
