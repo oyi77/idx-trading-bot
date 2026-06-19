@@ -432,15 +432,19 @@ async def scan_signals(
 
     for sym in target_symbols:
         stock = data.get(sym)
-        if not stock:
+        if not stock or not isinstance(stock, list):
             continue
 
-        closes = stock.get("closes", [])
-        highs = stock.get("highs", [])
-        lows = stock.get("lows", [])
-        volumes = stock.get("volumes", [])
+        # Cache format: list of {timestamp, open, high, low, close, volume}
+        if len(stock) < 20:
+            continue
 
-        if len(closes) < 20:
+        try:
+            closes = [bar["close"] for bar in stock]
+            highs = [bar["high"] for bar in stock]
+            lows = [bar["low"] for bar in stock]
+            volumes = [int(bar["volume"]) for bar in stock]
+        except (KeyError, TypeError):
             continue
 
         try:
