@@ -1875,8 +1875,6 @@ class BotHandlers:
         except Exception as e:
             logger.error(f"Payment checkout error: {e}", exc_info=True)
             await update.message.reply_text("❌ Gagal membuat invoice pembayaran. Coba lagi.")
-                "❌ Gagal membuka halaman pembayaran. Coba lagi."
-            )
 
     # ── Bandarmology ──
 
