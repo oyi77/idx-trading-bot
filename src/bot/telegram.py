@@ -206,6 +206,8 @@ class BotHandlers:
             "• `screener reversal` — siap balik arah\n"
             "• `screener breakout` — breakout detector\n"
             "• `screener smart money` — jejak akumulasi\n"
+            "• `signal_swing` — signal swing trade + TP/SL\n"
+            "• `signal_scalp` — signal scalping + TP/SL\n"
             "• `plan TLKM` — auto trading plan\n"
             "• `alert TLKM >4600` — notifikasi harga\n"
             "• `portfolio` — tracking posisi\n"
@@ -2291,6 +2293,106 @@ class BotHandlers:
         if not await self._check_tier(update, "screener_smartmoney"): return
         await self._run_category_screener(update, "smartmoney")
 
+    # ── Trading Signals ──────────────────────────────────────
+
+    def _format_signal(self, sig, idx: int) -> str:
+        """Format a single TradeSignal into Telegram markdown."""
+        emoji = "🟢" if sig.signal_type == "swing" else "⚡"
+        type_label = "SWING" if sig.signal_type == "swing" else "SCALP"
+
+        lines = [
+            f"{emoji} *#{idx}. {sig.symbol}* — *{type_label}* {sig.direction}",
+            f"",
+            f"📊 *Confidence:* {sig.confidence}/100",
+            f"⏱ *Durasi:* {sig.timeframe}",
+            f"",
+            f"🎯 *Entry Zone:*",
+            f"   Rp {sig.entry_low:,.0f} — Rp {sig.entry_high:,.0f}",
+            f"   *Entry:* Rp {sig.entry_price:,.0f}",
+            f"",
+            f"💰 *Take Profit:*",
+            f"   TP1: Rp {sig.tp1:,.0f}",
+            f"   TP2: Rp {sig.tp2:,.0f}",
+        ]
+        if sig.tp3:
+            lines.append(f"   TP3: Rp {sig.tp3:,.0f}")
+
+        lines.extend([
+            f"",
+            f"🛑 *Stop Loss:* Rp {sig.sl:,.0f}",
+            f"📐 *Risk:Reward:* 1:{sig.rr_ratio}",
+            f"",
+            f"💡 *Alasan:*",
+        ])
+        for r in sig.reasons[:4]:
+            lines.append(f"   • {r}")
+
+        return "\n".join(lines)
+
+    async def _run_signal_scan(self, update: Update, signal_type: str) -> None:
+        """Run signal scan and display results."""
+        from src.engine.signal_engine import scan_signals
+
+        type_label = "Swing Trade" if signal_type == "swing" else "Scalping"
+        emoji = "📈" if signal_type == "swing" else "⚡"
+
+        await update.message.reply_text(
+            f"{emoji} Scanning *{type_label}* signals...\n"
+            f"⏳ Menganalisa ~700 saham IDX...",
+            parse_mode="Markdown",
+        )
+
+        try:
+            batch = await scan_signals(signal_type=signal_type, limit=5)
+
+            if not batch.signals:
+                await update.message.reply_text(
+                    f"📭 Belum ada signal *{type_label}* saat ini.\n\n"
+                    f"💡 Market mungkin belum buka atau belum ada setup yang memenuhi kriteria.",
+                    parse_mode="Markdown",
+                )
+                return
+
+            # Header
+            header = (
+                f"{emoji} *Signal {type_label}*\n"
+                f"📅 {batch.generated_at}\n"
+                f"━━━━━━━━━━━━━━━━━━━━\n\n"
+            )
+
+            # Signal cards
+            cards = []
+            for i, sig in enumerate(batch.signals, 1):
+                cards.append(self._format_signal(sig, i))
+
+            text = header + "\n\n━━━━━━━━━━━━━━━━━━━━\n\n".join(cards)
+
+            # Disclaimer
+            text += (
+                "\n\n━━━━━━━━━━━━━━━━━━━━\n"
+                "⚠️ *DISCLAIMER:* Signal ini dihasilkan oleh analisis teknikal otomatis.\n"
+                "Bukan rekomendasi beli/jual. Selalu DYOR & gunakan manajemen risiko.\n"
+                "Gunakan /analisa [kode] untuk analisa mendalam."
+            )
+
+            await update.message.reply_text(text, parse_mode="Markdown")
+
+        except Exception as e:
+            logger.warning(f"Signal scan error: {e}")
+            await update.message.reply_text(f"❌ Gagal generate signal: {str(e)[:100]}")
+
+    async def signal_swing(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """Generate swing trade signals with TP/SL."""
+        if not await self._check_tier(update, "signal_swing"):
+            return
+        await self._run_signal_scan(update, "swing")
+
+    async def signal_scalp(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """Generate scalping signals with TP/SL."""
+        if not await self._check_tier(update, "signal_scalp"):
+            return
+        await self._run_signal_scan(update, "scalp")
+
     # ── Portfolio Tracker ──
 
     async def portfolio(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -2568,6 +2670,11 @@ def create_app() -> Application:
     app.add_handler(CommandHandler("screener_reversal", handlers.screener_reversal))
     app.add_handler(CommandHandler("screener_breakout", handlers.screener_breakout))
     app.add_handler(CommandHandler("screener_smartmoney", handlers.screener_smartmoney))
+    # Signals
+    app.add_handler(CommandHandler("signal_swing", handlers.signal_swing))
+    app.add_handler(CommandHandler("signal_scalp", handlers.signal_scalp))
+    app.add_handler(CommandHandler("sinyal_swing", handlers.signal_swing))
+    app.add_handler(CommandHandler("sinyal_scalp", handlers.signal_scalp))
     # Trading
     app.add_handler(CommandHandler("plan", handlers.myplans))
     app.add_handler(CommandHandler("myplans", handlers.myplans))
