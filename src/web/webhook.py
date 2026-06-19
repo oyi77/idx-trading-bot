@@ -11,6 +11,90 @@ WIB = timezone(timedelta(hours=7))
 router = APIRouter(prefix="/webhook", tags=["webhook"])
 
 
+@router.post("/midtrans")
+async def midtrans_notify(request: Request):
+    """Receive Midtrans payment notification and auto-upgrade user."""
+    try:
+        body = await request.body()
+        payload = json.loads(body)
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid JSON")
+
+    # Verify signature
+    order_id = payload.get("order_id", "")
+    status_code = payload.get("status_code", "")
+    gross_amount = payload.get("gross_amount", "")
+    signature_key = payload.get("signature_key", "")
+
+    from src.services.midtrans import verify_signature
+
+    if not verify_signature(order_id, status_code, gross_amount, signature_key):
+        logger.warning(f"Invalid Midtrans signature: order_id={order_id}")
+        raise HTTPException(status_code=403, detail="Invalid signature")
+
+    transaction_status = payload.get("transaction_status", "")
+    
+    # Only process successful payments
+    if transaction_status not in ("capture", "settlement"):
+        return {"status": "ignored", "transaction_status": transaction_status}
+
+    from src.services.midtrans import mark_paid, get_payment, infer_tier_from_amount
+
+    mark_paid(order_id)
+    logger.info(f"Midtrans payment marked paid: order_id={order_id}")
+
+    # Auto-upgrade user tier
+    try:
+        payment_record = get_payment(order_id)
+        if not payment_record:
+            logger.warning(f"Midtrans payment record not found: {order_id}")
+            return {"status": "ok", "reason": "payment_not_found"}
+
+        chat_id = payment_record.get("chat_id")
+        tier = payment_record.get("tier") or infer_tier_from_amount(int(gross_amount))
+        username = payment_record.get("username", "")
+
+        if not chat_id:
+            logger.warning(f"Midtrans payment missing chat_id: {order_id}")
+            return {"status": "ok", "reason": "missing_chat_id"}
+
+        # Upgrade user tier
+        from src.database import db
+        from src.models import UserTier
+
+        user = db.get_user(chat_id)
+        if not user:
+            logger.warning(f"User not found: chat_id={chat_id}")
+            return {"status": "ok", "reason": "user_not_found"}
+
+        old_tier = user.tier
+        user.tier = UserTier[tier.upper()]
+        user.tier_expires_at = None if tier == "lifetime" else None  # TODO: Add expiry for monthly
+        db.upsert_user(user)
+        logger.info(f"User upgraded: chat_id={chat_id}, {old_tier.value} → {tier}")
+
+        # Send Telegram notification
+        try:
+            from src.bot.telegram import bot
+            tier_emoji = {"pro": "💎", "premium": "👑", "lifetime": "🌟"}.get(tier, "✅")
+            message = (
+                f"{tier_emoji} *Pembayaran Berhasil!*\n\n"
+                f"Tier kamu sekarang: *{tier.upper()}*\n"
+                f"Order ID: `{order_id}`\n\n"
+                f"Selamat trading! 🚀"
+            )
+            bot.send_message(chat_id=chat_id, text=message, parse_mode="Markdown")
+            logger.info(f"Telegram notification sent: chat_id={chat_id}")
+        except Exception as e:
+            logger.error(f"Failed to send Telegram notification: {e}")
+
+    except Exception as e:
+        logger.error(f"Midtrans auto-upgrade failed: {e}")
+        return {"status": "error", "reason": str(e)}
+
+    return {"status": "ok", "order_id": order_id}
+
+
 @router.post("/notify")
 async def scalev_notify(request: Request):
     """Receive Scalev payment notification and auto-upgrade user."""
