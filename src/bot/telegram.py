@@ -325,7 +325,7 @@ class BotHandlers:
 
         elif page == 3:
             text = (
-                f"💎 *PRO — Rp49rb/bulan* ← PALING DIMINATI  |  3/5\n"
+                f"💎 *PRO — Rp79.900/bulan* ← PALING DIMINATI  |  3/5\n"
                 f"━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
                 f"🔍 `screener momentum` — saham momentum kencang\n"
                 f"🔄 `screener reversal` — siap balik arah\n"
@@ -470,7 +470,7 @@ class BotHandlers:
             "• Data delay 15 menit\n"
             "• 5 alert\n"
             "• AI basic\n\n"
-            "💎 *Pro — Rp49rb/bulan* ← PALING DIMINATI\n"
+            "💎 *Pro — Rp79.900/bulan* ← PALING DIMINATI\n"
             "━━━━━━━━━━━━━━━━━\n"
             "✅ Unlimited analisa + screener 693 saham\n"
             "✅ Trading plan auto (Entry/SL/TP/R:R)\n"
