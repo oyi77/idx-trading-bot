@@ -36,7 +36,7 @@ TIER_PRICES = {
 
 TIER_LABELS = {
     "pro": "💎 Pro (Rp79.900/bln)",
-    "premium": "👑 Premium (Rp149rb/bln)",
+    "premium": "👑 Premium (Rp149.000/bln)",
     "lifetime": "🌟 Lifetime (Rp1.999rb)",
     "whitelabel": "🏢 White-label (Rp5jt + Rp500rb/bln)",
 }
