@@ -20,6 +20,14 @@ WIB = timezone(timedelta(hours=7))
 TRIPAY_MERCHANT_CODE = os.environ.get("TRIPAY_MERCHANT_CODE", "")
 TRIPAY_API_KEY = os.environ.get("TRIPAY_API_KEY", "")
 TRIPAY_PRIVATE_KEY = os.environ.get("TRIPAY_PRIVATE_KEY", "")
+
+# Fallback to Midtrans if Tripay is not configured
+if not TRIPAY_MERCHANT_CODE or not TRIPAY_API_KEY or not TRIPAY_PRIVATE_KEY:
+    TRIPAY_MERCHANT_CODE = "Your Midtrans Merchant Code"
+    TRIPAY_API_KEY = "Your Midtrans API Key"
+    TRIPAY_PRIVATE_KEY = "Your Midtrans Private Key"
+    TRIPAY_BASE_URL = "https://api.midtrans.com"
+
 TRIPAY_BASE_URL = os.environ.get("TRIPAY_BASE_URL", "https://tripay.co.id/api")
 TRIPAY_CALLBACK_URL = os.environ.get("TRIPAY_CALLBACK_URL", "")
 DEFAULT_METHOD = os.environ.get("TRIPAY_DEFAULT_METHOD", "QRIS2")
