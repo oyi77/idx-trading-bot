@@ -118,23 +118,16 @@ def _create_midtrans_payment(tier: str, user_id: int, username: str, amount: int
     import time
     
     order_id = f"IDX-{tier.upper()}-{user_id}-{int(time.time())}"
-    item_details = {
-        "id": tier,
-        "price": amount,
-        "quantity": 1,
-        "name": TIER_LABELS.get(tier, tier.title()),
-    }
-    customer_details = {
-        "first_name": username or f"User{user_id}",
-        "email": f"user{user_id}@idx-bot.local",
-        "phone": f"+62{user_id % 100000000000}",  # Dummy phone
+    user_data = {
+        "user_id": user_id,
+        "tier": tier,
+        "username": username or f"user_{user_id}",
     }
     
     snap_token = create_snap_transaction(
-        order_id=order_id,
+        tier=tier,
         amount=amount,
-        item_details=item_details,
-        customer_details=customer_details,
+        user_data=user_data,
     )
     
     # Midtrans Snap URL
