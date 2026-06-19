@@ -125,6 +125,7 @@ def _create_midtrans_payment(tier: str, user_id: int, username: str, amount: int
     }
     
     snap_token = create_snap_transaction(
+        order_id=order_id,
         tier=tier,
         amount=amount,
         user_data=user_data,
