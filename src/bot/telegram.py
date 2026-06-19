@@ -353,7 +353,7 @@ class BotHandlers:
 
         elif page == 4:
             text = (
-                f"👑 *PREMIUM — Rp149.000/bulan*  |  4/5\\n"
+                f"👑 *PREMIUM — Rp149.900/bulan*  |  4/5\\n"
                 f"━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
                 f"🎰 `bandarmology`\n"
                 f"  Deteksi aktivitas bandar — broker akumulasi / distribusi.\n"
@@ -1817,8 +1817,8 @@ class BotHandlers:
 
         keyboard = [
             [InlineKeyboardButton("💎 Pro — Rp79.900/bulan", callback_data="pay:pro")],
-            [InlineKeyboardButton("👑 Premium — Rp149.000/bulan", callback_data="pay:premium")],
-            [InlineKeyboardButton("🌟 Lifetime — Rp1.999.000", callback_data="pay:lifetime")],
+            [InlineKeyboardButton("👑 Premium — Rp149.900/bulan", callback_data="pay:premium")],
+            [InlineKeyboardButton("🌟 Lifetime — Rp1.999.900", callback_data="pay:lifetime")],
         ]
         text = (
             "💰 *Vilona Saham — Upgrade Langganan*\n\n"
@@ -1840,7 +1840,7 @@ class BotHandlers:
             "✅ Watchlist 10 saham\n"
             "✅ AI trade setup + Confidence Score\n"
             "✅ Signal Swing + Scalping harian + TP/SL\n\n"
-            "👑 *Premium — Rp149.000/bulan*\n"
+            "👑 *Premium — Rp149.900/bulan*\n"
             "━━━━━━━━━━━━━━━━━\n"
             "✅ SEMUA fitur Pro +\n"
             "✅ Bandarmologi (deteksi bandar)\n"
@@ -1849,7 +1849,7 @@ class BotHandlers:
             "✅ Event Classifier korporat\n"
             "✅ Auto-Report Mingguan\n"
             "✅ Prioritas AI response\n\n"
-            "🌟 *Lifetime — Rp1.999.000* (one-time)\n"
+            "🌟 *Lifetime — Rp1.999.900* (one-time)\n"
             "━━━━━━━━━━━━━━━━━\n"
             "✅ SEMUA fitur Premium\n"
             "✅ Akses selamanya, bayar sekali\n"

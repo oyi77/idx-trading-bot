@@ -11,15 +11,15 @@ logger = logging.getLogger(__name__)
 # Tier pricing (in IDR)
 TIER_PRICES = {
     "pro": 79900,
-    "premium": 149000,
-    "lifetime": 1999000,
+    "premium": 149900,
+    "lifetime": 1999900,
     "whitelabel": 5000000,
 }
 
 TIER_LABELS = {
     "pro": "💎 Pro (Rp79.900/bln)",
-    "premium": "👑 Premium (Rp149.000/bln)",
-    "lifetime": "🌟 Lifetime (Rp1.999.000)",
+    "premium": "👑 Premium (Rp149.900/bln)",
+    "lifetime": "🌟 Lifetime (Rp1.999.900)",
     "whitelabel": "🏢 White-label (Rp5jt + Rp500rb/bln)",
 }
 

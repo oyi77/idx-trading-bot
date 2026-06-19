@@ -37,8 +37,8 @@ PAYMENT_STORE = DATA_DIR / "midtrans_payments.json"
 
 TIER_PRICES = {
     "pro": 79900,
-    "premium": 149000,
-    "lifetime": 1999000,
+    "premium": 149900,
+    "lifetime": 1999900,
     "whitelabel": 5000000,
 }
 
@@ -173,9 +173,9 @@ def get_payment(order_id: str) -> Optional[Dict[str, Any]]:
 
 def infer_tier_from_amount(amount: int) -> str:
     """Infer tier from payment amount."""
-    if amount >= 1999000:
+    if amount >= 1999900:
         return "lifetime"
-    elif amount >= 149000:
+    elif amount >= 149900:
         return "premium"
     elif amount >= 79900:
         return "pro"

@@ -166,7 +166,7 @@ FOLLOWUP_TEMPLATES = {
         3: (
             "🔔 {name}, terakhir nih!\n\n"
             "Kami kasih diskon khusus minggu ini:\n"
-            "💎 PRO: Rp79.900/bulan (harga normal Rp149.000)\n\n"
+            "💎 PRO: Rp79.900/bulan (harga normal Rp149.900)\n\n"
             "Benefit:\n"
             "• Signal harian + TP/SL\n"
             "• Backtested 92%+ win rate\n"

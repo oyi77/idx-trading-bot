@@ -81,7 +81,7 @@ async def admin_dashboard(request: Request):
         ).scalar() or 0
         ai_acc = round(accurate / total_resolved * 100, 1) if total_resolved > 0 else 0
 
-        revenue = pro * 79900 + premium * 149000
+        revenue = pro * 79900 + premium * 149900
 
         # Top symbols
         top_syms = session.query(
@@ -999,7 +999,7 @@ async def dashboard_stats():
             "lifetime_count": sub_counts.get("lifetime", 0),
             "estimated_monthly": (
                 sub_counts.get("pro", 0) * 79900
-                + sub_counts.get("premium", 0) * 149000
+                + sub_counts.get("premium", 0) * 149900
             ),
         },
     }
