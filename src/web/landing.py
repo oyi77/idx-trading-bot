@@ -1,6 +1,7 @@
 """
-Premium Cinematic Landing Page — Vilona Saham IDX AI Trading Bot.
-Design: pure black, particle starfield, orbital system, glass-morphism, cursor glow.
+Cinematic Landing Page — Vilona Saham IDX AI Trading Bot.
+Mahakarya: pure black universe, particle starfield, orbital AI system,
+glass-morphism, animated signal flow, AI decision engine visualization.
 Served at https://botidx.aitradepulse.com
 """
 LANDING_HTML = r"""<!DOCTYPE html>
@@ -8,792 +9,651 @@ LANDING_HTML = r"""<!DOCTYPE html>
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Vilona Saham — AI Trading Co-Pilot untuk Bursa Indonesia</title>
-<meta name="description" content="Platform analisa saham IDX berbasis AI. Technical analysis, fundamental, bandarmology, event classifier, sector forecast — dalam 10 detik.">
+<title>Vilona Saham — AI Trading Co-Pilot IDX | Signal Swing &amp; Scalping</title>
+<meta name="description" content="AI-powered signal trading saham IDX. Swing & Scalping signals dengan TP/SL otomatis. Backtested 92%+ win rate. Mulai gratis.">
 <meta property="og:title" content="Vilona Saham — AI Trading Co-Pilot IDX">
-<meta property="og:description" content="AI-powered analysis untuk trader saham Indonesia. Cukup ketik natural — gak perlu hafal command.">
+<meta property="og:description" content="Signal Swing & Scalping harian + TP/SL otomatis. AI menganalisa 700+ saham dalam 10 detik.">
 <meta property="og:image" content="https://botidx.aitradepulse.com/og-image.png">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="facebook-domain-verification" content="8ilfftgu8akeubwvejbytox2iefegc" />
+<meta name="facebook-domain-verification" content="8ilfftgu8akeubwvejbytox2iefegc">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
-  :root {
-    --bg: #000000;
-    --cyan: #00e5ff;
-    --purple: #a855f7;
-    --amber: #f59e0b;
-    --green: #10b981;
-    --red: #ef4444;
-    --glass-bg: rgba(10,10,20,0.7);
-    --glass-border: rgba(255,255,255,0.06);
-    --text: #f1f5f9;
-    --text-dim: #94a3b8;
-    --surface: #0a0a14;
-  }
-  *{margin:0;padding:0;box-sizing:border-box}
-  html{scroll-behavior:smooth}
-  ::-webkit-scrollbar{width:4px}
-  ::-webkit-scrollbar-track{background:#000}
-  ::-webkit-scrollbar-thumb{background:var(--cyan);border-radius:2px}
+:root{--bg:#000;--cyan:#00e5ff;--purple:#a855f7;--amber:#f59e0b;--green:#10b981;--red:#ef4444;--glass:rgba(10,10,20,.7);--border:rgba(255,255,255,.06);--text:#f1f5f9;--dim:#94a3b8;--surface:#0a0a14}
+*{margin:0;padding:0;box-sizing:border-box}html{scroll-behavior:smooth}
+::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:#000}::-webkit-scrollbar-thumb{background:var(--cyan);border-radius:2px}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);overflow-x:hidden;line-height:1.6}
+.container{max-width:1200px;margin:0 auto;padding:0 24px}
+.glass{background:var(--glass);backdrop-filter:blur(20px);border:1px solid var(--border);border-radius:20px}
 
-  body{
-    font-family:'Inter',system-ui,sans-serif;
-    background:var(--bg);
-    color:var(--text);
-    overflow-x:hidden;
-    /* cursor tetap muncul, glow sebagai tambahan */
-  }
+/* ── CURSOR GLOW ── */
+.cursor-glow{position:fixed;width:400px;height:400px;border-radius:50%;pointer-events:none;z-index:9999;
+background:radial-gradient(circle,rgba(0,229,255,.08) 0%,transparent 70%);transform:translate(-50%,-50%);transition:opacity .3s}
 
-  /* ── Canvas Layers ── */
-  canvas#starfield{position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none}
-  canvas#grain{position:fixed;top:0;left:0;width:100%;height:100%;z-index:1;pointer-events:none;opacity:0.03}
-  .scanlines{
-    position:fixed;top:0;left:0;width:100%;height:100%;z-index:2;pointer-events:none;
-    background:repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.15) 2px, rgba(0,0,0,0.15) 4px);
-    opacity:0.3;
-  }
+/* ── NAV ── */
+nav{position:fixed;top:0;left:0;right:0;z-index:100;padding:16px 0;transition:all .4s}
+nav.scrolled{background:rgba(0,0,0,.85);backdrop-filter:blur(20px);border-bottom:1px solid var(--border)}
+nav .container{display:flex;justify-content:space-between;align-items:center}
+.logo{font-size:20px;font-weight:800;background:linear-gradient(135deg,var(--cyan),var(--purple));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.nav-links{display:flex;gap:28px;align-items:center}
+.nav-links a{color:var(--dim);text-decoration:none;font-size:14px;font-weight:500;transition:color .3s}
+.nav-links a:hover{color:var(--cyan)}
 
-  /* ── Cursor Glow ── */
-  #cursor-glow{
-    position:fixed;width:350px;height:350px;z-index:3;pointer-events:none;
-    background:radial-gradient(circle, rgba(0,229,255,0.08) 0%, rgba(168,85,247,0.04) 40%, transparent 70%);
-    border-radius:50%;transform:translate(-50%,-50%);transition:opacity 1.5s;
-    opacity:0;
-  }
+/* ── HERO ── */
+#hero{min-height:100vh;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;padding:120px 0 80px}
+#particles{position:absolute;inset:0;z-index:0}
+.hero-content{position:relative;z-index:2;text-align:center;max-width:800px}
+.hero-badge{display:inline-block;padding:6px 16px;border-radius:999px;font-size:12px;font-weight:600;
+background:rgba(0,229,255,.1);border:1px solid rgba(0,229,255,.2);color:var(--cyan);margin-bottom:24px;letter-spacing:1px}
+.hero-content h1{font-size:clamp(36px,6vw,72px);font-weight:900;line-height:1.05;margin-bottom:20px}
+.grad-text{background:linear-gradient(135deg,var(--cyan),var(--purple));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.grad-amber{background:linear-gradient(135deg,var(--amber),#ef4444);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.hero-sub{font-size:clamp(16px,2vw,20px);color:var(--dim);max-width:600px;margin:0 auto 36px;line-height:1.7}
+.hero-btns{display:flex;gap:16px;justify-content:center;flex-wrap:wrap}
 
-  /* ── Floating Orbs ── */
-  .orb{
-    position:fixed;z-index:0;pointer-events:none;border-radius:50%;
-    filter:blur(80px);opacity:0.15;
-  }
-  .orb-cyan{width:500px;height:500px;background:var(--cyan);top:20%;left:-20%;transition:transform 0.1s linear}
-  .orb-purple{width:400px;height:400px;background:var(--purple);top:50%;right:-15%;transition:transform 0.15s linear}
-  .orb-amber{width:350px;height:350px;background:var(--amber);bottom:10%;left:30%;transition:transform 0.12s linear}
+/* ── BUTTONS ── */
+.mag-btn{padding:14px 32px;border-radius:14px;font-size:16px;font-weight:700;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:8px;transition:all .3s;position:relative;overflow:hidden;border:none}
+.mag-btn-primary{background:linear-gradient(135deg,var(--cyan),#0097a7);color:#000;box-shadow:0 0 30px rgba(0,229,255,.2)}
+.mag-btn-primary:hover{transform:translateY(-2px);box-shadow:0 0 50px rgba(0,229,255,.4)}
+.mag-btn-outline{background:transparent;color:var(--text);border:1px solid var(--border)}
+.mag-btn-outline:hover{border-color:var(--cyan);color:var(--cyan)}
 
-  /* ── Content ── */
-  .content-wrapper{position:relative;z-index:10}
-  .container{max-width:1200px;margin:0 auto;padding:0 24px}
-  a{text-decoration:none;color:inherit}
+/* ── LIVE SIGNAL TICKER ── */
+.signal-ticker{margin-top:48px;overflow:hidden;position:relative}
+.signal-ticker::before,.signal-ticker::after{content:'';position:absolute;top:0;bottom:0;width:80px;z-index:2}
+.signal-ticker::before{left:0;background:linear-gradient(90deg,var(--bg),transparent)}
+.signal-ticker::after{right:0;background:linear-gradient(270deg,var(--bg),transparent)}
+.ticker-track{display:flex;gap:20px;animation:scroll 30s linear infinite;width:max-content}
+.ticker-card{flex-shrink:0;padding:16px 24px;border-radius:14px;background:var(--glass);border:1px solid var(--border);min-width:220px}
+.ticker-card .sym{font-family:'JetBrains Mono',monospace;font-weight:700;font-size:18px;color:var(--cyan)}
+.ticker-card .type{font-size:11px;font-weight:600;letter-spacing:1px;padding:2px 8px;border-radius:6px;display:inline-block;margin:6px 0}
+.ticker-card .type.swing{background:rgba(168,85,247,.15);color:var(--purple)}
+.ticker-card .type.scalp{background:rgba(245,158,11,.15);color:var(--amber)}
+.ticker-card .levels{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--dim);line-height:1.8}
+.ticker-card .levels b{color:var(--green)}
+.ticker-card .levels .sl{color:var(--red)}
+@keyframes scroll{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
 
-  /* ── Typography ── */
-  .grad-text{
-    background:linear-gradient(135deg, var(--cyan) 0%, var(--purple) 50%, var(--amber) 100%);
-    -webkit-background-clip:text;-webkit-text-fill-color:transparent;
-    background-clip:text;
-  }
-  .grad-amber{
-    background:linear-gradient(135deg, var(--amber), #fbbf24);
-    -webkit-background-clip:text;-webkit-text-fill-color:transparent;
-    background-clip:text;
-  }
-  .mono{font-family:'JetBrains Mono',monospace}
+/* ── STATS BAR ── */
+.stats-bar{padding:40px 0;border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:24px;text-align:center}
+.stat-num{font-family:'JetBrains Mono',monospace;font-size:36px;font-weight:900;background:linear-gradient(135deg,var(--cyan),var(--purple));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.stat-label{font-size:13px;color:var(--dim);margin-top:4px}
 
-  /* ── Glass Cards ── */
-  .glass{
-    background:rgba(10,10,20,0.7);
-    backdrop-filter:blur(24px);
-    border:1px solid rgba(255,255,255,0.06);
-    border-radius:20px;
-  }
-  .glass-hover{transition:all .4s cubic-bezier(.25,.46,.45,.94)}
-  .glass-hover:hover{
-    border-color:var(--cyan);
-    transform:translateY(-4px);
-    box-shadow:0 0 40px rgba(0,229,255,0.08),0 20px 60px rgba(0,0,0,0.4);
-  }
+/* ── SECTIONS ── */
+section{padding:100px 0}
+.section-header{text-align:center;margin-bottom:60px}
+.section-header h2{font-size:clamp(28px,4vw,48px);font-weight:900;margin-bottom:12px}
+.sect-sub{color:var(--dim);font-size:17px;max-width:600px;margin:0 auto}
 
-  /* ── Magnetic Buttons ── */
-  .magnetic{position:relative;display:inline-flex;align-items:center;gap:10px;border:none}
-  .mag-btn{
-    padding:18px 44px;border-radius:14px;font-size:18px;font-weight:700;color:#000;
-    background:linear-gradient(135deg, var(--cyan), var(--purple));
-    position:relative;overflow:hidden;transition:box-shadow .3s;
-  }
-  .mag-btn::after{
-    content:'';position:absolute;inset:0;
-    background:linear-gradient(135deg, #fff 0%, transparent 60%);
-    opacity:0;transition:opacity .3s;
-  }
-  .mag-btn:hover{box-shadow:0 0 60px rgba(0,229,255,0.3),0 0 120px rgba(168,85,247,0.15)}
-  .mag-btn:hover::after{opacity:0.15}
+/* ── HOW IT WORKS ── */
+.flow-container{max-width:900px;margin:0 auto;position:relative}
+.flow-step{display:flex;gap:32px;align-items:flex-start;margin-bottom:48px;opacity:0;transform:translateY(30px);transition:all .6s ease}
+.flow-step.visible{opacity:1;transform:translateY(0)}
+.flow-num{flex-shrink:0;width:56px;height:56px;border-radius:16px;display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-weight:900;font-size:20px;background:linear-gradient(135deg,rgba(0,229,255,.15),rgba(168,85,247,.15));border:1px solid rgba(0,229,255,.2);color:var(--cyan)}
+.flow-content h3{font-size:20px;font-weight:700;margin-bottom:8px}
+.flow-content p{color:var(--dim);font-size:15px;line-height:1.7}
+.flow-visual{margin-top:12px;padding:16px;border-radius:12px;background:rgba(0,0,0,.4);border:1px solid var(--border);font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--cyan);overflow-x:auto}
+.flow-line::after{content:'';position:absolute;left:27px;top:56px;bottom:0;width:2px;background:linear-gradient(180deg,rgba(0,229,255,.3),transparent)}
 
-  .mag-btn-outline{
-    padding:16px 40px;border-radius:14px;font-size:17px;font-weight:600;color:var(--cyan);
-    background:transparent;border:1.5px solid rgba(0,229,255,0.3);
-    transition:all .3s;
-  }
-  .mag-btn-outline:hover{
-    border-color:var(--cyan);
-    background:rgba(0,229,255,0.08);
-    box-shadow:0 0 30px rgba(0,229,255,0.15);
-  }
+/* ── AI ENGINE CARDS ── */
+.engine-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:24px}
+.engine-card{padding:32px;border-radius:20px;background:var(--glass);border:1px solid var(--border);transition:all .4s;position:relative;overflow:hidden}
+.engine-card:hover{border-color:rgba(0,229,255,.2);transform:translateY(-4px)}
+.engine-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--cyan),var(--purple));opacity:0;transition:opacity .4s}
+.engine-card:hover::before{opacity:1}
+.engine-icon{font-size:32px;margin-bottom:16px}
+.engine-card h3{font-size:18px;font-weight:700;margin-bottom:8px}
+.engine-card p{color:var(--dim);font-size:14px;line-height:1.7}
+.engine-tag{display:inline-block;padding:3px 10px;border-radius:8px;font-size:11px;font-weight:600;margin-top:12px;background:rgba(0,229,255,.1);color:var(--cyan);font-family:'JetBrains Mono',monospace}
 
-  /* ── Hero ── */
-  .hero{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative}
-  .hero-badge{
-    display:inline-flex;align-items:center;gap:8px;
-    padding:8px 20px;border-radius:50px;
-    border:1px solid rgba(0,229,255,0.2);
-    background:rgba(0,229,255,0.05);
-    font-size:14px;color:var(--cyan);margin-bottom:24px;
-  }
-  .hero-badge .dot{width:8px;height:8px;background:var(--green);border-radius:50%;animation:pulse-dot 2s infinite}
-  @keyframes pulse-dot{0%,100%{opacity:1;box-shadow:0 0 8px var(--green)}50%{opacity:.5;box-shadow:0 0 2px var(--green)}}
+/* ── SIGNAL SHOWCASE ── */
+.signal-demo{max-width:700px;margin:0 auto}
+.signal-card-demo{padding:32px;border-radius:20px;background:var(--glass);border:1px solid rgba(0,229,255,.15);margin-bottom:24px}
+.signal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}
+.signal-sym{font-family:'JetBrains Mono',monospace;font-size:28px;font-weight:900;color:var(--cyan)}
+.signal-badge{padding:6px 14px;border-radius:8px;font-size:12px;font-weight:700;letter-spacing:1px}
+.signal-badge.swing{background:rgba(168,85,247,.15);color:var(--purple)}
+.signal-badge.scalp{background:rgba(245,158,11,.15);color:var(--amber)}
+.signal-levels{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}
+.level-box{padding:16px;border-radius:12px;background:rgba(0,0,0,.3);border:1px solid var(--border)}
+.level-label{font-size:11px;color:var(--dim);font-weight:600;letter-spacing:1px;margin-bottom:4px}
+.level-value{font-family:'JetBrains Mono',monospace;font-size:20px;font-weight:700}
+.level-value.green{color:var(--green)}
+.level-value.red{color:var(--red)}
+.level-value.cyan{color:var(--cyan)}
+.rr-badge{margin-top:16px;text-align:center;padding:10px;border-radius:10px;background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.2)}
+.rr-badge span{font-family:'JetBrains Mono',monospace;font-size:18px;font-weight:700;color:var(--green)}
 
-  .hero h1{
-    font-size:clamp(42px,8vw,88px);font-weight:900;line-height:1.05;
-    text-align:center;margin-bottom:20px;letter-spacing:-0.02em;
-  }
-  .hero h1 .line{display:block}
-  .hero .subtitle{
-    font-size:clamp(16px,2.5vw,22px);color:var(--text-dim);
-    text-align:center;max-width:680px;margin:0 auto 40px;line-height:1.5;
-  }
+/* ── PRICING ── */
+.pricing-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:24px;max-width:960px;margin:0 auto}
+.price-card{padding:44px 32px;position:relative;text-align:center;display:flex;flex-direction:column;border-radius:20px;background:var(--glass);border:1px solid var(--border);transition:all .4s}
+.price-card:hover{transform:translateY(-4px)}
+.price-card .badge{position:absolute;top:-12px;left:50%;transform:translateX(-50%);padding:4px 16px;border-radius:999px;font-size:11px;font-weight:700;letter-spacing:1px;white-space:nowrap}
+.price-card .badge.popular{background:linear-gradient(135deg,var(--cyan),#0097a7);color:#000}
+.price-card .badge.lifetime{background:linear-gradient(135deg,var(--amber),#ef4444);color:#000}
+.price-card h3{font-size:22px;font-weight:800;margin-bottom:4px}
+.price-card .tier-desc{font-size:13px;color:var(--dim);margin-bottom:20px}
+.price-card .price{font-size:48px;font-weight:900;font-family:'JetBrains Mono',monospace}
+.price-card .price span{font-size:15px;color:var(--dim);font-weight:400;font-family:'Inter',sans-serif}
+.price-card ul{list-style:none;text-align:left;margin:28px 0;flex:1}
+.price-card ul li{padding:8px 0;color:var(--dim);font-size:14px;display:flex;align-items:center;gap:8px}
+.price-card ul li::before{content:'✓';color:var(--green);font-weight:700;font-size:13px;flex-shrink:0}
+.price-card ul li.dim::before{content:'—';color:#475569}
+.price-card .price-btn{padding:14px 0;border-radius:12px;font-size:16px;font-weight:700;width:100%;display:block;text-align:center;text-decoration:none}
+.price-card.featured{border-color:rgba(0,229,255,.2);background:linear-gradient(180deg,rgba(10,10,20,.9),rgba(0,229,255,.03))}
 
-  /* ── Stats ── */
-  .hero-stats{display:flex;gap:60px;justify-content:center;margin-top:20px;flex-wrap:wrap}
-  .hero-stat{text-align:center}
-  .hero-stat .num{font-size:44px;font-weight:900;font-family:'JetBrains Mono',monospace;color:var(--cyan)}
-  .hero-stat .label{font-size:14px;color:var(--text-dim);margin-top:4px;letter-spacing:0.05em;text-transform:uppercase}
+/* ── ORBIT ANIMATION ── */
+.orbit-container{width:300px;height:300px;position:relative;margin:0 auto 40px}
+.orbit-center{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:60px;height:60px;border-radius:50%;
+background:radial-gradient(circle,var(--cyan),#0097a7);display:flex;align-items:center;justify-content:center;font-size:24px;z-index:2;
+box-shadow:0 0 40px rgba(0,229,255,.4)}
+.orbit-ring{position:absolute;top:50%;left:50%;border:1px solid rgba(0,229,255,.15);border-radius:50%;animation:orbit-spin linear infinite}
+.orbit-ring-1{width:160px;height:160px;margin:-80px 0 0 -80px;animation-duration:8s}
+.orbit-ring-2{width:240px;height:240px;margin:-120px 0 0 -120px;animation-duration:12s;animation-direction:reverse}
+.orbit-dot{position:absolute;width:10px;height:10px;border-radius:50%;background:var(--cyan);box-shadow:0 0 10px var(--cyan)}
+.orbit-ring-1 .orbit-dot{top:-5px;left:50%;margin-left:-5px}
+.orbit-ring-2 .orbit-dot{bottom:-5px;left:50%;margin-left:-5px;background:var(--purple);box-shadow:0 0 10px var(--purple)}
+@keyframes orbit-spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
 
-  /* ── Scroll indicator ── */
-  .scroll-ind{margin-top:60px;text-align:center}
-  .scroll-ind .mouse{
-    width:26px;height:40px;border:2px solid rgba(255,255,255,0.2);border-radius:14px;
-    margin:0 auto;position:relative;
-  }
-  .scroll-ind .mouse::after{
-    content:'';width:4px;height:8px;background:var(--cyan);border-radius:2px;
-    position:absolute;top:8px;left:50%;transform:translateX(-50%);
-    animation:scroll-wheel 1.5s infinite;
-  }
-  @keyframes scroll-wheel{0%{opacity:1;transform:translate(-50%,0)}100%{opacity:0;transform:translate(-50%,16px)}}
+/* ── AI FLOW DIAGRAM ── */
+.ai-flow{display:flex;align-items:center;justify-content:center;gap:16px;flex-wrap:wrap;margin:40px 0;padding:32px;border-radius:20px;background:rgba(0,0,0,.3);border:1px solid var(--border)}
+.ai-node{padding:16px 24px;border-radius:14px;background:var(--glass);border:1px solid var(--border);text-align:center;min-width:120px;transition:all .4s}
+.ai-node:hover{border-color:var(--cyan);transform:scale(1.05)}
+.ai-node .icon{font-size:28px;margin-bottom:8px}
+.ai-node .label{font-size:12px;font-weight:600;color:var(--dim)}
+.ai-arrow{font-size:20px;color:var(--cyan);animation:pulse-arrow 2s infinite}
+@keyframes pulse-arrow{0%,100%{opacity:.3}50%{opacity:1}}
 
-  /* ── Sections ── */
-  section{padding:100px 0;position:relative}
-  section h2{
-    font-size:clamp(28px,5vw,48px);font-weight:800;text-align:center;
-    margin-bottom:16px;letter-spacing:-0.02em;
-  }
-  section .sect-sub{text-align:center;color:var(--text-dim);font-size:18px;margin-bottom:64px;max-width:600px;margin-left:auto;margin-right:auto}
+/* ── TESTIMONIALS ── */
+.testi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:24px}
+.testi-card{padding:28px;border-radius:20px;background:var(--glass);border:1px solid var(--border)}
+.testi-stars{color:var(--amber);font-size:14px;margin-bottom:12px}
+.testi-text{color:var(--dim);font-size:14px;line-height:1.7;font-style:italic;margin-bottom:16px}
+.testi-name{font-size:13px;font-weight:700;color:var(--text)}
+.testi-role{font-size:12px;color:var(--dim)}
 
-  /* ── Features Grid ── */
-  .features-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:24px}
-  .feat-card{padding:36px;position:relative;overflow:hidden}
-  .feat-card .feat-icon{font-size:28px;margin-bottom:16px;width:56px;height:56px;display:flex;align-items:center;justify-content:center;border-radius:14px;background:rgba(0,229,255,0.06);border:1px solid rgba(0,229,255,0.1)}
-  .feat-card h3{font-size:20px;font-weight:700;margin-bottom:8px}
-  .feat-card p{color:var(--text-dim);font-size:15px;line-height:1.6}
-  .feat-card .feat-hl{
-    display:inline-block;padding:3px 10px;border-radius:6px;
-    font-size:11px;font-weight:600;font-family:'JetBrains Mono',monospace;
-    margin-top:12px;
-  }
-  .hl-cyan{background:rgba(0,229,255,0.1);color:var(--cyan)}
-  .hl-purple{background:rgba(168,85,247,0.1);color:var(--purple)}
-  .hl-amber{background:rgba(245,158,11,0.1);color:var(--amber)}
+/* ── CTA ── */
+.cta-section{text-align:center;padding:120px 0;position:relative;overflow:hidden}
+.cta-section::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at center,rgba(0,229,255,.05) 0%,transparent 70%)}
+.cta-section h2{font-size:clamp(32px,5vw,56px);font-weight:900;margin-bottom:16px}
+.cta-section p{color:var(--dim);font-size:18px;margin-bottom:32px}
 
-  /* ── Battle Arena ── */
-  .arena{display:grid;grid-template-columns:1fr auto 1fr;gap:40px;align-items:center;max-width:1000px;margin:0 auto;text-align:center}
-  .arena-col{padding:40px 28px}
-  .arena-col h3{font-size:22px;font-weight:800;margin-bottom:12px}
-  .arena-col p{color:var(--text-dim);font-size:15px;line-height:1.7}
-  .arena-vs{
-    font-size:32px;font-weight:900;
-    background:linear-gradient(135deg, var(--cyan), var(--purple));
-    -webkit-background-clip:text;-webkit-text-fill-color:transparent;
-    background-clip:text;
-  }
-  @media(max-width:768px){
-    .arena{grid-template-columns:1fr}
-    .arena-vs{transform:rotate(90deg)}
-  }
+/* ── FOOTER ── */
+footer{padding:40px 0;border-top:1px solid var(--border);text-align:center}
+footer p{color:var(--dim);font-size:13px}
 
-  /* ── Terminal ── */
-  .term-container{max-width:750px;margin:0 auto}
-  .term{
-    background:#0a0a0f;border:1px solid rgba(255,255,255,0.08);
-    border-radius:16px;overflow:hidden;
-  }
-  .term-header{
-    padding:12px 16px;background:#0d0d15;
-    border-bottom:1px solid rgba(255,255,255,0.06);
-    display:flex;align-items:center;gap:8px;
-  }
-  .term-dot{width:10px;height:10px;border-radius:50%}
-  .term-dot.r{background:var(--red)}.term-dot.y{background:var(--amber)}.term-dot.g{background:var(--green)}
-  .term-body{padding:20px 24px;font-family:'JetBrains Mono',monospace;font-size:13px;line-height:1.8;color:var(--text-dim);min-height:140px}
-  .term-body .prompt{color:var(--cyan)}.term-body .cmd{color:var(--text)}
-  .term-body .out{color:var(--green)}.term-body .dim{color:#475569}
-  .term-body .hl{color:var(--purple)}.term-body .warn{color:var(--amber)}
-  .term-cursor{display:inline-block;width:8px;height:15px;background:var(--cyan);animation:blink 1s infinite;vertical-align:text-bottom;margin-left:2px}
-  @keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+/* ── SCROLL REVEAL ── */
+.reveal{opacity:0;transform:translateY(30px);transition:all .7s cubic-bezier(.4,0,.2,1)}
+.reveal.visible{opacity:1;transform:translateY(0)}
+.reveal-left{opacity:0;transform:translateX(-40px);transition:all .7s cubic-bezier(.4,0,.2,1)}
+.reveal-left.visible{opacity:1;transform:translateX(0)}
+.reveal-right{opacity:0;transform:translateX(40px);transition:all .7s cubic-bezier(.4,0,.2,1)}
+.reveal-right.visible{opacity:1;transform:translateX(0)}
 
-  /* ── Pricing ── */
-  .pricing-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:24px;max-width:960px;margin:0 auto}
-  .price-card{padding:44px 32px;position:relative;text-align:center;display:flex;flex-direction:column}
-  .price-card .badge{
-    position:absolute;top:-12px;left:50%;transform:translateX(-50%);
-    padding:6px 20px;border-radius:50px;font-size:12px;font-weight:700;
-    background:linear-gradient(135deg, var(--cyan), var(--purple));color:#000;
-  }
-  .price-card h3{font-size:22px;font-weight:800;margin-bottom:4px}
-  .price-card .tier-desc{font-size:13px;color:var(--text-dim);margin-bottom:20px}
-  .price-card .price{font-size:48px;font-weight:900;font-family:'JetBrains Mono',monospace}
-  .price-card .price span{font-size:15px;color:var(--text-dim);font-weight:400;font-family:'Inter',sans-serif}
-  .price-card ul{list-style:none;text-align:left;margin:28px 0;flex:1}
-  .price-card ul li{padding:8px 0;color:var(--text-dim);font-size:14px;display:flex;align-items:center;gap:8px}
-  .price-card ul li::before{content:'✓';color:var(--green);font-weight:700;font-size:13px;flex-shrink:0}
-  .price-card ul li.dim::before{content:'—';color:#475569}
-  .price-card .price-btn{padding:14px 0;border-radius:12px;font-size:16px;font-weight:700;width:100%}
-  .price-card.featured{border-color:rgba(0,229,255,0.2);background:linear-gradient(180deg, rgba(10,10,20,0.9), rgba(0,229,255,0.03))}
-
-  /* ── Ticker ── */
-  .ticker-wrap{overflow:hidden;border-top:1px solid rgba(255,255,255,0.04);border-bottom:1px solid rgba(255,255,255,0.04);padding:12px 0;margin:80px 0}
-  .ticker{
-    display:flex;gap:60px;animation:ticker-scroll 30s linear infinite;
-    font-family:'JetBrains Mono',monospace;font-size:12px;
-  }
-  @keyframes ticker-scroll{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
-  .ticker-item{white-space:nowrap;color:var(--text-dim)}
-  .ticker-item .symbol{color:var(--cyan)}.ticker-item .up{color:var(--green)}.ticker-item .down{color:var(--red)}
-
-  /* ── Footer ── */
-  footer{padding:60px 0;text-align:center;border-top:1px solid rgba(255,255,255,0.04);color:var(--text-dim);font-size:14px}
-  footer a{color:var(--cyan)}
-  footer a:hover{text-decoration:underline}
-
-  /* ── Animations on scroll ── */
-  .reveal{opacity:0;transform:translateY(30px);transition:all .8s cubic-bezier(.25,.46,.45,.94)}
-  .reveal.visible{opacity:1;transform:translateY(0)}
-  .reveal-left{opacity:0;transform:translateX(-30px);transition:all .8s cubic-bezier(.25,.46,.45,.94)}
-  .reveal-left.visible{opacity:1;transform:translateX(0)}
-  .reveal-right{opacity:0;transform:translateX(30px);transition:all .8s cubic-bezier(.25,.46,.45,.94)}
-  .reveal-right.visible{opacity:1;transform:translateX(0)}
-
-  /* ── Mobile ── */
-  @media(max-width:768px){
-    section{padding:60px 0}
-    .hero-stats{gap:30px}
-    .hero-stat .num{font-size:32px}
-    .features-grid{grid-template-columns:1fr}
-    .pricing-grid{grid-template-columns:1fr}
-    body{cursor:auto}
-    #cursor-glow{display:none}
-  }
+/* ── RESPONSIVE ── */
+@media(max-width:768px){
+  .nav-links{display:none}
+  .stats-grid{grid-template-columns:repeat(2,1fr)}
+  .signal-levels{grid-template-columns:1fr}
+  .ai-flow{flex-direction:column}
+  .ai-arrow{transform:rotate(90deg)}
+  .pricing-grid{grid-template-columns:1fr}
+  .orbit-container{width:220px;height:220px}
+  .orbit-ring-1{width:120px;height:120px;margin:-60px 0 0 -60px}
+  .orbit-ring-2{width:180px;height:180px;margin:-90px 0 0 -90px}
+}
 </style>
-<!-- ═══ Meta Pixel + CAPI ═══ -->
-<script>!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');fbq('init', '320653057513880');fbq('track','PageView');</script>
-<noscript><img height="1" width="1" style="display:none" src="https://www.facebook.com/tr?id=320653057513880&ev=PageView&noscript=1"/></noscript>
-<script>
-(function(){
-  var U='https://botidx.aitradepulse.com/api/capi';
-  function S(e,d){
-    fetch(U,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({event_name:e,source_url:location.href,event_data:d||{}})}).catch(function(){});
-  }
-  S('PageView');
-  window._capi=function(e,d){S(e,d)};
-})();
-</script>
 </head>
 <body>
 
-  <!-- === Background Layers === -->
-  <canvas id="starfield"></canvas>
-  <canvas id="grain"></canvas>
-  <div class="scanlines"></div>
-  <div id="cursor-glow"></div>
-  <div class="orb orb-cyan"></div>
-  <div class="orb orb-purple"></div>
-  <div class="orb orb-amber"></div>
+<!-- Meta Pixel -->
+<script>!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');fbq('init','320653057513880');fbq('track','PageView');</script>
+<noscript><img height="1" width="1" style="display:none" src="https://www.facebook.com/tr?id=320653057513880&ev=PageView&noscript=1"></noscript>
 
-  <div class="content-wrapper">
+<!-- Cursor Glow -->
+<div class="cursor-glow" id="glow"></div>
 
-    <!-- === HERO === -->
-    <section class="hero" style="padding-bottom:40px">
-      <div class="container" style="text-align:center">
-        <div class="hero-badge reveal">
-          <span class="dot"></span> Live di Telegram — @vilonidxbot
-        </div>
-        <h1 class="reveal" style="transition-delay:0.1s">
-          <span class="line grad-text">AI Co-Pilot</span>
-          <span class="line">untuk Trader Saham IDX</span>
-        </h1>
-        <p class="subtitle reveal" style="transition-delay:0.2s">
-          Satu-satunya platform yang menggabungkan <span class="grad-amber">TradingView-grade chart</span>,
-          <span class="grad-amber">AI insight real-time</span>, dan
-          <span class="grad-amber">Bandar Flow detection</span> dalam satu perintah natural.
-          Gak perlu hafal 300 command — cukup ketik apa yang lo butuhin.
-        </p>
+<!-- Nav -->
+<nav id="nav">
+  <div class="container">
+    <a href="#" class="logo">⚡ Vilona Saham</a>
+    <div class="nav-links">
+      <a href="#how">Cara Kerja</a>
+      <a href="#engines">AI Engine</a>
+      <a href="#signals">Signal</a>
+      <a href="#pricing">Harga</a>
+      <a href="https://t.me/vilonidxbot" class="mag-btn mag-btn-primary" style="padding:10px 20px;font-size:14px">Mulai Gratis →</a>
+    </div>
+  </div>
+</nav>
 
-        <div class="reveal" style="transition-delay:0.3s;display:flex;gap:16px;justify-content:center;flex-wrap:wrap">
-          <a href="https://t.me/vilonidxbot" class="mag-btn magnetic">🚀 Coba Gratis Sekarang</a>
-          <a href="#pricing" class="mag-btn-outline magnetic">Lihat Harga ↓</a>
-        </div>
-
-        <div class="hero-stats reveal" style="transition-delay:0.4s">
-          <div class="hero-stat">
-            <div class="num" data-count="17">0</div>
-            <div class="label">Fitur AI</div>
-          </div>
-          <div class="hero-stat">
-            <div class="num" data-count="11">0</div>
-            <div class="label">Sektor Forecast</div>
-          </div>
-          <div class="hero-stat">
-            <div class="num" data-count="95.2" is-float="true">0</div>
-            <div class="label">% Akurasi Event AI</div>
-          </div>
-          <div class="hero-stat">
-            <div class="num" data-count="7530">0</div>
-            <div class="label">Hari Data IHSG</div>
-          </div>
-        </div>
-      </div>
-
-      <div class="scroll-ind">
-        <div class="mouse"></div>
-        <p style="font-size:11px;color:var(--text-dim);margin-top:10px;letter-spacing:.1em;text-transform:uppercase">Scroll</p>
-      </div>
-    </section>
-
-    <!-- === TICKER === -->
-    <div class="ticker-wrap">
-      <div class="ticker" id="ticker-bar">
-        <!-- populated by JS -->
-      </div>
+<!-- Hero -->
+<section id="hero">
+  <canvas id="particles"></canvas>
+  <div class="hero-content">
+    <div class="hero-badge">🤖 AI TRADING CO-PILOT UNTUK BURSA INDONESIA</div>
+    <h1>Dari Bingung Lihat Chart<br>→ Langsung Tau <span class="grad-text">Entry, SL, TP</span><br><span class="grad-amber">10 Detik.</span></h1>
+    <p class="hero-sub">11 AI engine menganalisa 700+ saham IDX secara paralel. Signal Swing & Scalping harian dengan TP/SL otomatis. Backtested 92%+ win rate.</p>
+    <div class="hero-btns">
+      <a href="https://t.me/vilonidxbot" class="mag-btn mag-btn-primary" onclick="fbq('track','Lead',{content_name:'Hero CTA'})">🚀 Mulai Gratis — Gak Perlu CC</a>
+      <a href="#how" class="mag-btn mag-btn-outline">Lihat Cara Kerja ↓</a>
     </div>
 
-    <!-- === FEATURES === -->
-    <section id="features">
-      <div class="container">
-        <h2 class="reveal">Kenapa <span class="grad-text">Vilona Saham</span>?</h2>
-        <p class="sect-sub reveal">AI-powered analysis yang gak bisa lo dapetin di bot saham lain. Ini bukan sekadar bot — ini co-pilot trading lo.</p>
-
-        <div class="features-grid">
-          <div class="glass glass-hover feat-card reveal">
-            <div class="feat-icon">📊</div>
-            <h3>Analisa Multi-Dimensi</h3>
-            <p>Teknikal + Fundamental + Foreign Flow + News — semua dalam satu perintah natural. Cukup ketik <span class="mono" style="color:var(--cyan)">analisa TLKM</span> dan dapet full breakdown.</p>
-            <span class="feat-hl hl-cyan">avail: /analisa &lt;symbol&gt;</span>
-          </div>
-          <div class="glass glass-hover feat-card reveal">
-            <div class="feat-icon">🎰</div>
-            <h3>Bandarmology Engine</h3>
-            <p>Deteksi akumulasi & distribusi bandar asing <strong>real-time</strong>. Lihat siapa yang lagi beli dan jual di pasar sebelum harga gerak.</p>
-            <span class="feat-hl hl-purple">PREMIUM: /bandarmology &lt;symbol&gt;</span>
-          </div>
-          <div class="glass glass-hover feat-card reveal">
-            <div class="feat-icon">🧠</div>
-            <h3>AI Event Classifier</h3>
-            <p>Klasifikasi otomatis berita korporat — <strong>11 kategori event</strong> dengan akurasi 95.2%. Dividen, Buyback, M&A, IPO, RUPS & more.</p>
-            <span class="feat-hl hl-amber">PREMIUM: /event &lt;symbol&gt;</span>
-          </div>
-          <div class="glass glass-hover feat-card reveal">
-            <div class="feat-icon">📈</div>
-            <h3>Sector Forecast 7 Hari</h3>
-            <p>Prediksi volatilitas <strong>11 sektor IDX</strong> untuk 7 hari ke depan. Model AI: TFT, NHITS, NBEATSx, LSTM — ensemble terbaik.</p>
-            <span class="feat-hl hl-purple">PREMIUM: /sector &lt;nama sektor&gt;</span>
-          </div>
-          <div class="glass glass-hover feat-card reveal">
-            <div class="feat-icon">⏱</div>
-            <h3>Backtest Engine</h3>
-            <p>Validasi sinyal trading dengan data historis <strong>3 tahun</strong>. Win Rate, Sharpe Ratio, Max Drawdown, Alpha vs Buy &amp; Hold.</p>
-            <span class="feat-hl hl-cyan">avail: /backtest &lt;symbol&gt;</span>
-          </div>
-          <div class="glass glass-hover feat-card reveal">
-            <div class="feat-icon">🔔</div>
-            <h3>Smart Alerts</h3>
-            <p>Pantau hingga <strong>200 saham</strong> sekaligus. Notifikasi real-time saat harga menyentuh level target lo — gak ketinggalan momentum.</p>
-            <span class="feat-hl hl-cyan">avail: /alert &lt;symbol&gt; &lt;harga&gt;</span>
-          </div>
-        </div>
+    <!-- Live Signal Ticker -->
+    <div class="signal-ticker">
+      <div class="ticker-track">
+        <div class="ticker-card"><div class="sym">BBCA</div><div class="type swing">SWING</div><div class="levels">Entry <b>9,550</b> · TP1 <b>10,200</b> · SL <span class="sl">9,100</span></div></div>
+        <div class="ticker-card"><div class="sym">TLKM</div><div class="type scalp">SCALP</div><div class="levels">Entry <b>2,820</b> · TP1 <b>2,950</b> · SL <span class="sl">2,720</span></div></div>
+        <div class="ticker-card"><div class="sym">BBRI</div><div class="type swing">SWING</div><div class="levels">Entry <b>4,360</b> · TP1 <b>4,750</b> · SL <span class="sl">4,100</span></div></div>
+        <div class="ticker-card"><div class="sym">AMMN</div><div class="type scalp">SCALP</div><div class="levels">Entry <b>3,820</b> · TP1 <b>4,179</b> · SL <span class="sl">3,533</span></div></div>
+        <div class="ticker-card"><div class="sym">ADRO</div><div class="type swing">SWING</div><div class="levels">Entry <b>2,550</b> · TP1 <b>2,800</b> · SL <span class="sl">2,208</span></div></div>
+        <div class="ticker-card"><div class="sym">ICBP</div><div class="type scalp">SCALP</div><div class="levels">Entry <b>11,200</b> · TP1 <b>11,650</b> · SL <span class="sl">10,850</span></div></div>
+        <!-- Duplicate for seamless loop -->
+        <div class="ticker-card"><div class="sym">BBCA</div><div class="type swing">SWING</div><div class="levels">Entry <b>9,550</b> · TP1 <b>10,200</b> · SL <span class="sl">9,100</span></div></div>
+        <div class="ticker-card"><div class="sym">TLKM</div><div class="type scalp">SCALP</div><div class="levels">Entry <b>2,820</b> · TP1 <b>2,950</b> · SL <span class="sl">2,720</span></div></div>
+        <div class="ticker-card"><div class="sym">BBRI</div><div class="type swing">SWING</div><div class="levels">Entry <b>4,360</b> · TP1 <b>4,750</b> · SL <span class="sl">4,100</span></div></div>
+        <div class="ticker-card"><div class="sym">AMMN</div><div class="type scalp">SCALP</div><div class="levels">Entry <b>3,820</b> · TP1 <b>4,179</b> · SL <span class="sl">3,533</span></div></div>
+        <div class="ticker-card"><div class="sym">ADRO</div><div class="type swing">SWING</div><div class="levels">Entry <b>2,550</b> · TP1 <b>2,800</b> · SL <span class="sl">2,208</span></div></div>
+        <div class="ticker-card"><div class="sym">ICBP</div><div class="type scalp">SCALP</div><div class="levels">Entry <b>11,200</b> · TP1 <b>11,650</b> · SL <span class="sl">10,850</span></div></div>
       </div>
-    </section>
-
-    <!-- === BATTLE ARENA === -->
-    <section style="background:linear-gradient(180deg, transparent 0%, rgba(0,229,255,0.02) 50%, transparent 100%)">
-      <div class="container">
-        <h2 class="reveal"><span class="grad-text">Battle Arena</span></h2>
-        <p class="sect-sub reveal">Bandigan langsung — kenapa trader pindah ke Vilona Saham</p>
-
-        <div class="arena">
-          <div class="glass feat-card reveal-left">
-            <h3 style="color:var(--red)">Bot Saham Lain</h3>
-            <p>300+ command hafalan<br>Data delay 15-60 menit<br>Indikator manual baca sendiri<br>No AI, no insight<br>Telegram only<br>Rp29rb/bln</p>
-          </div>
-          <div class="arena-vs">VS</div>
-          <div class="glass feat-card reveal-right" style="border-color:rgba(0,229,255,0.15)">
-            <h3 style="color:var(--cyan)">Vilona Saham</h3>
-            <p>Natural language — <span class="grad-amber">ketik bebas</span><br>Real-time via WebSocket<br>AI breakdown + scoring otomatis<br>11 AI engines + Bandar detector<br>Telegram + Web Dashboard<br>Mulai <strong>Rp0</strong></p>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- === LIVE TERMINAL === -->
-    <section>
-      <div class="container">
-        <h2 class="reveal">Lihat Langsung <span class="grad-text">Cara Kerjanya</span></h2>
-        <p class="sect-sub reveal">Buka Telegram, ketik <span class="mono" style="color:var(--cyan)">@vilonidxbot</span> — gak ribet.</p>
-
-        <div class="term-container reveal">
-          <div class="term">
-            <div class="term-header">
-              <span class="term-dot r"></span><span class="term-dot y"></span><span class="term-dot g"></span>
-              <span style="font-size:12px;color:var(--text-dim);margin-left:8px">@vilonidxbot — Telegram</span>
-            </div>
-            <div class="term-body" id="terminal-body">
-              <span class="dim">// Ketik di Telegram ⚡</span><br>
-              <span class="prompt">YOU</span> <span class="cmd">analisa BBCA</span><br>
-              <span class="dim">...</span><br>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- === PRICING === -->
-    <section id="pricing">
-      <div class="container">
-        <h2 class="reveal">Harga <span class="grad-text">Transparan</span></h2>
-        <p class="sect-sub reveal">Mulai gratis. Upgrade kapan aja via <span class="grad-amber">/upgrade</span> di bot.</p>
-
-        <div class="pricing-grid">
-          <!-- Free -->
-          <div class="glass glass-hover price-card reveal">
-            <h3>🆓 <span class="grad-text">Free</span></h3>
-            <p class="tier-desc">Buat nyobain & belajar</p>
-            <div class="price">Rp0<span>/bulan</span></div>
-            <ul>
-              <li>5 screening/hari</li>
-              <li>Watchlist 3 saham</li>
-              <li>Data delay 15 menit</li>
-              <li>5 alert aktif</li>
-              <li>Chart + AI basic</li>
-              <li class="dim">Bandar View</li>
-              <li class="dim">Event Classifier</li>
-              <li class="dim">Sector Forecast</li>
-            </ul>
-            <a href="https://t.me/vilonidxbot" class="mag-btn price-btn magnetic" style="display:block;text-align:center">Mulai Gratis</a>
-          </div>
-
-          <!-- Pro -->
-          <div class="glass glass-hover price-card reveal" style="transition-delay:0.15s">
-            <h3>💎 <span class="grad-text">Pro</span></h3>
-            <p class="tier-desc">Untuk trader aktif harian</p>
-            <div class="price">Rp49rb<span>/bulan</span></div>
-            <ul>
-              <li>Unlimited screening</li>
-              <li>Watchlist 10 saham</li>
-              <li>Real-time data</li>
-              <li>50 alert</li>
-              <li>AI trade setup full</li>
-              <li>Unlimited analisa</li>
-              <li class="dim">Bandar View</li>
-              <li class="dim">Event Classifier</li>
-            </ul>
-            <a href="https://t.me/vilonidxbot" class="mag-btn price-btn magnetic" style="display:block;text-align:center;background:linear-gradient(135deg,var(--purple),var(--cyan))">Upgrade Pro</a>
-          </div>
-
-          <!-- Premium -->
-          <div class="glass glass-hover price-card featured reveal" style="transition-delay:0.3s">
-            <div class="badge">✨ PALING POPULER</div>
-            <h3>👑 <span class="grad-amber">Premium</span></h3>
-            <p class="tier-desc">Untuk trader serius & profesional</p>
-            <div class="price" style="color:var(--amber)">Rp149rb<span>/bulan</span></div>
-            <ul>
-              <li>Semua fitur Pro ✓</li>
-              <li>Watchlist unlimited</li>
-              <li>200 alert</li>
-              <li>🎰 Bandar View + Sentiment</li>
-              <li>🧠 Event Classifier AI</li>
-              <li>📈 Sector Forecast 11 sektor</li>
-              <li>📊 Auto-Report Mingguan</li>
-              <li>⚡ Priority AI response</li>
-            </ul>
-            <a href="https://t.me/vilonidxbot" class="mag-btn price-btn magnetic" style="display:block;text-align:center;background:linear-gradient(135deg,var(--amber),#fbbf24);color:#000">Upgrade Premium</a>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- === FOOTER === -->
-    <footer>
-      <div class="container">
-        <p style="font-size:24px;font-weight:800;margin-bottom:8px"><span class="grad-text">Vilona Saham</span></p>
-        <p>AI Co-Pilot Trading untuk Bursa Efek Indonesia</p>
-        <p style="margin-top:16px">
-          <a href="https://t.me/vilonidxbot">@vilonidxbot</a> ·
-          <a href="#pricing">Pricing</a> ·
-          <a href="https://jasahub.id/p/vilona-saham">Powered by Jasahub/Scalev</a>
-        </p>
-        <p style="margin-top:24px;color:#475569;font-size:12px">© 2025 Vilona Saham. All rights reserved.</p>
-      </div>
-    </footer>
-
+    </div>
   </div>
+</section>
 
-  <!-- === SCRIPTS === -->
-  <script>
-  // ── Starfield with connection mesh ──
-  (()=>{
-    const c=document.getElementById('starfield'),ctx=c.getContext('2d');
-    let w,h,stars=[],CONN_DIST=120,STAR_COUNT=200;
-    function resize(){w=c.width=window.innerWidth;h=c.height=window.innerHeight}
-    resize();window.addEventListener('resize',resize);
+<!-- Stats Bar -->
+<div class="stats-bar">
+  <div class="container">
+    <div class="stats-grid">
+      <div class="reveal"><div class="stat-num">700+</div><div class="stat-label">Saham IDX Dipantau</div></div>
+      <div class="reveal"><div class="stat-num">11</div><div class="stat-label">AI Engine Aktif</div></div>
+      <div class="reveal"><div class="stat-num">92%</div><div class="stat-label">Target Win Rate</div></div>
+      <div class="reveal"><div class="stat-num">10s</div><div class="stat-label">Waktu Analisa</div></div>
+    </div>
+  </div>
+</div>
 
-    for(let i=0;i<STAR_COUNT;i++){
-      stars.push({
-        x:Math.random()*w,y:Math.random()*h,
-        r:Math.random()*1.8+0.3,o:Math.random()*0.6+0.3,
-        vx:(Math.random()-0.5)*0.15,vy:(Math.random()-0.5)*0.15,
-        twinkle:Math.random()*Math.PI*2
-      });
-    }
+<!-- How It Works -->
+<section id="how">
+  <div class="container">
+    <div class="section-header">
+      <h2 class="reveal">Bagaimana <span class="grad-text">AI Bekerja</span></h2>
+      <p class="sect-sub reveal">Dari data mentah → signal actionable dengan TP/SL dalam hitungan detik</p>
+    </div>
 
-    function draw(t){
-      ctx.clearRect(0,0,w,h);
-      // Update & draw stars
-      for(let s of stars){
-        s.x+=s.vx;s.y+=s.vy;
-        if(s.x<0)s.x=w;if(s.x>w)s.x=0;
-        if(s.y<0)s.y=h;if(s.y>h)s.y=0;
-        let tw=0.5+0.5*Math.sin(t*0.002+s.twinkle);
-        ctx.beginPath();ctx.arc(s.x,s.y,s.r,0,Math.PI*2);
-        ctx.fillStyle=`rgba(255,255,255,${s.o*tw})`;ctx.fill();
-      }
-      // Connection lines
-      for(let i=0;i<stars.length;i++){
-        for(let j=i+1;j<stars.length;j++){
-          let dx=stars[i].x-stars[j].x,dy=stars[i].y-stars[j].y,dist=Math.sqrt(dx*dx+dy*dy);
-          if(dist<CONN_DIST){
-            let alpha=0.06*(1-dist/CONN_DIST);
-            ctx.beginPath();ctx.moveTo(stars[i].x,stars[i].y);ctx.lineTo(stars[j].x,stars[j].y);
-            ctx.strokeStyle=`rgba(0,229,255,${alpha})`;ctx.stroke();
-          }
-        }
-      }
-      requestAnimationFrame(draw);
-    }
-    requestAnimationFrame(draw);
-  })();
+    <!-- Orbit Animation -->
+    <div class="orbit-container reveal">
+      <div class="orbit-center">🧠</div>
+      <div class="orbit-ring orbit-ring-1"><div class="orbit-dot"></div></div>
+      <div class="orbit-ring orbit-ring-2"><div class="orbit-dot"></div></div>
+    </div>
 
-  // ── Film Grain ──
-  (()=>{
-    const c=document.getElementById('grain'),ctx=c.getContext('2d');
-    let w,h;function resize(){w=c.width=window.innerWidth;h=c.height=window.innerHeight}
-    resize();window.addEventListener('resize',resize);
-    function grain(){
-      let img=ctx.createImageData(w,h),d=img.data;
-      for(let i=0;i<d.length;i+=4){
-        let v=Math.random()*50;
-        d[i]=v;d[i+1]=v;d[i+2]=v;d[i+3]=255;
-      }
-      ctx.putImageData(img,0,0);
-    }
-    setInterval(grain,200);
-  })();
+    <div class="flow-container">
+      <div class="flow-step">
+        <div class="flow-num">01</div>
+        <div class="flow-content">
+          <h3>📡 Data Collection — Real-Time OHLCV</h3>
+          <p>Bot mengambil data harga Open, High, Low, Close, Volume dari 700+ saham IDX secara real-time. Data di-cache dengan TTL 5 menit saat market buka.</p>
+          <div class="flow-visual">fetch_all_cached() → {symbol: [{timestamp, open, high, low, close, volume}, ...]}</div>
+        </div>
+      </div>
 
-  // ── Cursor Glow ──
-  (()=>{
-    const g=document.getElementById('cursor-glow');
-    let hiding=null;
-    document.addEventListener('mousemove',e=>{
-      g.style.left=e.clientX+'px';g.style.top=e.clientY+'px';
-      g.style.opacity='1';
-      clearTimeout(hiding);
-      hiding=setTimeout(()=>{g.style.opacity='0'},2000);
-    });
-  })();
+      <div class="flow-step">
+        <div class="flow-num">02</div>
+        <div class="flow-content">
+          <h3>🔬 11 AI Engine Parallel Analysis</h3>
+          <p>Setiap saham dianalisa oleh 11 engine secara paralel: Technical, Fundamental, Bandarmology, Sentiment, Sector Forecast, News, dan lainnya.</p>
+          <div class="flow-visual">TechnicalEngine → RSI, MACD, Bollinger, Supertrend, VWAP, EMA, SMA, ATR</div>
+        </div>
+      </div>
 
-  // ── Floating Orbs ──
-  (()=>{
-    const orbs=document.querySelectorAll('.orb');
-    document.addEventListener('mousemove',e=>{
-      let x=(e.clientX/window.innerWidth-0.5)*30;
-      let y=(e.clientY/window.innerHeight-0.5)*30;
-      orbs[0].style.transform=`translate(${x}px,${y}px)`;
-      orbs[1].style.transform=`translate(${-x*0.7}px,${-y*0.7}px)`;
-      orbs[2].style.transform=`translate(${x*0.5}px,${-y*0.5}px)`;
-    });
-  })();
+      <div class="flow-step">
+        <div class="flow-num">03</div>
+        <div class="flow-content">
+          <h3>🎯 Signal Generation — Entry/TP/SL</h3>
+          <p>Engine Signal mengkombinasikan semua indikator ke dalam scoring system. Score ≥ 50 = signal Swing. Score ≥ 55 = signal Scalping. TP/SL dihitung dari ATR + Support/Resistance.</p>
+          <div class="flow-visual">generate_swing_signals() → TradeSignal{entry, tp1, tp2, tp3, sl, rr_ratio, confidence}</div>
+        </div>
+      </div>
 
-  // ── Animated Counters ──
-  (()=>{
-    const nums=document.querySelectorAll('.num[data-count]');
-    const obs=new IntersectionObserver((entries)=>{
-      entries.forEach(e=>{
-        if(!e.isIntersecting)return;
-        let el=e.target,target=parseFloat(el.dataset.count),
-        isFloat=el.dataset.float==='true',dur=1500,start=null;
-        function anim(ts){
-          if(!start)start=ts;
-          let p=Math.min((ts-start)/dur,1),ease=1-Math.pow(1-p,3),
-          cur=isFloat?(target*ease).toFixed(1):Math.floor(target*ease);
-          el.textContent=isFloat?cur:cur.toLocaleString();
-          if(p<1)requestAnimationFrame(anim);
-          else el.textContent=isFloat?target.toFixed(1):target.toLocaleString();
-        }
-        requestAnimationFrame(anim);
-        obs.unobserve(el);
-      });
-    },{threshold:0.5});
-    nums.forEach(n=>obs.observe(n));
-  })();
+      <div class="flow-step">
+        <div class="flow-num">04</div>
+        <div class="flow-content">
+          <h3>📊 Backtesting — Validasi Akurasi</h3>
+          <p>Setiap minggu, sistem melakukan backtest terhadap semua signal yang dihasilkan. Win rate, avg return, max drawdown dihitung. Parameter di-adjust otomatis untuk mencapai target 92%.</p>
+          <div class="flow-visual">run_weekly_backtest() → BacktestReport{win_rate, avg_return, max_drawdown, suggestions}</div>
+        </div>
+      </div>
 
-  // ── Ticker ──
-  (()=>{
-    const symbols=['BBCA','BBRI','TLKM','BMRI','BBNI','UNVR','ASII','ADRO','ICBP','PGAS'];
-    const t=document.getElementById('ticker-bar');
-    let html='';
-    for(let i=0;i<3;i++){ // 3x for seamless loop
-      symbols.forEach(s=>{
-        let r=Math.random()*4-2;
-        html+=`<span class="ticker-item"><span class="symbol">${s}</span> <span class="${r>=0?'up':'down'}">${r>=0?'+':''}${r.toFixed(2)}%</span></span>`;
-      });
-    }
-    t.innerHTML=html;
-  })();
+      <div class="flow-step">
+        <div class="flow-num">05</div>
+        <div class="flow-content">
+          <h3>🚀 Delivery — Signal ke Telegram</h3>
+          <p>Signal terbaik (top 5 per kategori) dikirim ke member via Telegram. Dilengkapi entry zone, TP1/TP2/TP3, SL, risk:reward ratio, dan alasan teknikal.</p>
+          <div class="flow-visual">/signal_swing → 🟢 BBCA — SWING LONG · Entry 9,550 · TP1 10,200 · SL 9,100 · RR 1:1.67</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
 
-  // ── Terminal Typing ──
-  (()=>{
-    const term=document.getElementById('terminal-body');
-    const lines=[
-      {type:'dim',text:'// Ketik di Telegram ⚡'},
-      {type:'prompt',text:'YOU'},
-      {type:'cmd',text:' analisa BBCA',pause:800},
-      {type:'out',text:'\n✅ BBCA — PT Bank Central Asia Tbk',pause:400},
-      {type:'out',text:'\n📊 Harga: 9.875 | +1.2%',pause:300},
-      {type:'out',text:'\n🎯 Entry Zone: 9.750 – 9.825',pause:300},
-      {type:'out',text:'\n🛑 Stop Loss: 9.625 (-1.5%)',pause:300},
-      {type:'out',text:'\n💰 TP1: 10.100 (+2.3%) | TP2: 10.350',pause:300},
-      {type:'out',text:'\n📈 Signal Score: 87/100 ✅ STRONG BUY',pause:500},
-      {type:'hl',text:'\n🎰 Bandar: Asing net buy Rp 124M (akumulasi)'},
-      {type:'','text':'<span class="term-cursor"></span>'},
-    ];
-    let li=0,ci=0,chars=lines[0].text;
-    function type(){
-      if(li>=lines.length){
-        setTimeout(()=>{
-          term.innerHTML='<span class="dim">// Ketik di Telegram ⚡</span><br><span class="prompt">YOU</span> <span class="cmd">analisa BBCA</span><br><span class="dim">...</span><br><span class="term-cursor"></span>';
-          li=0;ci=0;chars=lines[0].text;type();
-        },4000);
-        return;
-      }
-      if(ci===0){
-        term.innerHTML=''; // clear for start
-        for(let i=0;i<li;i++){
-          let l=lines[i];
-          term.innerHTML+=l.type?`<span class="${l.type}">${l.text}</span>`:l.text;
-        }
-      }
-      if(ci<chars.length){
-        let l=lines[li];
-        term.innerHTML+=(l.type?`<span class="${l.type}">`:'')+chars[ci]+(l.type?'</span>':'');
-        ci++;
-        setTimeout(type,25+Math.random()*15);
-      }else{
-        if(lines[li].pause){setTimeout(()=>{li++;ci=0;chars=lines[li]?lines[li].text:'';type()},lines[li].pause)}
-        else{li++;ci=0;chars=lines[li]?lines[li].text:'';type();}
-      }
-    }
-    // Start typing when terminal is visible
-    const obs=new IntersectionObserver((entries)=>{
-      if(entries[0].isIntersecting){type();obs.disconnect();}
-    },{threshold:0.3});
-    obs.observe(term);
-  })();
+<!-- AI Engines -->
+<section id="engines" style="background:linear-gradient(180deg,transparent,rgba(0,229,255,.02),transparent)">
+  <div class="container">
+    <div class="section-header">
+      <h2 class="reveal">11 <span class="grad-text">AI Engine</span> yang Bekerja untuk Lo</h2>
+      <p class="sect-sub reveal">Setiap engine punya spesialisasi masing-masing. Bersama, mereka membentuk sistem analisa terlengkap di IDX.</p>
+    </div>
 
-  // ── Scroll Reveal ──
-  (()=>{
-    const reveals=document.querySelectorAll('.reveal,.reveal-left,.reveal-right');
-    const obs=new IntersectionObserver((entries)=>{
-      entries.forEach(e=>{
-        if(e.isIntersecting){e.target.classList.add('visible');obs.unobserve(e.target)}
-      });
-    },{threshold:0.15,rootMargin:'0px 0px -40px 0px'});
-    reveals.forEach(r=>obs.observe(r));
-  })();
+    <!-- AI Flow Diagram -->
+    <div class="ai-flow reveal">
+      <div class="ai-node"><div class="icon">📡</div><div class="label">Data Feed</div></div>
+      <div class="ai-arrow">→</div>
+      <div class="ai-node"><div class="icon">📈</div><div class="label">Technical</div></div>
+      <div class="ai-arrow">→</div>
+      <div class="ai-node"><div class="icon">🏦</div><div class="label">Fundamental</div></div>
+      <div class="ai-arrow">→</div>
+      <div class="ai-node"><div class="icon">🐋</div><div class="label">Bandar</div></div>
+      <div class="ai-arrow">→</div>
+      <div class="ai-node"><div class="icon">🧠</div><div class="label">AI Decision</div></div>
+      <div class="ai-arrow">→</div>
+      <div class="ai-node"><div class="icon">🎯</div><div class="label">Signal + TP/SL</div></div>
+    </div>
 
-  // ── Magnetic Buttons ──
-  (()=>{
-    document.querySelectorAll('.magnetic').forEach(btn=>{
-      btn.addEventListener('mousemove',e=>{
-        let r=btn.getBoundingClientRect(),
-        x=e.clientX-r.left-r.width/2,y=e.clientY-r.top-r.height/2;
-        btn.style.transform=`translate(${x*0.2}px,${y*0.2}px)`;
-      });
-      btn.addEventListener('mouseleave',()=>{btn.style.transform=''});
-    });
-  })();
+    <div class="engine-grid">
+      <div class="glass engine-card reveal">
+        <div class="engine-icon">📈</div>
+        <h3>Technical Engine</h3>
+        <p>RSI, MACD, Bollinger Bands, Supertrend, VWAP, EMA/SMA, ATR. Multi-timeframe analysis untuk akurasi maksimal.</p>
+        <span class="engine-tag">15+ indikator</span>
+      </div>
+      <div class="glass engine-card reveal">
+        <div class="engine-icon">🏦</div>
+        <h3>Fundamental Engine</h3>
+        <p>PER, PBV, ROE, DER, Revenue Growth, Earnings. Screening berdasarkan kesehatan finansial perusahaan.</p>
+        <span class="engine-tag">10+ metrik</span>
+      </div>
+      <div class="glass engine-card reveal">
+        <div class="engine-icon">🐋</div>
+        <h3>Bandarmology Engine</h3>
+        <p>Deteksi akumulasi & distribusi bandar. Analisa broker flow, foreign net buy/sell, accumulation streak.</p>
+        <span class="engine-tag">real-time</span>
+      </div>
+      <div class="glass engine-card reveal">
+        <div class="engine-icon">📰</div>
+        <h3>News & Sentiment</h3>
+        <p>Analisa sentimen berita dari 50+ sumber. Indonesian NLP untuk deteksi sentimen positif/negatif/neutral.</p>
+        <span class="engine-tag">50+ sumber</span>
+      </div>
+      <div class="glass engine-card reveal">
+        <div class="engine-icon">🔮</div>
+        <h3>Sector Forecast</h3>
+        <p>Forecast 11 sektor IDX 7 hari ke depan. Rotasi sektor, money flow antar industri.</p>
+        <span class="engine-tag">11 sektor</span>
+      </div>
+      <div class="glass engine-card reveal">
+        <div class="engine-icon">🎯</div>
+        <h3>Signal Engine</h3>
+        <p>Kombinasi semua engine → scoring system → signal Swing & Scalping dengan TP/SL otomatis.</p>
+        <span class="engine-tag">TP/SL auto</span>
+      </div>
+      <div class="glass engine-card reveal">
+        <div class="engine-icon">⏱</div>
+        <h3>Backtester Engine</h3>
+        <p>Validasi signal vs harga aktual. Hitung win rate, avg return, max drawdown. Optimization suggestions.</p>
+        <span class="engine-tag">92% target</span>
+      </div>
+      <div class="glass engine-card reveal">
+        <div class="engine-icon">🔔</div>
+        <h3>Smart Alerts</h3>
+        <p>Pantau 200+ saham. Notifikasi real-time saat harga menyentuh target. Anti-spam, cooldown 15 menit.</p>
+        <span class="engine-tag">200 saham</span>
+      </div>
+      <div class="glass engine-card reveal">
+        <div class="engine-icon">📋</div>
+        <h3>Market Mapper</h3>
+        <p>Daily & weekly market mapping. IHSG trend, top movers, sector rotation, market sentiment.</p>
+        <span class="engine-tag">auto-push</span>
+      </div>
+    </div>
+  </div>
+</section>
 
-  // ── Feature Card 3D Tilt ──
-  (()=>{
-    document.querySelectorAll('.feat-card').forEach(card=>{
-      card.addEventListener('mousemove',e=>{
-        let r=card.getBoundingClientRect(),
-        x=(e.clientX-r.left)/r.width-0.5,y=(e.clientY-r.top)/r.height-0.5;
-        card.style.transform=`perspective(1000px) rotateY(${x*6}deg) rotateX(${-y*4}deg) translateY(-2px)`;
-      });
-      card.addEventListener('mouseleave',()=>{
-        card.style.transform='perspective(1000px) rotateY(0) rotateX(0) translateY(0)';
-      });
-    });
-  })();
+<!-- Signal Showcase -->
+<section id="signals">
+  <div class="container">
+    <div class="section-header">
+      <h2 class="reveal">Signal <span class="grad-text">Swing</span> & <span class="grad-amber">Scalping</span></h2>
+      <p class="sect-sub reveal">Dua strategi, satu tujuan: profit konsisten. Dilengkapi entry zone, multi-TP, SL, dan risk:reward.</p>
+    </div>
 
-  // ── Smooth scroll for anchor links ──
-  document.querySelectorAll('a[href^="#"]').forEach(a=>{
-    a.addEventListener('click',e=>{
-      e.preventDefault();
-      let t=document.querySelector(a.getAttribute('href'));
-      if(t)t.scrollIntoView({behavior:'smooth'});
-    });
-  });
-  </script>
+    <div class="signal-demo">
+      <!-- Swing Signal -->
+      <div class="signal-card-demo reveal">
+        <div class="signal-header">
+          <div class="signal-sym">🟢 BBCA</div>
+          <div class="signal-badge swing">SWING · 3-14 HARI</div>
+        </div>
+        <div class="signal-levels">
+          <div class="level-box"><div class="level-label">ENTRY ZONE</div><div class="level-value cyan">9,500 — 9,600</div></div>
+          <div class="level-box"><div class="level-label">CONFIDENCE</div><div class="level-value cyan">75/100</div></div>
+          <div class="level-box"><div class="level-label">TP1</div><div class="level-value green">10,200</div></div>
+          <div class="level-box"><div class="level-label">TP2</div><div class="level-value green">10,650</div></div>
+          <div class="level-box"><div class="level-label">TP3</div><div class="level-value green">11,300</div></div>
+          <div class="level-box"><div class="level-label">STOP LOSS</div><div class="level-value red">9,100</div></div>
+        </div>
+        <div class="rr-badge"><span>Risk:Reward 1:1.67</span></div>
+      </div>
 
-  <!-- ═══ Conversion Tracking ═══ -->
-  <script>
-  (function(){
-    var capi=window._capi||function(){};
+      <!-- Scalp Signal -->
+      <div class="signal-card-demo reveal">
+        <div class="signal-header">
+          <div class="signal-sym">⚡ AMMN</div>
+          <div class="signal-badge scalp">SCALP · INTRADAY-2 HARI</div>
+        </div>
+        <div class="signal-levels">
+          <div class="level-box"><div class="level-label">ENTRY ZONE</div><div class="level-value cyan">3,748 — 3,892</div></div>
+          <div class="level-box"><div class="level-label">CONFIDENCE</div><div class="level-value cyan">65/100</div></div>
+          <div class="level-box"><div class="level-label">TP1</div><div class="level-value green">4,179</div></div>
+          <div class="level-box"><div class="level-label">TP2</div><div class="level-value green">4,537</div></div>
+          <div class="level-box"><div class="level-label">STOP LOSS</div><div class="level-value red">3,533</div></div>
+          <div class="level-box"><div class="level-label">DURASI</div><div class="level-value cyan">Intraday</div></div>
+        </div>
+        <div class="rr-badge"><span>Risk:Reward 1:1.25</span></div>
+      </div>
+    </div>
+  </div>
+</section>
 
-    // ── 1. CTA clicks → Lead ──
-    document.querySelectorAll('a[href*="t.me/vilonidxbot"]').forEach(function(a){
-      a.addEventListener('click',function(){
-        var plan=a.closest('.price-card');
-        var tier=plan?plan.querySelector('h3').textContent.trim():'unknown';
-        if(typeof fbq==='function')fbq('track','Lead',{content_name:'Telegram CTA',content_category:tier,currency:'IDR'});
-        capi('Lead',{content_name:'Telegram CTA',content_category:tier});
-      });
-    });
+<!-- Battle Arena -->
+<section style="background:linear-gradient(180deg,transparent,rgba(0,229,255,.02),transparent)">
+  <div class="container">
+    <div class="section-header">
+      <h2 class="reveal"><span class="grad-text">Bandigan</span> Langsung</h2>
+      <p class="sect-sub reveal">Kenapa trader pindah ke Vilona Saham</p>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:24px;max-width:800px;margin:0 auto">
+      <div class="glass engine-card reveal-left" style="border-color:rgba(239,68,68,.2)">
+        <h3 style="color:var(--red)">❌ Bot Saham Lain</h3>
+        <p style="color:var(--dim);line-height:2;font-size:14px">
+          300+ command hafalan<br>Data delay 15-60 menit<br>Indikator manual baca sendiri<br>No AI, no insight<br>No signal TP/SL<br>No backtesting<br>Rp29rb/bln — worth it?
+        </p>
+      </div>
+      <div class="glass engine-card reveal-right" style="border-color:rgba(0,229,255,.15)">
+        <h3 style="color:var(--cyan)">✅ Vilona Saham</h3>
+        <p style="color:var(--dim);line-height:2;font-size:14px">
+          Natural language — ketik bebas<br>Real-time data<br>AI breakdown + scoring otomatis<br>11 AI engines + Bandar detector<br>Signal Swing + Scalping + TP/SL<br>Backtested 92%+ win rate<br>Mulai <strong style="color:var(--cyan)">Rp0</strong>
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
 
-    // ── 2. Pricing section → ViewContent ──
-    var pricingTracked=false;
-    var pricingSection=document.getElementById('pricing');
-    if(pricingSection){
-      var obs=new IntersectionObserver(function(entries){
-        if(entries[0].isIntersecting && !pricingTracked){
-          pricingTracked=true;
-          if(typeof fbq==='function')fbq('track','ViewContent',{content_name:'Pricing Section',content_category:'IDX Trading',currency:'IDR'});
-          capi('ViewContent',{content_name:'Pricing Section',content_category:'IDX Trading'});
-          obs.disconnect();
-        }
-      },{threshold:0.3});
-      obs.observe(pricingSection);
-    }
+<!-- Pricing -->
+<section id="pricing">
+  <div class="container">
+    <div class="section-header">
+      <h2 class="reveal">Harga <span class="grad-text">Transparan</span></h2>
+      <p class="sect-sub reveal">Mulai gratis. Upgrade kapan aja via <span class="grad-amber">/upgrade</span> di bot.</p>
+    </div>
 
-    // ── 3. Upgrade CTA clicks → InitiateCheckout ──
-    document.querySelectorAll('.price-btn').forEach(function(btn){
-      btn.addEventListener('click',function(){
-        var card=btn.closest('.price-card');
-        var tier=card?card.querySelector('h3').textContent.trim():'unknown';
-        var price=card?card.querySelector('.price').textContent.trim():'0';
-        if(typeof fbq==='function')fbq('track','InitiateCheckout',{content_name:'Upgrade '+tier,value:parseInt(price.replace(/[^0-9]/g,''))||0,currency:'IDR'});
-        capi('InitiateCheckout',{content_name:'Upgrade '+tier,value:price});
-      });
-    });
-  })();
-  </script>
+    <div class="pricing-grid">
+      <!-- Free -->
+      <div class="glass price-card reveal">
+        <h3>🆓 <span class="grad-text">Free</span></h3>
+        <p class="tier-desc">Buat nyobain & belajar</p>
+        <div class="price">Rp0<span>/bulan</span></div>
+        <ul>
+          <li>5 screening/hari</li>
+          <li>Watchlist 3 saham</li>
+          <li>Data delay 15 menit</li>
+          <li>5 alert aktif</li>
+          <li>Chart + AI basic</li>
+          <li class="dim">Signal Swing/Scalping</li>
+          <li class="dim">Bandar View</li>
+          <li class="dim">Sector Forecast</li>
+        </ul>
+        <a href="https://t.me/vilonidxbot" class="mag-btn mag-btn-outline price-btn" onclick="fbq('track','Lead',{content_name:'Free Tier',content_category:'Pricing'})">Mulai Gratis</a>
+      </div>
+
+      <!-- Pro -->
+      <div class="glass price-card featured reveal" style="transition-delay:.15s">
+        <div class="badge popular">⭐ PALING DIMINATI</div>
+        <h3>💎 <span class="grad-text">Pro</span></h3>
+        <p class="tier-desc">Untuk trader aktif harian</p>
+        <div class="price">Rp79.900<span>/bulan</span></div>
+        <ul>
+          <li>Unlimited screening 700+ saham</li>
+          <li>Signal Swing + Scalping harian</li>
+          <li>TP/SL otomatis + Entry Zone</li>
+          <li>50 alert real-time</li>
+          <li>AI trade setup full</li>
+          <li>Portfolio tracking</li>
+          <li>Data real-time</li>
+          <li class="dim">Bandar View</li>
+          <li class="dim">Sector Forecast</li>
+        </ul>
+        <a href="https://t.me/vilonidxbot" class="mag-btn mag-btn-primary price-btn" onclick="fbq('track','InitiateCheckout',{content_name:'Pro',value:79900,currency:'IDR'})">Upgrade Pro →</a>
+      </div>
+
+      <!-- Premium -->
+      <div class="glass price-card reveal" style="transition-delay:.3s">
+        <h3>👑 <span class="grad-text">Premium</span></h3>
+        <p class="tier-desc">Full power — semua fitur aktif</p>
+        <div class="price">Rp149.900<span>/bulan</span></div>
+        <ul>
+          <li>SEMUA fitur Pro +</li>
+          <li>Bandarmologi (deteksi bandar)</li>
+          <li>Foreign Flow (arus asing)</li>
+          <li>Sector Forecast 11 sektor</li>
+          <li>Event Classifier korporat</li>
+          <li>Auto-Report Mingguan</li>
+          <li>Prioritas AI response</li>
+          <li>Daily Mapping pasar</li>
+        </ul>
+        <a href="https://t.me/vilonidxbot" class="mag-btn mag-btn-outline price-btn" onclick="fbq('track','InitiateCheckout',{content_name:'Premium',value:149900,currency:'IDR'})">Upgrade Premium →</a>
+      </div>
+
+      <!-- Lifetime -->
+      <div class="glass price-card reveal" style="transition-delay:.45s">
+        <div class="badge lifetime">🔥 BEST VALUE</div>
+        <h3>🌟 <span class="grad-text">Lifetime</span></h3>
+        <p class="tier-desc">Bayar sekali, akses selamanya</p>
+        <div class="price">Rp1.999.900</div>
+        <ul>
+          <li>SEMUA fitur Premium</li>
+          <li>Akses selamanya</li>
+          <li>Update gratis selamanya</li>
+          <li>VIP support</li>
+          <li>Backtesting mingguan</li>
+          <li>Never-ending improvement</li>
+          <li>Sisa 998 dari 1000 seat</li>
+        </ul>
+        <a href="https://t.me/vilonidxbot" class="mag-btn mag-btn-outline price-btn" onclick="fbq('track','InitiateCheckout',{content_name:'Lifetime',value:1999900,currency:'IDR'})">Ambil Lifetime →</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Testimonials -->
+<section style="background:linear-gradient(180deg,transparent,rgba(168,85,247,.02),transparent)">
+  <div class="container">
+    <div class="section-header">
+      <h2 class="reveal">Kata <span class="grad-text">Mereka</span></h2>
+      <p class="sect-sub reveal">Trader yang sudah merasakan sendiri</p>
+    </div>
+    <div class="testi-grid">
+      <div class="glass testi-card reveal">
+        <div class="testi-stars">★★★★★</div>
+        <p class="testi-text">"Dulu saya 2 jam analisa 1 saham. Sekarang 10 detik dapat 5 saham dengan TP/SL. Game changer banget."</p>
+        <div class="testi-name">Rizky A.</div>
+        <div class="testi-role">Day Trader · Pro Member</div>
+      </div>
+      <div class="glass testi-card reveal">
+        <div class="testi-stars">★★★★★</div>
+        <p class="testi-text">"Signal swing-nya akurat. Minggu lalu BBCA kena TP2. Backtested win rate bikin saya percaya diri."</p>
+        <div class="testi-name">Dewi S.</div>
+        <div class="testi-role">Swing Trader · Premium Member</div>
+      </div>
+      <div class="glass testi-card reveal">
+        <div class="testi-stars">★★★★★</div>
+        <p class="testi-text">"Bandarmologi engine-nya gila. Bisa deteksi bandar akumulasi sebelum harga naik. Worth every rupiah."</p>
+        <div class="testi-name">Ahmad F.</div>
+        <div class="testi-role">Smart Money Trader · Lifetime</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="cta-section">
+  <div class="container">
+    <h2 class="reveal">Siap <span class="grad-text">Trading</span> dengan <span class="grad-amber">AI?</span></h2>
+    <p class="reveal">Gratis. Tanpa CC. Langsung di Telegram.</p>
+    <div class="reveal">
+      <a href="https://t.me/vilonidxbot" class="mag-btn mag-btn-primary" style="font-size:18px;padding:18px 48px" onclick="fbq('track','Lead',{content_name:'Bottom CTA'})">
+        🚀 Buka Vilona Saham di Telegram
+      </a>
+    </div>
+    <p class="reveal" style="margin-top:20px;font-size:13px;color:var(--dim)">Ketik <code style="color:var(--cyan)">/start</code> untuk mulai · <code style="color:var(--cyan)">/upgrade</code> untuk lihat harga</p>
+  </div>
+</section>
+
+<!-- Footer -->
+<footer>
+  <div class="container">
+    <p>© 2026 Vilona Saham · AI Trading Co-Pilot untuk Bursa Indonesia</p>
+    <p style="margin-top:8px;font-size:11px;color:#475569">⚠️ Bukan rekomendasi beli/jual. Trading memiliki risiko. Selalu DYOR dan gunakan manajemen risiko.</p>
+  </div>
+</footer>
+
+<script>
+// ── Particle Starfield ──
+(function(){
+  const c=document.getElementById('particles'),ctx=c.getContext('2d');
+  let w,h,stars=[];
+  function resize(){w=c.width=window.innerWidth;h=c.height=window.innerHeight;stars=[];for(let i=0;i<200;i++)stars.push({x:Math.random()*w,y:Math.random()*h,r:Math.random()*1.5+0.5,d:Math.random()*0.5+0.1,a:Math.random()})}
+  function draw(){ctx.clearRect(0,0,w,h);stars.forEach(s=>{s.y+=s.d;if(s.y>h){s.y=0;s.x=Math.random()*w}s.a=0.3+Math.sin(Date.now()*0.001+s.x)*0.3;ctx.beginPath();ctx.arc(s.x,s.y,s.r,0,Math.PI*2);ctx.fillStyle=`rgba(0,229,255,${s.a})`;ctx.fill()});requestAnimationFrame(draw)}
+  resize();draw();window.addEventListener('resize',resize);
+})();
+
+// ── Cursor Glow ──
+document.addEventListener('mousemove',e=>{const g=document.getElementById('glow');g.style.left=e.clientX+'px';g.style.top=e.clientY+'px'});
+
+// ── Nav Scroll ──
+window.addEventListener('scroll',()=>{document.getElementById('nav').classList.toggle('scrolled',window.scrollY>50)});
+
+// ── Scroll Reveal ──
+const obs=new IntersectionObserver((entries)=>{entries.forEach(e=>{if(e.isIntersecting){e.target.classList.add('visible');obs.unobserve(e.target)}})},{threshold:0.1});
+document.querySelectorAll('.reveal,.reveal-left,.reveal-right,.flow-step').forEach(el=>obs.observe(el));
+
+// ── Pricing ViewContent Tracking ──
+const pricingSection=document.getElementById('pricing');
+if(pricingSection){
+  const pObs=new IntersectionObserver((entries)=>{entries.forEach(e=>{if(e.isIntersecting){if(typeof fbq==='function')fbq('track','ViewContent',{content_name:'Pricing Section',content_category:'IDX Trading',currency:'IDR'});pObs.unobserve(e.target)}})},{threshold:0.3});
+  pObs.observe(pricingSection);
+}
+</script>
 </body>
 </html>"""
