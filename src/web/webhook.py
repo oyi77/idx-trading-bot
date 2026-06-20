@@ -161,42 +161,45 @@ async def scalev_notify(request: Request):
 
         if user_id and tier:
             from src.config import settings
-            from sqlalchemy import create_engine
-            from sqlalchemy.orm import sessionmaker
+            import sqlite3
+            from datetime import datetime, timedelta, timezone
 
-            sync_url = settings.database_url.replace("+aiosqlite", "").replace("+asyncpg", "")
-            engine = create_engine(sync_url)
-            Session = sessionmaker(bind=engine)
+            db_path = settings.database_url.replace("sqlite+aiosqlite:///", "").replace("sqlite:///", "")
+            if not db_path.startswith("/"):
+                db_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), db_path)
 
             try:
-                session = Session()
-                from src.services.user_manager import UserManager
-                mgr = UserManager(session)
-                import asyncio
-                loop = asyncio.get_event_loop()
-                if loop.is_running():
-                    async def _do_upgrade():
-                        try:
-                            ok, msg = await mgr.upgrade_tier(user_id, tier, amount)
-                            logger.info(f"Auto-upgrade user={user_id} tier={tier}: {ok} {msg}")
-                        except Exception as e:
-                            logger.error(f"Auto-upgrade failed: {e}")
-                        finally:
-                            session.close()
-                            engine.dispose()
-                    loop.create_task(_do_upgrade())
-                else:
-                    ok, msg = loop.run_until_complete(mgr.upgrade_tier(user_id, tier, amount))
-                    logger.info(f"Auto-upgrade user={user_id} tier={tier}: {ok} {msg}")
-                    session.close()
-                    engine.dispose()
+                conn = sqlite3.connect(db_path)
+                conn.row_factory = sqlite3.Row
+
+                # Check if user exists
+                user_row = conn.execute("SELECT id FROM users WHERE telegram_id=?", [int(user_id)]).fetchone()
+                if not user_row:
+                    # Create user
+                    conn.execute(
+                        "INSERT INTO users (telegram_id, username, created_at, last_active, is_active) VALUES (?, ?, ?, ?, 1)",
+                        [int(user_id), f"user_{user_id}", datetime.now(timezone.utc).isoformat(), datetime.now(timezone.utc).isoformat()]
+                    )
+                    conn.commit()
+                    user_row = conn.execute("SELECT id FROM users WHERE telegram_id=?", [int(user_id)]).fetchone()
+                    logger.info(f"Created new user: telegram_id={user_id}")
+
+                user_db_id = user_row["id"] if user_row else None
+                if user_db_id:
+                    # Upsert subscription
+                    existing = conn.execute("SELECT id FROM subscriptions WHERE user_id=?", [user_db_id]).fetchone()
+                    expiry = None if tier == "lifetime" else (datetime.now(timezone.utc) + timedelta(days=30)).isoformat()
+                    if existing:
+                        conn.execute("UPDATE subscriptions SET tier=?, start_date=?, end_date=?, payment_status='paid' WHERE user_id=?",
+                                     [tier, datetime.now(timezone.utc).isoformat(), expiry, user_db_id])
+                    else:
+                        conn.execute("INSERT INTO subscriptions (user_id, tier, start_date, end_date, payment_status) VALUES (?, ?, ?, ?, 'paid')",
+                                     [user_db_id, tier, datetime.now(timezone.utc).isoformat(), expiry])
+                    conn.commit()
+                    logger.info(f"✅ Auto-upgrade user={user_id} tier={tier}")
+                conn.close()
             except Exception as e:
                 logger.error(f"Auto-upgrade DB failed: {e}")
-                try:
-                    session.close()
-                    engine.dispose()
-                except:
-                    pass
 
             # ── Fire Meta CAPI Purchase event ──
             try:
