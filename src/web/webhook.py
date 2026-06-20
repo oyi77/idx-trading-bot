@@ -160,32 +160,43 @@ async def scalev_notify(request: Request):
             tier = tier or entry.get("tier") or infer_tier_from_amount(normalize_amount(entry.get("amount", 0)))
 
         if user_id and tier:
-            import asyncio
             from src.config import settings
             from sqlalchemy import create_engine
             from sqlalchemy.orm import sessionmaker
-            from sqlalchemy.ext.asyncio import AsyncSession
 
             sync_url = settings.database_url.replace("+aiosqlite", "").replace("+asyncpg", "")
             engine = create_engine(sync_url)
-            SessionFactory = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
+            Session = sessionmaker(bind=engine)
 
-            async def _do_upgrade():
+            try:
+                session = Session()
+                from src.services.user_manager import UserManager
+                mgr = UserManager(session)
+                import asyncio
+                loop = asyncio.get_event_loop()
+                if loop.is_running():
+                    async def _do_upgrade():
+                        try:
+                            ok, msg = await mgr.upgrade_tier(user_id, tier, amount)
+                            logger.info(f"Auto-upgrade user={user_id} tier={tier}: {ok} {msg}")
+                        except Exception as e:
+                            logger.error(f"Auto-upgrade failed: {e}")
+                        finally:
+                            session.close()
+                            engine.dispose()
+                    loop.create_task(_do_upgrade())
+                else:
+                    ok, msg = loop.run_until_complete(mgr.upgrade_tier(user_id, tier, amount))
+                    logger.info(f"Auto-upgrade user={user_id} tier={tier}: {ok} {msg}")
+                    session.close()
+                    engine.dispose()
+            except Exception as e:
+                logger.error(f"Auto-upgrade DB failed: {e}")
                 try:
-                    async with SessionFactory() as s:
-                        from src.services.user_manager import UserManager
-                        mgr = UserManager(s)
-                        ok, msg = await mgr.upgrade_tier(user_id, tier, amount)
-                        logger.info(f"Auto-upgrade user={user_id} tier={tier}: {ok} {msg}")
-                except Exception as e:
-                    logger.error(f"Auto-upgrade DB failed: {e}")
-
-            loop = asyncio.get_event_loop()
-            if loop.is_running():
-                loop.create_task(_do_upgrade())
-            else:
-                loop.run_until_complete(_do_upgrade())
-            engine.dispose()
+                    session.close()
+                    engine.dispose()
+                except:
+                    pass
 
             # ── Fire Meta CAPI Purchase event ──
             try:
