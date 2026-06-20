@@ -412,6 +412,117 @@ class BotHandlers:
 
         return text, keyboard
 
+    async def analyze(self, update: Update, context: ContextTypes.DEFAULT_TYPE, symbol: str):
+        """Full stock analysis — fetch data, compute technicals, send result."""
+        msg = await update.message.reply_text(f"🔍 Menganalisa *{symbol}*...", parse_mode="Markdown")
+        try:
+            feed = await self._get_feed()
+
+            # Fetch data
+            quote = await feed.get_quote(symbol)
+            if not quote:
+                await msg.edit_text(f"❌ Saham *{symbol}* tidak ditemukan di IDX.", parse_mode="Markdown")
+                return
+
+            ohlc = await feed.get_klines(symbol, interval="1d", limit=60)
+
+            price = quote.get("price", 0) or quote.get("close", 0)
+            change = quote.get("change_pct", 0) or 0
+
+            # Technical indicators (basic)
+            closes = [float(c.get("close", 0)) for c in ohlc] if ohlc else [price]
+            if len(closes) < 2:
+                closes = [price]
+
+            # SMA
+            sma20 = sum(closes[-20:]) / min(len(closes), 20)
+            sma50 = sum(closes[-50:]) / min(len(closes), 50)
+
+            # RSI
+            def calc_rsi(prices, period=14):
+                if len(prices) < period + 1:
+                    return 50.0
+                gains, losses = [], []
+                for i in range(-period, 0):
+                    diff = prices[i] - prices[i - 1]
+                    gains.append(max(diff, 0))
+                    losses.append(max(-diff, 0))
+                avg_gain = sum(gains) / period or 0.001
+                avg_loss = sum(losses) / period or 0.001
+                rs = avg_gain / avg_loss
+                return 100 - (100 / (1 + rs))
+
+            rsi = calc_rsi(closes)
+
+            # Trend
+            if price > sma20 > sma50:
+                trend = "🟢 BULLISH"
+            elif price < sma20 < sma50:
+                trend = "🔴 BEARISH"
+            else:
+                trend = "⚪ NEUTRAL"
+
+            # Support/Resistance
+            support = min(closes[-20:]) if len(closes) >= 20 else price * 0.95
+            resistance = max(closes[-20:]) if len(closes) >= 20 else price * 1.05
+
+            # AI Analysis
+            ai_text = ""
+            try:
+                from src.engine.ai_analysis import AIAnalysisEngine
+                ai = AIAnalysisEngine()
+                ai_result = await ai.analyze(symbol, ohlc=ohlc, quote=quote)
+                if ai_result:
+                    ai_text = f"\n\n🤖 *AI Analysis:*\n{ai_result[:500]}"
+            except Exception:
+                pass
+
+            # Chart
+            chart_path = None
+            try:
+                from src.visual import download_chart
+                chart_path = await download_chart(symbol, interval="1D", theme="dark")
+            except Exception:
+                pass
+
+            # Build message
+            rsi_emoji = "🟢" if rsi < 30 else ("🔴" if rsi > 70 else "🟡")
+            chg_emoji = "🟢" if change >= 0 else "🔴"
+            chg_sign = "+" if change >= 0 else ""
+
+            out = (
+                f"📊 *Analisa {symbol}*\n"
+                f"━━━━━━━━━━━━━━━━━━━━\n\n"
+                f"💰 *Harga:* Rp{price:,.0f} ({chg_emoji}{chg_sign}{change:.2f}%)\n"
+                f"📐 *Trend:* {trend}\n"
+                f"📈 *RSI(14):* {rsi_emoji} {rsi:.1f}\n\n"
+                f"📏 *Level Kunci:*\n"
+                f"  🔺 Resistance: Rp{resistance:,.0f}\n"
+                f"  🔻 Support: Rp{support:,.0f}\n\n"
+                f"📊 *Moving Average:*\n"
+                f"  SMA20: Rp{sma20:,.0f}\n"
+                f"  SMA50: Rp{sma50:,.0f}\n"
+                f"{ai_text}\n\n"
+                f"━━━━━━━━━━━━━━━━━━━━\n"
+                f"⚠️ Bukan rekomendasi. DYOR & manajemen risiko."
+            )
+
+            # Send chart + analysis
+            if chart_path:
+                try:
+                    with open(chart_path, "rb") as f:
+                        await update.message.reply_photo(photo=f, caption=out, parse_mode="Markdown")
+                    await msg.delete()
+                    return
+                except Exception:
+                    pass
+
+            await msg.edit_text(out, parse_mode="Markdown")
+
+        except Exception as e:
+            logger.error(f"Analyze error: {e}", exc_info=True)
+            await msg.edit_text(f"❌ Gagal menganalisa *{symbol}*: {str(e)[:100]}", parse_mode="Markdown")
+
     async def analisa_direct(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """Direct handler for /analisa command."""
         if not await self._check_tier(update, "analisa"): return
