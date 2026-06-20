@@ -24,6 +24,17 @@ class Intent(Enum):
     TRENDING = "trending"
     HELP = "help"
     PRICING = "pricing"
+    # ── New intents for /command-free routing ──
+    SIGNAL_SWING = "signal_swing"
+    SIGNAL_SCALP = "signal_scalp"
+    BANDARMOLOGY = "bandarmology"
+    EVENT = "event"
+    REPORT = "report"
+    JEJAK = "jejak"
+    LEADERBOARD = "leaderboard"
+    POINTS = "points"
+    PORTFOLIO = "portfolio"
+    PREMARKET = "premarket"
     UNKNOWN = "unknown"
 
 
@@ -84,6 +95,34 @@ class NLPRouter:
     _PRICING_TRIGGERS = ("/pricing", "pricing", "harga", "subscription",
                          "/subscription", "langganan", "beli", "upgrade",
                          "/subscribe")
+
+    # ── Signal aliases ──
+    _SIGNAL_SWING_TRIGGERS = ("signal_swing", "/signal_swing", "signal swing", "swing signal", "swing trade")
+    _SIGNAL_SCALP_TRIGGERS = ("signal_scalp", "/signal_scalp", "signal scalp", "scalp signal", "scalping")
+
+    # ── Bandarmology aliases ──
+    _BANDARMOLOGY_TRIGGERS = ("bandarmology", "/bandarmology", "bandar", "foreign flow", "asing")
+
+    # ── Event aliases ──
+    _EVENT_TRIGGERS = ("event", "/event", "klasifikasi berita", "corporate event")
+
+    # ── Report aliases ──
+    _REPORT_TRIGGERS = ("report", "/report", "laporan mingguan", "weekly report")
+
+    # ── Jejak aliases ──
+    _JEJAK_TRIGGERS = ("jejak", "/jejak", "jejak cuan", "profit trail")
+
+    # ── Leaderboard aliases ──
+    _LEADERBOARD_TRIGGERS = ("leaderboard", "/leaderboard", "top trader", "ranking")
+
+    # ── Points aliases ──
+    _POINTS_TRIGGERS = ("points", "/points", "poin", "rank saya")
+
+    # ── Portfolio aliases ──
+    _PORTFOLIO_TRIGGERS = ("portfolio", "/portfolio", "posisi", "my portfolio")
+
+    # ── Premarket aliases ──
+    _PREMARKET_TRIGGERS = ("premarket", "/premarket", "pre-market", "pra pasar")
 
     def parse(self, text: str) -> ParsedCommand:
         """Parse incoming message text to structured command."""
@@ -165,6 +204,67 @@ class NLPRouter:
         # ── PRICING ──
         if lower in self._PRICING_TRIGGERS or lower.split()[0] in self._PRICING_TRIGGERS:
             return ParsedCommand(Intent.PRICING)
+
+        # ── SIGNAL_SWING ──
+        for trigger in self._SIGNAL_SWING_TRIGGERS:
+            if trigger in lower or lower.startswith(trigger):
+                logger.info(f"NLPRouter: SIGNAL_SWING from '{text}'")
+                return ParsedCommand(Intent.SIGNAL_SWING)
+
+        # ── SIGNAL_SCALP ──
+        for trigger in self._SIGNAL_SCALP_TRIGGERS:
+            if trigger in lower or lower.startswith(trigger):
+                logger.info(f"NLPRouter: SIGNAL_SCALP from '{text}'")
+                return ParsedCommand(Intent.SIGNAL_SCALP)
+
+        # ── BANDARMOLOGY ──
+        for trigger in self._BANDARMOLOGY_TRIGGERS:
+            if trigger in lower or lower.startswith(trigger):
+                logger.info(f"NLPRouter: BANDARMOLOGY from '{text}'")
+                return ParsedCommand(Intent.BANDARMOLOGY)
+
+        # ── EVENT ──
+        for trigger in self._EVENT_TRIGGERS:
+            if lower.startswith(trigger):
+                rest = text[len(trigger):].strip()
+                logger.info(f"NLPRouter: EVENT from '{text}'")
+                return ParsedCommand(Intent.EVENT, "", {"text": rest})
+
+        # ── REPORT ──
+        for trigger in self._REPORT_TRIGGERS:
+            if trigger in lower or lower.startswith(trigger):
+                logger.info(f"NLPRouter: REPORT from '{text}'")
+                return ParsedCommand(Intent.REPORT)
+
+        # ── JEJAK ──
+        for trigger in self._JEJAK_TRIGGERS:
+            if trigger in lower or lower.startswith(trigger):
+                logger.info(f"NLPRouter: JEJAK from '{text}'")
+                return ParsedCommand(Intent.JEJAK)
+
+        # ── LEADERBOARD ──
+        for trigger in self._LEADERBOARD_TRIGGERS:
+            if trigger in lower or lower.startswith(trigger):
+                logger.info(f"NLPRouter: LEADERBOARD from '{text}'")
+                return ParsedCommand(Intent.LEADERBOARD)
+
+        # ── POINTS ──
+        for trigger in self._POINTS_TRIGGERS:
+            if trigger in lower or lower.startswith(trigger):
+                logger.info(f"NLPRouter: POINTS from '{text}'")
+                return ParsedCommand(Intent.POINTS)
+
+        # ── PORTFOLIO ──
+        for trigger in self._PORTFOLIO_TRIGGERS:
+            if trigger in lower or lower.startswith(trigger):
+                logger.info(f"NLPRouter: PORTFOLIO from '{text}'")
+                return ParsedCommand(Intent.PORTFOLIO)
+
+        # ── PREMARKET ──
+        for trigger in self._PREMARKET_TRIGGERS:
+            if trigger in lower or lower.startswith(trigger):
+                logger.info(f"NLPRouter: PREMARKET from '{text}'")
+                return ParsedCommand(Intent.PREMARKET)
 
         # ── Legacy: /C <symbol> <indicators> ──
         if lower.startswith("/c "):
