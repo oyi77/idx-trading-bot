@@ -878,15 +878,21 @@ class BotHandlers:
             feed = await self._get_feed()
             quote = await feed.get_quote(cmd.symbol)
             if quote:
-                chg_emoji = "🟢" if getattr(quote, "change_pct", 0) >= 0 else "🔴"
+                price = quote.get("price", 0) or quote.get("close", 0)
+                high = quote.get("high", 0)
+                low = quote.get("low", 0)
+                volume = quote.get("volume", 0)
+                value = quote.get("value", 0)
+                change_pct = quote.get("change_pct", 0)
+                chg_emoji = "🟢" if change_pct >= 0 else "🔴"
                 text = (
                     f"📈 *Statistik {cmd.symbol}*\n"
                     f"━━━━━━━━━━━━━━━━━\n"
-                    f"Harga: Rp{quote.price:,.0f} {chg_emoji}\n"
-                    f"Tertinggi: Rp{quote.high:,.0f}\n"
-                    f"Terendah: Rp{quote.low:,.0f}\n"
-                    f"Volume: {quote.volume:,}\n"
-                    f"Nilai: Rp{quote.value:,.0f}\n\n"
+                    f"Harga: Rp{price:,.0f} {chg_emoji}\n"
+                    f"Tertinggi: Rp{high:,.0f}\n"
+                    f"Terendah: Rp{low:,.0f}\n"
+                    f"Volume: {volume:,}\n"
+                    f"Nilai: Rp{value:,.0f}\n\n"
                     f"💡 Analisa lengkap: `analisa {cmd.symbol}`"
                 )
             else:
