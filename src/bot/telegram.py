@@ -469,9 +469,13 @@ class BotHandlers:
             # AI Analysis
             ai_text = ""
             try:
-                from src.engine.ai_analysis import AIAnalysisEngine
-                ai = AIAnalysisEngine()
-                ai_result = await ai.analyze(symbol, ohlc=ohlc, quote=quote)
+                from src.engine.ai_analysis import analyze_with_ai
+                tech_data = {
+                    "rsi": rsi, "sma20": sma20, "sma50": sma50,
+                    "support": support, "resistance": resistance,
+                    "trend": trend,
+                }
+                ai_result = await analyze_with_ai(symbol, price, change, tech_data)
                 if ai_result:
                     ai_text = f"\n\n🤖 *AI Analysis:*\n{ai_result[:500]}"
             except Exception:
