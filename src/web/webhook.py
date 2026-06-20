@@ -116,29 +116,30 @@ async def scalev_notify(request: Request):
 
     event = parse_event(payload)
     event_name = event["event"]
-    reference = extract_reference(event)
 
-    if event_name not in ("payment.paid", "payment.success", "order.paid", "checkout.completed", "paid"):
+    # Accept more event types including Subscription Activated
+    if event_name not in ("payment.paid", "payment.success", "order.paid",
+                          "checkout.completed", "paid", "subscription activated",
+                          "subscription.activated"):
         return {"status": "ignored", "event": event_name}
 
-    if not reference:
-        logger.warning("Scalev callback missing reference")
-        return {"status": "ignored", "reason": "missing_reference"}
+    # Extract metadata first (new API flow with ScaleV Business API)
+    metadata = {}
+    if isinstance(payload.get("data"), dict):
+        metadata = payload["data"].get("metadata", {}) or {}
+    if not metadata:
+        metadata = payload.get("metadata", {}) or {}
 
-    mark_paid(reference)
-    logger.info(f"Scalev payment marked paid: ref={reference}")
+    reference = extract_reference(event)
+    if reference:
+        mark_paid(reference)
+        logger.info(f"Scalev payment marked paid: ref={reference}")
 
     # ── Auto-upgrade user tier + send Telegram notification + CAPI ──
     try:
-        # Extract metadata from ScaleV webhook (new API flow)
-        metadata = {}
-        if isinstance(payload.get("data"), dict):
-            metadata = payload["data"].get("metadata", {}) or {}
-        if not metadata:
-            metadata = payload.get("metadata", {}) or {}
-
         user_id = None
         tier = None
+
 
         # Try metadata first (new API flow)
         if metadata:
