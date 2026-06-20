@@ -165,8 +165,8 @@ async def scalev_notify(request: Request):
             from datetime import datetime, timedelta, timezone
 
             db_path = settings.database_url.replace("sqlite+aiosqlite:///", "").replace("sqlite:///", "")
-            if not db_path.startswith("/"):
-                db_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), db_path)
+            if not os.path.isabs(db_path):
+                db_path = os.path.join(os.path.expanduser("~"), "projects", "idx-trading-bot", db_path)
 
             try:
                 conn = sqlite3.connect(db_path)
