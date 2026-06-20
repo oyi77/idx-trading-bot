@@ -236,16 +236,50 @@ async def scalev_notify(request: Request):
                 from telegram import Bot
                 bot = Bot(token=settings.bot_token)
                 tier_emoji = {"pro": "💎", "premium": "👑", "lifetime": "🌟"}.get(tier, "✅")
-                msg_text = (
-                    f"{tier_emoji} *Upgrade Berhasil!*\n\n"
-                    f"Akun kamu sekarang *{tier.upper()}*.\n"
-                    f"Semua fitur {tier.title()} udah aktif.\n\n"
-                    f"Ketik /start untuk mulai pakai!"
+                tier_label = tier.upper()
+
+                # Message 1: Welcome
+                msg1 = (
+                    f"{tier_emoji} *Pembayaran Berhasil!*\n\n"
+                    f"Tier: *{tier_label}*\n"
+                    f"Semua fitur premium udah aktif! 🚀"
                 )
-                if loop.is_running():
-                    loop.create_task(bot.send_message(chat_id=user_id, text=msg_text, parse_mode="Markdown"))
-                else:
-                    loop.run_until_complete(bot.send_message(chat_id=user_id, text=msg_text, parse_mode="Markdown"))
+
+                # Message 2: Quick Start
+                msg2 = (
+                    f"📖 *Quick Start — Langsung Analisa!*\n"
+                    f"━━━━━━━━━━━━━━━━\n\n"
+                    f"1️⃣ Ketik nama saham:\n"
+                    f"   `analisa BBCA`\n\n"
+                    f"2️⃣ Lihat signal aktif:\n"
+                    f"   `/signal`\n\n"
+                    f"3️⃣ Screening saham:\n"
+                    f"   `/screener momentum`\n\n"
+                    f"4️⃣ Cek bandar flow:\n"
+                    f"   `/bandarmologi BBCA`\n\n"
+                    f"💡 Semua command: `/help`"
+                )
+
+                # Message 3: Features
+                features = f"⭐ *Fitur {tier_label} Aktif:*\n"
+                features += "✅ Unlimited screening 700+ saham\n"
+                features += "✅ Signal Swing + Scalping\n"
+                features += "✅ TP/SL otomatis\n"
+                if tier in ("premium", "lifetime"):
+                    features += "✅ Bandarmologi (deteksi bandar)\n"
+                    features += "✅ Foreign Flow\n"
+                    features += "✅ Sector Forecast\n"
+                if tier == "lifetime":
+                    features += "✅ Akses SELAMANYA\n"
+                features += "\n📊 Cek status: `/status`"
+
+                # Send all messages
+                for msg in [msg1, msg2, features]:
+                    try:
+                        await bot.send_message(chat_id=user_id, text=msg, parse_mode="Markdown")
+                        await asyncio.sleep(1)
+                    except Exception as e:
+                        logger.warning(f"Telegram notification failed: {e}")
             except Exception as e:
                 logger.warning(f"Telegram upgrade notification failed: {e}")
         else:
