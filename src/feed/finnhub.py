@@ -1,91 +1,112 @@
-"""Finnhub data feed — alternative for IDX + global data."""
-import time
-from datetime import datetime
-from typing import List, Optional
+"""Finnhub Data Feed — Real-time market data from Finnhub API."""
+import logging
+import urllib.request
+import json
+from typing import Optional, List, Dict
+from datetime import datetime, timedelta
 
-import aiohttp
-
-from src.config import settings
-from src.feed import Kline, Quote, DataFeed
-
-BASE = "https://finnhub.io/api/v1"
+logger = logging.getLogger(__name__)
 
 
-class FinnhubFeed(DataFeed):
-    def __init__(self, api_key: str = ""):
-        self.api_key = api_key or settings.finnhub_api_key
-        self._session: Optional[aiohttp.ClientSession] = None
-
-    async def _ensure_session(self):
-        if self._session is None or self._session.closed:
-            self._session = aiohttp.ClientSession()
-        return self._session
-
-    def _idx_to_finnhub(self, symbol: str) -> str:
-        """Convert IDX code (e.g. TLKM) to Finnhub format."""
-        return f"{symbol}.JK"
-
-    async def get_quote(self, symbol: str) -> Optional[Quote]:
-        session = await self._ensure_session()
+class FinnhubFeed:
+    """Finnhub API client for real-time market data."""
+    
+    def __init__(self, api_key: str):
+        self.api_key = api_key
+        self.base_url = "https://finnhub.io/api/v1"
+    
+    def _get(self, endpoint: str, params: dict = None) -> Optional[dict]:
+        """Make GET request to Finnhub API."""
         try:
-            symbol_fh = self._idx_to_finnhub(symbol)
-            url = f"{BASE}/quote?symbol={symbol_fh}&token={self.api_key}"
-            async with session.get(url) as resp:
-                if resp.status != 200:
-                    return None
-                data = await resp.json()
-                if not data or data.get("c", 0) == 0:
-                    return None
-                return Quote(
-                    symbol=symbol,
-                    price=data.get("c", 0),  # current
-                    open=data.get("o", 0),
-                    high=data.get("h", 0),
-                    low=data.get("l", 0),
-                    volume=0,  # Finnhub quote endpoint doesn't provide volume
-                    value=0,
-                    timestamp=datetime.now(),
-                )
+            url = f"{self.base_url}{endpoint}"
+            if params:
+                params["token"] = self.api_key
+                query = "&".join(f"{k}={v}" for k, v in params.items())
+                url = f"{url}?{query}"
+            else:
+                url = f"{url}?token={self.api_key}"
+            
+            req = urllib.request.Request(url, headers={"User-Agent": "VilonaSahamBot/1.0"})
+            with urllib.request.urlopen(req, timeout=10) as r:
+                return json.loads(r.read())
         except Exception as e:
-            print(f"[FinnhubFeed] Error: {e}")
+            logger.error(f"Finnhub API error: {e}")
             return None
+    
+    def get_quote(self, symbol: str) -> Optional[Dict]:
+        """Get real-time quote for a symbol."""
+        data = self._get("/quote", {"symbol": symbol})
+        if data and "c" in data:
+            return {
+                "symbol": symbol,
+                "price": data["c"],
+                "change": data.get("d", 0),
+                "change_pct": data.get("dp", 0),
+                "high": data.get("h", 0),
+                "low": data.get("l", 0),
+                "open": data.get("o", 0),
+                "prev_close": data.get("pc", 0),
+            }
+        return None
+    
+    def get_candles(self, symbol: str, resolution: str = "D", days: int = 30) -> Optional[List[Dict]]:
+        """Get OHLCV candles."""
+        import time
+        to_ts = int(time.time())
+        from_ts = to_ts - (days * 86400)
+        
+        data = self._get("/stock/candle", {
+            "symbol": symbol,
+            "resolution": resolution,
+            "from": from_ts,
+            "to": to_ts,
+        })
+        
+        if data and data.get("s") == "ok":
+            candles = []
+            for i in range(len(data["t"])):
+                candles.append({
+                    "timestamp": data["t"][i],
+                    "open": data["o"][i],
+                    "high": data["h"][i],
+                    "low": data["l"][i],
+                    "close": data["c"][i],
+                    "volume": data["v"][i],
+                })
+            return candles
+        return None
+    
+    def get_company_news(self, symbol: str, days: int = 7) -> Optional[List[Dict]]:
+        """Get company news."""
+        import time
+        to_date = datetime.now().strftime("%Y-%m-%d")
+        from_date = (datetime.now() - timedelta(days=days)).strftime("%Y-%m-%d")
+        
+        data = self._get("/company-news", {
+            "symbol": symbol,
+            "from": from_date,
+            "to": to_date,
+        })
+        
+        if data:
+            return [{
+                "headline": n.get("headline", ""),
+                "source": n.get("source", ""),
+                "url": n.get("url", ""),
+                "datetime": n.get("datetime", ""),
+                "summary": n.get("summary", ""),
+            } for n in data[:10]]
+        return None
 
-    async def get_klines(
-        self, symbol: str, interval: str = "1d", limit: int = 100
-    ) -> List[Kline]:
-        session = await self._ensure_session()
-        try:
-            symbol_fh = self._idx_to_finnhub(symbol)
-            resolution = {"1m": "1", "5m": "5", "15m": "15", "30m": "30", "1h": "60", "1d": "D", "1w": "W", "1M": "M"}.get(interval, "D")
-            to_ts = int(time.time())
-            from_ts = to_ts - (limit * 86400)  # approximate
 
-            url = f"{BASE}/stock/candle?symbol={symbol_fh}&resolution={resolution}&from={from_ts}&to={to_ts}&token={self.api_key}"
-            async with session.get(url) as resp:
-                if resp.status != 200:
-                    return []
-                data = await resp.json()
-                if data.get("s") != "ok":
-                    return []
+# Singleton
+finnhub_feed = None
 
-                klines = []
-                for i in range(len(data.get("t", []))):
-                    klines.append(
-                        Kline(
-                            symbol=symbol,
-                            open=data["o"][i],
-                            high=data["h"][i],
-                            low=data["l"][i],
-                            close=data["c"][i],
-                            volume=data["v"][i],
-                            timestamp=datetime.fromtimestamp(data["t"][i]),
-                            interval=interval,
-                        )
-                    )
-                return klines[:limit]
-        except Exception as e:
-            print(f"[FinnhubFeed] Error: {e}")
-            return []
-
-    async def health(self) -> bool:
-        return self.api_key != ""
+def get_finnhub_feed():
+    global finnhub_feed
+    if finnhub_feed is None:
+        import os
+        api_key = os.environ.get("finnhub_api_key", "")
+        if api_key:
+            finnhub_feed = FinnhubFeed(api_key)
+    return finnhub_feed

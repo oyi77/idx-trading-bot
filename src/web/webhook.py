@@ -5,6 +5,7 @@ import os
 from datetime import datetime, timezone, timedelta
 
 from fastapi import APIRouter, Request, HTTPException
+from fastapi.responses import JSONResponse
 
 logger = logging.getLogger(__name__)
 WIB = timezone(timedelta(hours=7))
@@ -294,3 +295,34 @@ async def scalev_notify(request: Request):
 @router.post("/payments/notify")
 async def scalev_notify_alias(request: Request):
     return await scalev_notify(request)
+
+
+@router.post("/finnhub")
+async def finnhub_webhook(request: Request):
+    """Finnhub webhook endpoint for real-time market data."""
+    import os
+    secret = os.environ.get("finnhub_webhook_secret", "")
+    
+    try:
+        body = await request.body()
+        payload = await request.json()
+        
+        # Verify secret if provided
+        if secret:
+            auth = request.headers.get("X-Finnhub-Secret", "")
+            if auth != secret:
+                return JSONResponse({"error": "Invalid secret"}, status_code=401)
+        
+        # Process Finnhub data
+        event_type = payload.get("type", "")
+        data = payload.get("data", {})
+        
+        logger.info(f"Finnhub webhook: {event_type} - {data}")
+        
+        # Save to database or process
+        # TODO: Integrate with signal engine
+        
+        return JSONResponse({"status": "ok", "type": event_type})
+    except Exception as e:
+        logger.error(f"Finnhub webhook error: {e}")
+        return JSONResponse({"error": str(e)}, status_code=500)
