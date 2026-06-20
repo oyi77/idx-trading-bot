@@ -140,13 +140,17 @@ async def scalev_notify(request: Request):
     try:
         user_id = None
         tier = None
+        amount = 0
 
+
+        # Extract amount from webhook data
+        webhook_data = payload.get("data", payload) if isinstance(payload.get("data"), dict) else payload
+        amount = int(webhook_data.get("amount", webhook_data.get("gross_amount", 0)) or 0)
 
         # Try metadata first (new API flow)
         if metadata:
             user_id = metadata.get("chat_id") or metadata.get("telegram_username")
             tier = metadata.get("tier")
-
         # Fallback: look up in payments.json (old flow)
         if not user_id:
             from src.services.scalev import _load_payments, infer_tier_from_amount, normalize_amount
