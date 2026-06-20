@@ -1,4 +1,4 @@
-"""Feed factory — RapidAPI IDX primary (real-time), Yahoo fallback (delay 15m)."""
+"""Feed factory — Finnhub primary, Massive secondary, Yahoo/Local fallback."""
 import logging
 from datetime import datetime, timedelta
 from typing import Optional
@@ -6,6 +6,8 @@ from typing import Optional
 from src.config import settings
 from src.feed import DataFeed
 from src.feed.yahoo import YahooFeed
+from src.feed.finnhub import get_finnhub_feed
+from src.feed.massive import get_massive_feed
 from src.feed.local_idx import LocalIDXFeed
 
 log = logging.getLogger(__name__)
@@ -23,16 +25,27 @@ class FeedManager:
         self.local = LocalIDXFeed()
         self.rapidapi = None
         self._rapidapi_available: bool | None = None
-
+        
+        # Finnhub (primary for international stocks)
+        self.finnhub = get_finnhub_feed()
+        if self.finnhub:
+            log.info("Finnhub feed initialized (primary)")
+        
+        # Massive.com (secondary data source)
+        self.massive = get_massive_feed()
+        if self.massive:
+            log.info("Massive.com feed initialized (secondary)")
+        
+        # RapidAPI IDX (fallback)
         if settings.rapidapi_key:
             try:
                 from src.feed.rapidapi_idx import RapidAPIFeed
                 self.rapidapi = RapidAPIFeed()
-                log.info("RapidAPI IDX feed initialized (real-time)")
+                log.info("RapidAPI IDX feed initialized (fallback)")
             except Exception as e:
                 log.warning(f"RapidAPI init failed: {e}")
         else:
-            log.info("RapidAPI key not configured — using Yahoo only")
+            log.info("RapidAPI key not configured — using alternatives")
 
     async def _check_rapidapi(self) -> bool:
         """Lazy-check RapidAPI availability."""
@@ -55,23 +68,54 @@ class FeedManager:
 
     @property
     def is_realtime(self) -> bool:
-        return self._rapidapi_available is True
+        return self.finnhub is not None or self._rapidapi_available is True
 
     @property
     def data_source_label(self) -> str:
+        if self.finnhub:
+            return "real-time (Finnhub)"
+        if self.massive:
+            return "real-time (Massive)"
         if self._rapidapi_available:
             return "real-time (IDX)"
         return "delay 15 menit (Yahoo)"
 
     async def get_quote(self, symbol: str) -> Optional[dict]:
-        """Get quote — RapidAPI IDX real-time first, Yahoo fallback."""
-        # Try RapidAPI IDX
+        """Get quote — Finnhub → Massive → RapidAPI → Yahoo fallback."""
+        
+        # 1. Try Finnhub (fastest, real-time)
+        if self.finnhub:
+            try:
+                finnhub_symbol = f"{symbol}.JK" if not symbol.endswith(".JK") else symbol
+                quote = self.finnhub.get_quote(finnhub_symbol)
+                if quote:
+                    return {
+                        "price": quote["price"],
+                        "open": quote.get("open", 0),
+                        "high": quote.get("high", 0),
+                        "low": quote.get("low", 0),
+                        "change_pct": quote.get("change_pct", 0),
+                        "source": "finnhub",
+                    }
+            except Exception as e:
+                log.warning(f"Finnhub quote failed for {symbol}: {e}")
+        
+        # 2. Try Massive.com
+        if self.massive:
+            try:
+                quote = self.massive.get_quote(symbol)
+                if quote:
+                    return {**quote, "source": "massive"}
+            except Exception as e:
+                log.warning(f"Massive quote failed for {symbol}: {e}")
+        
+        # 3. Try RapidAPI IDX
         if await self._check_rapidapi():
             try:
                 candle = await self.rapidapi.get_latest_price(symbol)
                 if candle:
                     close = candle.get("close", 0)
-                    prev_close = candle.get("open", close)  # approximate
+                    prev_close = candle.get("open", close)
                     change_pct = ((close - prev_close) / prev_close * 100) if prev_close else 0
                     return {
                         "price": close,
@@ -85,8 +129,8 @@ class FeedManager:
                     }
             except Exception as e:
                 log.warning(f"RapidAPI quote failed for {symbol}: {e}")
-
-        # Fallback: Yahoo
+        
+        # 4. Fallback: Yahoo
         try:
             return await self.yahoo.get_quote(symbol)
         except Exception as e:
