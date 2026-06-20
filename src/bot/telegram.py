@@ -412,6 +412,46 @@ class BotHandlers:
 
         return text, keyboard
 
+
+    async def analyze(self, update: Update, context: ContextTypes.DEFAULT_TYPE, symbol: str = ""):
+        """Core analysis — fetch data, run engines, send result."""
+        if not symbol:
+            await update.message.reply_text("❌ Masukkan nama saham. Contoh: `BBCA`", parse_mode="Markdown")
+            return
+        symbol = symbol.upper().strip()
+        await update.message.reply_text(f"⚡ Menganalisa *{symbol}*... (10-20 detik)", parse_mode="Markdown")
+        try:
+            from src.feed.yahoo import YahooFeed
+            feed = YahooFeed()
+            klines = await feed.get_klines(symbol + ".JK", interval="1d", limit=60)
+            if not klines or len(klines) < 5:
+                await update.message.reply_text(f"❌ Data {symbol} tidak tersedia.")
+                return
+            price = klines[-1].get("close", 0)
+            prev = klines[-2].get("close", price) if len(klines) > 1 else price
+            pct = ((price - prev) / prev * 100) if prev else 0
+            from src.engine.technical import TechnicalEngine
+            tech = TechnicalEngine()
+            closes = [k["close"] for k in klines]
+            highs = [k["high"] for k in klines]
+            lows = [k["low"] for k in klines]
+            vols = [k.get("volume", 0) for k in klines]
+            tech_r = tech.analyze(symbol, closes, highs, lows, vols)
+            score = tech_r.get("score", 50)
+            from src.engine.ai_analysis import analyze_with_ai
+            ai_text = await analyze_with_ai(symbol=symbol, price=price, change_pct=pct, technical_data=tech_r, score=score)
+            sig = tech_r.get("signal", "HOLD")
+            em = {"BUY": "🟢", "SELL": "🔴", "HOLD": "⚪️"}.get(sig, "⚪️")
+            bar = "█" * min(int(score / 10), 10) + "░" * max(0, 10 - int(score / 10))
+            msg = f"{em} *{symbol}* — {sig}\n━━━━━━━━━━━━━━━━\n💰 Rp{price:,.0f} ({pct:+.1f}%)\n📊 Score: {score}/100 {bar}\n"
+            if ai_text:
+                msg += f"\n💡 *AI:*\n{ai_text[:600]}\n"
+            msg += "\n━━━━━━━━━━━━━━━━\n⚡ /pricing untuk upgrade"
+            await update.message.reply_text(msg, parse_mode="Markdown")
+        except Exception as e:
+            logger.error(f"Analyze failed: {e}", exc_info=True)
+            await update.message.reply_text(f"❌ Error: {str(e)[:100]}")
+
     async def analisa_direct(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """Direct handler for /analisa command."""
         if not await self._check_tier(update, "analisa"): return
