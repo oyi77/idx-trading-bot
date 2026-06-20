@@ -19,6 +19,19 @@ app = FastAPI(title="IDX AI Trading Bot", version="0.1.0")
 from src.web.webhook import router as webhook_router
 app.include_router(webhook_router)
 
+# Register admin routes
+try:
+    from src.web.admin import register_admin_routes
+    register_admin_routes(app)
+    logger.info("✅ Admin routes registered")
+except Exception as e:
+    logger.warning(f"Admin routes not available: {e}")
+
+# Meta.json endpoint
+@app.get("/meta.json")
+async def meta_json():
+    return JSONResponse({"name": "Vilona Saham AI", "version": "0.1.0", "status": "running", "bot": "@vilonidxbot"})
+
 BASE_DIR = Path(__file__).resolve().parent
 static_dir = BASE_DIR / "static"
 static_dir.mkdir(exist_ok=True)

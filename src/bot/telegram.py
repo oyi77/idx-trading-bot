@@ -1391,6 +1391,28 @@ class BotHandlers:
             logger.warning(f"Feedback error: {e}")
             await update.message.reply_text("❌ Gagal menyimpan feedback. Coba lagi.")
 
+    async def botfeedback(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """Handle /botfeedback - general bot feedback."""
+        try:
+            args = context.args
+            if len(args) < 1:
+                await update.message.reply_text("💬 Ketik feedback setelah command: /botfeedback bot ini bagus!", parse_mode="HTML")
+                return
+            feedback_text = " ".join(args)
+            user = update.effective_user
+            feedback_file = Path(__file__).resolve().parent.parent.parent / "data" / "user_feedback.json"
+            feedback = []
+            if feedback_file.exists():
+                try: feedback = json.loads(feedback_file.read_text())
+                except: pass
+            feedback.append({"chat_id": str(user.id), "username": user.username or "", "message": feedback_text, "timestamp": datetime.now().isoformat()})
+            feedback_file.parent.mkdir(parents=True, exist_ok=True)
+            feedback_file.write_text(json.dumps(feedback, indent=2, ensure_ascii=False))
+            await update.message.reply_text(f"✅ Feedback received: {feedback_text[:100]}\nTerima kasih!")
+        except Exception as e:
+            logger.warning(f"Bot feedback error: {e}")
+            await update.message.reply_text("❌ Gagal menyimpan feedback.")
+
     # ── Upgrade (Payment) ──
 
     async def upgrade(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -2345,6 +2367,7 @@ def create_app() -> Application:
     app.add_handler(CommandHandler("watchlist", handlers.watchlist))
     app.add_handler(CommandHandler("performance", handlers.performance))
     app.add_handler(CommandHandler("feedback", handlers.feedback))
+    app.add_handler(CommandHandler("botfeedback", handlers.botfeedback))
     app.add_handler(CommandHandler("leaderboard", handlers.leaderboard))
     app.add_handler(CommandHandler("points", handlers.points))
     app.add_handler(CommandHandler("pricing", handlers.pricing))

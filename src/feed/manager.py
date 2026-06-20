@@ -6,6 +6,7 @@ from typing import Optional
 from src.config import settings
 from src.feed import DataFeed
 from src.feed.yahoo import YahooFeed
+from src.feed.local_idx import LocalIDXFeed
 
 log = logging.getLogger(__name__)
 
@@ -19,6 +20,7 @@ class FeedManager:
 
     def __init__(self):
         self.yahoo = YahooFeed()
+        self.local = LocalIDXFeed()
         self.rapidapi = None
         self._rapidapi_available: bool | None = None
 
