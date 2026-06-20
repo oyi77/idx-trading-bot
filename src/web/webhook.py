@@ -128,14 +128,30 @@ async def scalev_notify(request: Request):
     mark_paid(reference)
     logger.info(f"Scalev payment marked paid: ref={reference}")
 
-    # ── Auto-upgrade user tier + send Telegram notification ──────
+    # ── Auto-upgrade user tier + send Telegram notification + CAPI ──
     try:
-        from src.services.scalev import _load_payments, infer_tier_from_amount, normalize_amount
-        payments_data = _load_payments()
-        entry = payments_data.get("payments", {}).get(reference, {})
-        user_id = entry.get("user_id")
-        tier = entry.get("tier") or infer_tier_from_amount(normalize_amount(entry.get("amount", 0)))
-        amount = entry.get("amount", 0)
+        # Extract metadata from ScaleV webhook (new API flow)
+        metadata = {}
+        if isinstance(payload.get("data"), dict):
+            metadata = payload["data"].get("metadata", {}) or {}
+        if not metadata:
+            metadata = payload.get("metadata", {}) or {}
+
+        user_id = None
+        tier = None
+
+        # Try metadata first (new API flow)
+        if metadata:
+            user_id = metadata.get("chat_id") or metadata.get("telegram_username")
+            tier = metadata.get("tier")
+
+        # Fallback: look up in payments.json (old flow)
+        if not user_id:
+            from src.services.scalev import _load_payments, infer_tier_from_amount, normalize_amount
+            payments_data = _load_payments()
+            entry = payments_data.get("payments", {}).get(reference, {})
+            user_id = entry.get("user_id")
+            tier = tier or entry.get("tier") or infer_tier_from_amount(normalize_amount(entry.get("amount", 0)))
 
         if user_id and tier:
             import asyncio
@@ -165,6 +181,39 @@ async def scalev_notify(request: Request):
                 loop.run_until_complete(_do_upgrade())
             engine.dispose()
 
+            # ── Fire Meta CAPI Purchase event ──
+            try:
+                import urllib.request
+                META_PIXEL_ID = os.getenv("META_PIXEL_ID", "")
+                META_ACCESS_TOKEN = os.getenv("META_ACCESS_TOKEN", "")
+                if META_PIXEL_ID and META_ACCESS_TOKEN:
+                    import hashlib
+                    import time as _time
+                    capi_event = {
+                        "event_name": "Purchase",
+                        "event_time": int(_time.time()),
+                        "action_source": "other",
+                        "event_id": f"idx_{user_id}_{tier}_{int(_time.time())}",
+                        "custom_data": {
+                            "currency": "IDR",
+                            "value": amount / 1_000_000.0,
+                            "content_name": f"Vilona Saham {tier.upper()}",
+                            "content_category": "subscription",
+                        },
+                        "user_data": {
+                            "external_id": hashlib.sha256(str(user_id).encode()).hexdigest(),
+                        },
+                    }
+                    capi_payload = json.dumps({"data": [capi_event]}).encode()
+                    capi_url = f"https://graph.facebook.com/v19.0/{META_PIXEL_ID}/events?access_token={META_ACCESS_TOKEN}"
+                    capi_req = urllib.request.Request(capi_url, data=capi_payload, method="POST")
+                    capi_req.add_header("Content-Type", "application/json")
+                    with urllib.request.urlopen(capi_req, timeout=10) as r:
+                        capi_result = json.loads(r.read())
+                    logger.info(f"📊 Meta CAPI Purchase fired: {capi_result.get('events_received', 0)} events")
+            except Exception as e:
+                logger.warning(f"Meta CAPI error (non-fatal): {e}")
+
             # Send Telegram notification
             try:
                 from telegram import Bot
@@ -186,8 +235,6 @@ async def scalev_notify(request: Request):
             logger.warning(f"Cannot auto-upgrade: user_id={user_id} tier={tier}")
     except Exception as e:
         logger.error(f"Auto-upgrade flow failed: {e}")
-
-    return {"status": "ok", "reference": reference}
 
 
 @router.post("/payments/notify")
