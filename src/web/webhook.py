@@ -198,6 +198,12 @@ async def scalev_notify(request: Request):
                                      [user_db_id, tier, datetime.now(timezone.utc).isoformat(), expiry])
                     conn.commit()
                     logger.info(f"✅ Auto-upgrade user={user_id} tier={tier}")
+                    # ── Meta CAPI: Purchase ──
+                    try:
+                        from src.meta_capi import track_purchase
+                        track_purchase(str(user_id), tier, value=float(amount), order_ref=reference)
+                    except Exception:
+                        pass
                 conn.close()
             except Exception as e:
                 logger.error(f"Auto-upgrade DB failed: {e}")

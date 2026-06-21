@@ -169,6 +169,12 @@ class BotHandlers:
             await update.message.reply_text(
                 text, parse_mode="Markdown", reply_markup=reply_markup
             )
+            # ── Meta CAPI: CompleteRegistration ──
+            try:
+                from src.meta_capi import track_registration
+                track_registration(str(user_id), source="botidx")
+            except Exception:
+                pass
 
     async def help(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         if not await self._check_tier(update, "help"): return
@@ -1530,6 +1536,12 @@ class BotHandlers:
                     text, parse_mode="Markdown",
                     reply_markup=InlineKeyboardMarkup(keyboard),
                 )
+                # ── Meta CAPI: InitiateCheckout ──
+                try:
+                    from src.meta_capi import track_checkout
+                    track_checkout(str(user.id), tier, value=float(payment.get('amount', 0)))
+                except Exception:
+                    pass
             else:
                 error = payment.get("error", "Unknown error")
                 await msg.edit_text(
